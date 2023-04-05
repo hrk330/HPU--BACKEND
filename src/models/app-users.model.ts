@@ -1,36 +1,18 @@
-import {Entity, model, property} from '@loopback/repository';
+import {
+  User
+} from '@loopback/authentication-jwt';
+import {model, property} from '@loopback/repository';
 
 @model()
-export class AppUsers extends Entity {
-  @property({
-    type: 'string',
-    id: true,
-    generated: false,
-    required: true,
-  })
-  userId: string;
+export class AppUsers extends User {
 
   @property({
     type: 'string',
-    required: true,
-  })
-  email: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  password: string;
-
-  @property({
-    type: 'string',
-    required: true,
   })
   firstName: string;
 
   @property({
     type: 'string',
-    required: true,
   })
   lastName: string;
 
@@ -103,11 +85,6 @@ export class AppUsers extends Entity {
     type: 'date',
   })
   passwordUpdatedAt?: string;
-
-  @property({
-    type: 'string',
-  })
-  isEmailVerified?: string;
 
   @property({
     type: 'string',

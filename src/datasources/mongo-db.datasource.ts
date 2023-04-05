@@ -4,11 +4,11 @@ import {juggler} from '@loopback/repository';
 const config = {
   name: 'MongoDb',
   connector: 'mongodb',
-  url: 'mongodb+srv://arhambutt0:zso4ecrPqr1fNLHO@cluster0.ma3k3kc.mongodb.net/test?retryWrites=true&w=majority',
-  host: 'cluster0.ma3k3kc.mongodb.net',
+  url: 'mongodb+srv://planlabweb:Temp123@cluster0.sxupysi.mongodb.net/test?retryWrites=true&w=majority',
+  host: 'cluster0.sxupysi.mongodb.net',
   port: '',
-  user: 'arhambutt0',
-  password: 'zso4ecrPqr1fNLHO',
+  user: 'planlabweb',
+  password: 'Temp123',
   database: 'autoService',
   useNewUrlParser: true
 };
