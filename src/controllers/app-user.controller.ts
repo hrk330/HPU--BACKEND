@@ -31,7 +31,7 @@ import {
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AppUsers} from '../models';
+import {AppUsers, VerificationRequestObject} from '../models';
 import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
 
 const CredentialsSchema: SchemaObject = {
@@ -117,26 +117,30 @@ export class AppUserController {
   })
   async login(
     @requestBody(CredentialsRequestBody) credentials: Credentials,
-  ): Promise<{token: string}> {
+  ): Promise<String> {
     // ensure the user exists, and the password is correct
-    console.log(0);
+    let result = {code: "00", msg: "User logged in successfully.", token: '', user: {}};
     let token = '';
     try {
       const user = await this.userService.verifyCredentials(credentials);
-      console.log(user);
-      console.log(1);
-      //this.appUsersRepository.updateById(id, appUsers)
-      // convert a User object into a UserProfile object (reduced set of properties)
-      const userProfile = this.userService.convertToUserProfile(user);
-      console.log(userProfile);
-      console.log(2);
+      if (user) {
 
-      // create a JSON Web Token based on the user profile
-      token = await this.jwtService.generateToken(userProfile);
+        //this.appUsersRepository.updateById(id, appUsers)
+        // convert a User object into a UserProfile object (reduced set of properties)
+        const userProfile = this.userService.convertToUserProfile(user);
+
+        // create a JSON Web Token based on the user profile
+        result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+        result.user = user;
+      } else {
+        result.code = "05";
+        result.msg = "Invalid email or password.";
+      }
     } catch (e) {
-      console.log(e);
+      result.code = "05";
+      result.msg = e.message;
     }
-    return {token};
+    return JSON.stringify(result);
   }
 
   @post('/appUsers/signup', {
@@ -165,23 +169,29 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
+    let token = '';
     const filter = {where: {email: newUserRequest.email}};
     const user = await this.appUsersRepository.findOne(filter);
-    let result = "SUCCESS";
+    let result = {code: "00", msg: "User registered successfully.", token: '', userId: ''};
     if (user) {
-      result = "FAILURE";
-      return result;
+      result = {code: "05", msg: "User already exists", token: '', userId: ''};
+    } else {
+      const password = await hash(newUserRequest.password, await genSalt());
+      const savedUser = await this.userRepository.create(
+        _.omit(newUserRequest, 'password'),
+      );
+
+      await this.userRepository.userCredentials(savedUser.id).create({password});
+      const userProfile = this.userService.convertToUserProfile(savedUser);
+
+      result.userId = savedUser.id;
+      // create a JSON Web Token based on the user profile
+      result.token = await this.jwtService.generateToken(userProfile);
     }
-    const password = await hash(newUserRequest.password, await genSalt());
-    const savedUser = await this.userRepository.create(
-      _.omit(newUserRequest, 'password'),
-    );
-
-    await this.userRepository.userCredentials(savedUser.id).create({password});
-
-    return result;
+    return JSON.stringify(result);
   }
 
+  @authenticate('jwt')
   @post('/appUsers/resetPassword', {
     responses: {
       '200': {
@@ -220,6 +230,54 @@ export class AppUserController {
     return "savedUser";
   }
 
+  @authenticate('jwt')
+  @post('/appUsers/verifyCode', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: String,
+          },
+        },
+      },
+    },
+  })
+  async verifyCode(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(VerificationRequestObject, {
+            title: 'VerificationRequestObject', partial: true
+          }),
+        },
+      },
+    })
+    verificationRequestObject: VerificationRequestObject
+  ): Promise<String> {
+    let result = {code: "05", msg: "Verification code was not verified."};
+    const filter = {where: {email: verificationRequestObject.email}};
+
+    const user = await this.appUsersRepository.findOne(filter);
+    console.log(user);
+    if (user && user.id === verificationRequestObject.userId) {
+      const verificationCodefilter = {where: {key: verificationRequestObject.email, code: verificationRequestObject.verificationCode}, order: ['createdAt desc']};
+      const verificationCodeObject = await this.verificationCodesRepository.findOne(verificationCodefilter);
+      if (verificationCodeObject) {
+        const currentDateTime = new Date();
+        console.log(currentDateTime);
+        console.log(verificationCodeObject);
+        if (verificationCodeObject.expiry && currentDateTime < verificationCodeObject.expiry) {
+          result.code = "00";
+          result.msg = "Verification code has been verified.";
+        }
+      }
+    }
+
+    return JSON.stringify(result);
+  }
+
+  @authenticate('jwt')
   @post('/appUsers/sendEmailCode/{email}', {
     responses: {
       '200': {
@@ -242,33 +300,36 @@ export class AppUserController {
     })
     @param.path.string('email') email: string,
   ): Promise<String> {
-    console.log((await this.addMinutes(new Date(), 15)).toDateString());
-    this.verificationCodesRepository.create({key: email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toDateString()});
-    return "SUCCESS";
+    let result = {code: "00", msg: "Verification code sent successfully."};
+    const filter = {where: {email: email}};
+    const user = await this.appUsersRepository.findOne(filter);
+    if (user) {
+      this.verificationCodesRepository.create({key: email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+    } else {
+      result.code = "05";
+      result.msg = "Invalid User.";
+    }
+
+    return JSON.stringify(result);
   }
   async getRandomInt(max: number): Promise<string> {
-    return Math.floor(Math.random() * max).toString();
+    //return Math.floor(Math.random() * max).toString();
+    return "1234";
   }
 
   async addMinutes(date: Date, minutes: number): Promise<Date> {
-    console.log(date);
     date.setMinutes(date.getMinutes() + minutes);
-    console.log(date.getMinutes());
-    console.log(minutes);
-    console.log(date);
-
     return date;
   }
 
-  @post('/appUsers/sendSmsCode', {
+  @authenticate('jwt')
+  @post('/appUsers/sendSmsCode/{mobileNumber}', {
     responses: {
       '200': {
         description: 'User',
         content: {
           'application/json': {
-            schema: {
-              'x-ts-type': User,
-            },
+            schema: String,
           },
         },
       },
@@ -278,24 +339,14 @@ export class AppUserController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
-            title: 'NewUser', partial: true
-          }),
+          schema: String,
         },
       },
     })
-    newUserRequest: AppUsers
+    @param.path.string('mobileNumber') mobileNumber: string,
   ): Promise<String> {
-    console.log(newUserRequest);
-    const password = await hash(newUserRequest.password, await genSalt());
-    const filter = {where: {email: newUserRequest.email}};
-    const user = await this.appUsersRepository.findOne(filter);
-    if (user) {
-      await this.userRepository.userCredentials(user.id).delete();
-      await this.userRepository.userCredentials(user.id).create({password});
-    }
-
-    return "savedUser";
+    this.verificationCodesRepository.create({key: mobileNumber, code: await this.getRandomInt(999999), type: 'M', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+    return "SUCCESS";
   }
 
   @get('/appUsers/count')

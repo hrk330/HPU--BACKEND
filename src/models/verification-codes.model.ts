@@ -44,7 +44,7 @@ export class VerificationCodes extends Entity {
   @property({
     type: 'date',
   })
-  expiry?: string;
+  expiry?: Date;
 
 
   constructor(data?: Partial<VerificationCodes>) {
