@@ -17,7 +17,7 @@ export class AppUsers extends User {
   lastName: string;
 
   @property({
-    type: 'date',
+    type: 'string',
   })
   dateOfBirth?: string;
 
@@ -63,13 +63,14 @@ export class AppUsers extends User {
 
   @property({
     type: 'date',
+    default: "$now"
   })
-  createdAt?: string;
+  createdAt?: Date;
 
   @property({
     type: 'date',
   })
-  updatedAt?: string;
+  updatedAt?: Date;
 
   @property({
     type: 'string',
@@ -90,6 +91,12 @@ export class AppUsers extends User {
     type: 'string',
   })
   isMobileVerified?: string;
+
+  @property({
+    type: 'string',
+    default: "N"
+  })
+  isProfileCompleted?: string;
 
 
   constructor(data?: Partial<AppUsers>) {
