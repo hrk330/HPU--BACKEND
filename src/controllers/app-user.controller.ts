@@ -172,9 +172,9 @@ export class AppUserController {
     let token = '';
     const filter = {where: {email: newUserRequest.email}};
     const user = await this.appUsersRepository.findOne(filter);
-    let result = {code: "00", msg: "User registered successfully.", token: '', userId: ''};
+    let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
     if (user) {
-      result = {code: "05", msg: "User already exists", token: '', userId: ''};
+      result = {code: 5, msg: "User already exists", token: '', userId: ''};
     } else {
       const password = await hash(newUserRequest.password, await genSalt());
       newUserRequest.isProfileCompleted = "N";
@@ -225,7 +225,7 @@ export class AppUserController {
     const filter = {where: {id: newUserRequest.id}};
     await this.appUsersRepository.updateById(newUserRequest.id, _.omit(newUserRequest, 'email'));
     const user = await this.appUsersRepository.findOne(filter);
-    let result = {code: "00", msg: "User profile updated successfully.", user: user};
+    let result = {code: 0, msg: "User profile updated successfully.", user: user};
     // if (user) {
     //   result = {code: "05", msg: "User already exists", token: '', userId: ''};
     // } else {
