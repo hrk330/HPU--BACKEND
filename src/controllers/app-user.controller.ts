@@ -177,6 +177,10 @@ export class AppUserController {
       result = {code: "05", msg: "User already exists", token: '', userId: ''};
     } else {
       const password = await hash(newUserRequest.password, await genSalt());
+      newUserRequest.isProfileCompleted = "N";
+      newUserRequest.isMobileVerified = "N";
+      newUserRequest.createdAt = new Date();
+      newUserRequest.roleId = "APPUSER";
       const savedUser = await this.userRepository.create(
         _.omit(newUserRequest, 'password'),
       );
@@ -188,6 +192,55 @@ export class AppUserController {
       // create a JSON Web Token based on the user profile
       result.token = await this.jwtService.generateToken(userProfile);
     }
+    return JSON.stringify(result);
+  }
+
+  @authenticate('jwt')
+  @post('/appUsers/updateProfile', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async updateProfile(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+    const filter = {where: {id: newUserRequest.id}};
+    await this.appUsersRepository.updateById(newUserRequest.id, _.omit(newUserRequest, 'email'));
+    const user = await this.appUsersRepository.findOne(filter);
+    let result = {code: "00", msg: "User profile updated successfully.", user: user};
+    // if (user) {
+    //   result = {code: "05", msg: "User already exists", token: '', userId: ''};
+    // } else {
+    //   const password = await hash(newUserRequest.password, await genSalt());
+    //   const savedUser = await this.userRepository.create(
+    //     _.omit(newUserRequest, 'password'),
+    //   );
+
+    //   await this.userRepository.userCredentials(savedUser.id).create({password});
+    //   const userProfile = this.userService.convertToUserProfile(savedUser);
+
+    //   result.userId = savedUser.id;
+    //   // create a JSON Web Token based on the user profile
+    //   result.token = await this.jwtService.generateToken(userProfile);
+    // }
     return JSON.stringify(result);
   }
 
