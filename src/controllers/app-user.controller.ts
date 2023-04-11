@@ -119,7 +119,7 @@ export class AppUserController {
     @requestBody(CredentialsRequestBody) credentials: Credentials,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    let result = {code: "00", msg: "User logged in successfully.", token: '', user: {}};
+    let result = {code: 0, msg: "User logged in successfully.", token: '', user: {}};
     let token = '';
     try {
       const user = await this.userService.verifyCredentials(credentials);
@@ -133,11 +133,11 @@ export class AppUserController {
         result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
         result.user = user;
       } else {
-        result.code = "05";
+        result.code = 5;
         result.msg = "Invalid email or password.";
       }
     } catch (e) {
-      result.code = "05";
+      result.code = 5;
       result.msg = e.message;
     }
     return JSON.stringify(result);
@@ -230,7 +230,6 @@ export class AppUserController {
     return "savedUser";
   }
 
-  @authenticate('jwt')
   @post('/appUsers/verifyCode', {
     responses: {
       '200': {
@@ -255,30 +254,22 @@ export class AppUserController {
     })
     verificationRequestObject: VerificationRequestObject
   ): Promise<String> {
-    let result = {code: "05", msg: "Verification code was not verified."};
-    const filter = {where: {email: verificationRequestObject.email}};
-
-    const user = await this.appUsersRepository.findOne(filter);
-    console.log(user);
-    if (user && user.id === verificationRequestObject.userId) {
-      const verificationCodefilter = {where: {key: verificationRequestObject.email, code: verificationRequestObject.verificationCode}, order: ['createdAt desc']};
-      const verificationCodeObject = await this.verificationCodesRepository.findOne(verificationCodefilter);
-      if (verificationCodeObject) {
-        const currentDateTime = new Date();
-        console.log(currentDateTime);
-        console.log(verificationCodeObject);
-        if (verificationCodeObject.expiry && currentDateTime < verificationCodeObject.expiry) {
-          result.code = "00";
-          result.msg = "Verification code has been verified.";
-        }
+    let result = {code: 5, msg: "Verification code was not verified."};
+    const verificationCodefilter = {where: {key: verificationRequestObject.email, code: verificationRequestObject.verificationCode, status: 'L'}, order: ['createdAt desc']};
+    const verificationCodeObject = await this.verificationCodesRepository.findOne(verificationCodefilter);
+    if (verificationCodeObject) {
+      const currentDateTime = new Date();
+      if (verificationCodeObject.expiry && currentDateTime < verificationCodeObject.expiry) {
+        await this.verificationCodesRepository.updateById(verificationCodeObject.id, {status: 'V'});
+        result.code = 0;
+        result.msg = "Verification code has been verified.";
       }
     }
 
     return JSON.stringify(result);
   }
 
-  @authenticate('jwt')
-  @post('/appUsers/sendEmailCode/{email}', {
+  @post('/appUsers/sendEmailCode', {
     responses: {
       '200': {
         description: 'User',
@@ -294,20 +285,27 @@ export class AppUserController {
     @requestBody({
       content: {
         'application/json': {
-          schema: String,
+          schema: getModelSchemaRef(VerificationRequestObject, {
+            title: 'VerificationRequestObject', partial: true
+          }),
         },
       },
-    })
-    @param.path.string('email') email: string,
+    }) verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    let result = {code: "00", msg: "Verification code sent successfully."};
-    const filter = {where: {email: email}};
+    let result = {code: 0, msg: "Verification code sent successfully."};
+    const filter = {where: {email: verificationRequestObject.email}};
+
     const user = await this.appUsersRepository.findOne(filter);
-    if (user) {
-      this.verificationCodesRepository.create({key: email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+    if (user && user.id) {
+      result.code = 5;
+      result.msg = "User already exits.";
     } else {
-      result.code = "05";
-      result.msg = "Invalid User.";
+      try {
+        this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+      } catch (e) {
+        result.code = 5;
+        result.msg = e.message;
+      }
     }
 
     return JSON.stringify(result);

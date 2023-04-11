@@ -17,6 +17,11 @@ export class VerificationRequestObject extends Model {
   })
   verificationCode?: string;
 
+  @property({
+    type: 'string',
+  })
+  phoneNo?: string;
+
 
   constructor(data?: Partial<VerificationRequestObject>) {
     super(data);
