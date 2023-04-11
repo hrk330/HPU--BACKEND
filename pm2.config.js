@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'HPU Backend Node',
+      name: 'HPU-Backend',
       script: './dist/index.js',
     },
   ],
