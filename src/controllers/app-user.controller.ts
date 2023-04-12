@@ -244,7 +244,6 @@ export class AppUserController {
     return JSON.stringify(result);
   }
 
-  @authenticate('jwt')
   @post('/appUsers/resetPassword', {
     responses: {
       '200': {
@@ -271,6 +270,7 @@ export class AppUserController {
     })
     newUserRequest: AppUsers
   ): Promise<String> {
+    let result = {code: 5, msg: "Reset password failed."};
     console.log(newUserRequest);
     const password = await hash(newUserRequest.password, await genSalt());
     const filter = {where: {email: newUserRequest.email}};
@@ -278,9 +278,11 @@ export class AppUserController {
     if (user) {
       await this.userRepository.userCredentials(user.id).delete();
       await this.userRepository.userCredentials(user.id).create({password});
+      result.code = 0;
+      result.msg = "Password has been reset successfully.";
     }
 
-    return "savedUser";
+    return JSON.stringify(result);
   }
 
   @post('/appUsers/verifyCode', {
