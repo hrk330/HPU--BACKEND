@@ -120,14 +120,12 @@ export class AppUserController {
   ): Promise<String> {
     // ensure the user exists, and the password is correct
     let result = {code: 0, msg: "User logged in successfully.", token: '', user: {}};
-    let token = '';
     try {
       const user = await this.userService.verifyCredentials(credentials);
       if (user) {
 
         //this.appUsersRepository.updateById(id, appUsers)
         // convert a User object into a UserProfile object (reduced set of properties)
-        const userProfile = this.userService.convertToUserProfile(user);
 
         // create a JSON Web Token based on the user profile
         result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
@@ -170,6 +168,57 @@ export class AppUserController {
     newUserRequest: AppUsers,
   ): Promise<String> {
     let token = '';
+    const filter = {where: {email: newUserRequest.email}};
+    const user = await this.appUsersRepository.findOne(filter);
+    let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
+    if (user) {
+      result = {code: 5, msg: "User already exists", token: '', userId: ''};
+    } else {
+      const password = await hash(newUserRequest.password, await genSalt());
+      newUserRequest.isProfileCompleted = "N";
+      newUserRequest.isMobileVerified = "N";
+      newUserRequest.createdAt = new Date();
+      newUserRequest.roleId = "APPUSER";
+      const savedUser = await this.userRepository.create(
+        _.omit(newUserRequest, 'password'),
+      );
+
+      await this.userRepository.userCredentials(savedUser.id).create({password});
+      const userProfile = this.userService.convertToUserProfile(savedUser);
+
+      result.userId = savedUser.id;
+      // create a JSON Web Token based on the user profile
+      result.token = await this.jwtService.generateToken(userProfile);
+    }
+    return JSON.stringify(result);
+  }
+
+  @post('/appUsers/socialsignup', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async socialSignUp(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
     const filter = {where: {email: newUserRequest.email}};
     const user = await this.appUsersRepository.findOne(filter);
     let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
@@ -351,17 +400,33 @@ export class AppUserController {
     const filter = {where: {email: verificationRequestObject.email}};
 
     const user = await this.appUsersRepository.findOne(filter);
-    if (user && user.id) {
-      result.code = 5;
-      result.msg = "User already exits.";
-    } else {
-      try {
-        this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
-      } catch (e) {
+
+    if (verificationRequestObject.type === 'RP') {
+      if (!user || !user.id) {
         result.code = 5;
-        result.msg = e.message;
+        result.msg = "User does not exits.";
+      } else {
+        try {
+          this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+        } catch (e) {
+          result.code = 5;
+          result.msg = e.message;
+        }
+      }
+    } else if (verificationRequestObject.type === 'SU') {
+      if (user && user.id) {
+        result.code = 5;
+        result.msg = "User already exits.";
+      } else {
+        try {
+          this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+        } catch (e) {
+          result.code = 5;
+          result.msg = e.message;
+        }
       }
     }
+
 
     return JSON.stringify(result);
   }
