@@ -119,7 +119,7 @@ export class AppUserController {
     @requestBody(CredentialsRequestBody) credentials: Credentials,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    let result = {code: 0, msg: "User logged in successfully.", token: '', user: {}};
+    let result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {
       const user = await this.userService.verifyCredentials(credentials);
       if (user) {
@@ -130,9 +130,8 @@ export class AppUserController {
         // create a JSON Web Token based on the user profile
         result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
         result.user = user;
-      } else {
-        result.code = 5;
-        result.msg = "Invalid email or password.";
+        result.code = 0;
+        result.msg = "User logged in successfully.";
       }
     } catch (e) {
       result.code = 5;
@@ -171,7 +170,7 @@ export class AppUserController {
     const filter = {where: {email: newUserRequest.email}};
     const user = await this.appUsersRepository.findOne(filter);
     let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
-    if (user) {
+    if (user && user.id) {
       result = {code: 5, msg: "User already exists", token: '', userId: ''};
     } else {
       const password = await hash(newUserRequest.password, await genSalt());
@@ -193,7 +192,7 @@ export class AppUserController {
     return JSON.stringify(result);
   }
 
-  @post('/appUsers/socialsignup', {
+  @post('/appUsers/socialSignUp', {
     responses: {
       '200': {
         description: 'User',
@@ -219,27 +218,77 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    const filter = {where: {email: newUserRequest.email}};
+    const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType}};
     const user = await this.appUsersRepository.findOne(filter);
     let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
     if (user) {
       result = {code: 5, msg: "User already exists", token: '', userId: ''};
     } else {
-      const password = await hash(newUserRequest.password, await genSalt());
       newUserRequest.isProfileCompleted = "N";
       newUserRequest.isMobileVerified = "N";
       newUserRequest.createdAt = new Date();
       newUserRequest.roleId = "APPUSER";
-      const savedUser = await this.userRepository.create(
-        _.omit(newUserRequest, 'password'),
-      );
+      const savedUser = await this.userRepository.create(newUserRequest);
 
-      await this.userRepository.userCredentials(savedUser.id).create({password});
       const userProfile = this.userService.convertToUserProfile(savedUser);
 
       result.userId = savedUser.id;
       // create a JSON Web Token based on the user profile
       result.token = await this.jwtService.generateToken(userProfile);
+    }
+    return JSON.stringify(result);
+  }
+
+  @post('/appUsers/socialLogin', {
+    responses: {
+      '200': {
+        description: 'Token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async socialLogin(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+    // ensure the user exists, and the password is correct
+    let result = {code: 5, msg: "Invalid Login.", token: '', user: {}};
+    try {
+      const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType}};
+      const user = await this.appUsersRepository.findOne(filter);
+      if (user) {
+
+        //this.appUsersRepository.updateById(id, appUsers)
+        // convert a User object into a UserProfile object (reduced set of properties)
+
+        // create a JSON Web Token based on the user profile
+        result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+        result.user = user;
+        result.code = 0;
+        result.msg = "User logged in successfully";
+      }
+    } catch (e) {
+      result.code = 5;
+      result.msg = e.message;
     }
     return JSON.stringify(result);
   }
@@ -275,21 +324,6 @@ export class AppUserController {
     await this.appUsersRepository.updateById(newUserRequest.id, _.omit(newUserRequest, 'email'));
     const user = await this.appUsersRepository.findOne(filter);
     let result = {code: 0, msg: "User profile updated successfully.", user: user};
-    // if (user) {
-    //   result = {code: "05", msg: "User already exists", token: '', userId: ''};
-    // } else {
-    //   const password = await hash(newUserRequest.password, await genSalt());
-    //   const savedUser = await this.userRepository.create(
-    //     _.omit(newUserRequest, 'password'),
-    //   );
-
-    //   await this.userRepository.userCredentials(savedUser.id).create({password});
-    //   const userProfile = this.userService.convertToUserProfile(savedUser);
-
-    //   result.userId = savedUser.id;
-    //   // create a JSON Web Token based on the user profile
-    //   result.token = await this.jwtService.generateToken(userProfile);
-    // }
     return JSON.stringify(result);
   }
 
@@ -396,7 +430,7 @@ export class AppUserController {
       },
     }) verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    let result = {code: 0, msg: "Verification code sent successfully."};
+    let result = {code: 5, msg: "Verification code not sent."};
     const filter = {where: {email: verificationRequestObject.email}};
 
     const user = await this.appUsersRepository.findOne(filter);
@@ -408,6 +442,8 @@ export class AppUserController {
       } else {
         try {
           this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+          result.code = 0;
+          result.msg = "Verification code sent successfully.";
         } catch (e) {
           result.code = 5;
           result.msg = e.message;
@@ -420,6 +456,8 @@ export class AppUserController {
       } else {
         try {
           this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+          result.code = 0;
+          result.msg = "Verification code sent successfully.";
         } catch (e) {
           result.code = 5;
           result.msg = e.message;
