@@ -98,6 +98,19 @@ export class AppUsers extends User {
   })
   isProfileCompleted?: string;
 
+  @property({
+    type: 'string',
+    default: "N"
+  })
+  socialId?: string;
+
+  @property({
+    type: 'string',
+    default: "N"
+  })
+  socialIdType?: string;
+
+
 
   constructor(data?: Partial<AppUsers>) {
     super(data);
