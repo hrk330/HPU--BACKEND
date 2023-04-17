@@ -121,17 +121,24 @@ export class AppUserController {
     // ensure the user exists, and the password is correct
     let result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {
-      const user = await this.userService.verifyCredentials(credentials);
-      if (user) {
+      const filter = {where: {email: credentials.email}, include: [{'relation': 'userCreds'}]};
+      const user = await this.appUsersRepository.findOne(filter);
 
-        //this.appUsersRepository.updateById(id, appUsers)
-        // convert a User object into a UserProfile object (reduced set of properties)
+      //const user = await this.userService.verifyCredentials(credentials);
+      if (user && user.userCreds) {
+        const salt = user.userCreds.salt;
+        const password = await hash(credentials.password, salt);
+        if (password === user.userCreds.password) {
 
-        // create a JSON Web Token based on the user profile
-        result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
-        result.user = user;
-        result.code = 0;
-        result.msg = "User logged in successfully.";
+          //this.appUsersRepository.updateById(id, appUsers)
+          // convert a User object into a UserProfile object (reduced set of properties)
+
+          // create a JSON Web Token based on the user profile
+          result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+          result.user = user;
+          result.code = 0;
+          result.msg = "User logged in successfully.";
+        }
       }
     } catch (e) {
       result.code = 5;
@@ -166,28 +173,35 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    let token = '';
-    const filter = {where: {email: newUserRequest.email}};
-    const user = await this.appUsersRepository.findOne(filter);
-    let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
-    if (user && user.id) {
-      result = {code: 5, msg: "User already exists", token: '', userId: ''};
-    } else {
-      const password = await hash(newUserRequest.password, await genSalt());
-      newUserRequest.isProfileCompleted = "N";
-      newUserRequest.isMobileVerified = "N";
-      newUserRequest.createdAt = new Date();
-      newUserRequest.roleId = "APPUSER";
-      const savedUser = await this.userRepository.create(
-        _.omit(newUserRequest, 'password'),
-      );
 
-      await this.userRepository.userCredentials(savedUser.id).create({password});
-      const userProfile = this.userService.convertToUserProfile(savedUser);
+    let result = {code: 5, msg: "User registeration failed.", token: '', userId: ''};
+    try {
+      const filter = {where: {email: newUserRequest.email}};
+      const user = await this.appUsersRepository.findOne(filter);
 
-      result.userId = savedUser.id;
-      // create a JSON Web Token based on the user profile
-      result.token = await this.jwtService.generateToken(userProfile);
+      if (user && user.id) {
+        result = {code: 5, msg: "User already exists", token: '', userId: ''};
+      } else {
+        const salt = await genSalt();
+        const password = await hash(newUserRequest.password, salt);
+        newUserRequest.roleId = "APPUSER";
+        const savedUser = await this.appUsersRepository.create(
+          _.omit(newUserRequest, 'password'),
+        );
+        if (savedUser) {
+          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
+          const userProfile = this.userService.convertToUserProfile(savedUser);
+
+          result.userId = savedUser.id;
+          // create a JSON Web Token based on the user profile
+          result.token = await this.jwtService.generateToken(userProfile);
+          result.code = 0;
+          result.msg = "User registered successfully.";
+        }
+      }
+    } catch (e) {
+      result.code = 5;
+      result.msg = e.message;
     }
     return JSON.stringify(result);
   }
@@ -224,11 +238,8 @@ export class AppUserController {
     if (user) {
       result = {code: 5, msg: "User already exists", token: '', userId: ''};
     } else {
-      newUserRequest.isProfileCompleted = "N";
-      newUserRequest.isMobileVerified = "N";
-      newUserRequest.createdAt = new Date();
       newUserRequest.roleId = "APPUSER";
-      const savedUser = await this.userRepository.create(newUserRequest);
+      const savedUser = await this.appUsersRepository.create(newUserRequest);
 
       const userProfile = this.userService.convertToUserProfile(savedUser);
 
@@ -354,13 +365,14 @@ export class AppUserController {
     newUserRequest: AppUsers
   ): Promise<String> {
     let result = {code: 5, msg: "Reset password failed."};
-    console.log(newUserRequest);
-    const password = await hash(newUserRequest.password, await genSalt());
+
     const filter = {where: {email: newUserRequest.email}};
     const user = await this.appUsersRepository.findOne(filter);
     if (user) {
-      await this.userRepository.userCredentials(user.id).delete();
-      await this.userRepository.userCredentials(user.id).create({password});
+      const salt = await genSalt();
+      const password = await hash(newUserRequest.password, salt);
+      const updatedAt = new Date();
+      await this.appUsersRepository.userCreds(user.id).patch({password, salt, updatedAt});
       result.code = 0;
       result.msg = "Password has been reset successfully.";
     }
@@ -529,7 +541,7 @@ export class AppUserController {
     },
   })
   async find(
-    @param.filter(User) filter?: Filter<User>,
+    @param.filter(AppUsers) filter?: Filter<AppUsers>,
   ): Promise<User[]> {
     return this.appUsersRepository.find(filter);
   }
@@ -565,7 +577,7 @@ export class AppUserController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>
+    @param.filter(AppUsers, {exclude: 'where'}) filter?: FilterExcludingWhere<AppUsers>
   ): Promise<User> {
     return this.appUsersRepository.findById(id, filter);
   }

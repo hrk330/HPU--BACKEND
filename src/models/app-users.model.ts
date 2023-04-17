@@ -1,10 +1,37 @@
-import {
-  User
-} from '@loopback/authentication-jwt';
-import {model, property} from '@loopback/repository';
+import {UserCredentials} from '@loopback/authentication-jwt';
+import {Entity, hasMany, model, property, hasOne} from '@loopback/repository';
+import {Vehicle} from './vehicle.model';
+import {UserCreds} from './user-creds.model';
 
 @model()
-export class AppUsers extends User {
+export class AppUsers extends Entity {
+
+  @property({
+    type: 'string',
+    id: true,
+    generated: true,
+  })
+  id: string;
+
+  @property({
+    type: 'string',
+  })
+  username?: string;
+
+  @property({
+    type: 'string',
+  })
+  email: string;
+
+  @property({
+    type: 'boolean',
+  })
+  emailVerified: boolean;
+
+  @property({
+    type: 'string',
+  })
+  password: string;
 
   @property({
     type: 'string',
@@ -89,28 +116,32 @@ export class AppUsers extends User {
 
   @property({
     type: 'string',
+    default: 'N'
   })
   isMobileVerified?: string;
 
   @property({
     type: 'string',
-    default: "N"
+    default: 'N'
   })
   isProfileCompleted?: string;
 
   @property({
-    type: 'string',
-    default: "N"
+    type: 'string'
   })
   socialId?: string;
 
   @property({
-    type: 'string',
-    default: "N"
+    type: 'string'
   })
   socialIdType?: string;
+  userCredentials: UserCredentials;
 
+  @hasMany(() => Vehicle, {keyTo: 'userId'})
+  vehicles: Vehicle[];
 
+  @hasOne(() => UserCreds, {keyTo: 'userId'})
+  userCreds: UserCreds;
 
   constructor(data?: Partial<AppUsers>) {
     super(data);
