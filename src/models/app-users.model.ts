@@ -1,7 +1,7 @@
 import {UserCredentials} from '@loopback/authentication-jwt';
-import {Entity, hasMany, model, property, hasOne} from '@loopback/repository';
-import {Vehicle} from './vehicle.model';
+import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
 import {UserCreds} from './user-creds.model';
+import {Vehicle} from './vehicle.model';
 
 @model()
 export class AppUsers extends Entity {
@@ -125,6 +125,16 @@ export class AppUsers extends Entity {
     default: 'N'
   })
   isProfileCompleted?: string;
+
+  @property({
+    type: 'string',
+  })
+  isServiceProviderVerified?: string;
+
+  @property({
+    type: 'string',
+  })
+  serviceProviderType?: string;
 
   @property({
     type: 'string'
