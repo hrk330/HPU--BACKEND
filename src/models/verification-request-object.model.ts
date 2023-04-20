@@ -5,7 +5,7 @@ export class VerificationRequestObject extends Model {
   @property({
     type: 'string',
   })
-  email?: string;
+  email: string;
 
   @property({
     type: 'string',

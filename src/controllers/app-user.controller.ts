@@ -1,61 +1,33 @@
 import {authenticate, TokenService} from '@loopback/authentication';
-import {
-  Credentials,
-  MyUserService,
-  TokenServiceBindings,
-  User,
-  UserRepository,
-  UserServiceBindings,
-} from '@loopback/authentication-jwt';
+import {MyUserService, TokenServiceBindings, User, UserServiceBindings, } from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
-import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-  Where,
-} from '@loopback/repository';
-import {
-  del,
-  get,
-  getModelSchemaRef,
-  param,
-  patch,
-  post,
-  put,
-  requestBody,
-  response,
-  SchemaObject,
-} from '@loopback/rest';
+import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where, } from '@loopback/repository';
+import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AppUsers, VerificationRequestObject} from '../models';
+import nodemailer from "nodemailer";
+import {AppUsers, CredentialsRequest, CredentialsRequestBody} from '../models';
 import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
 
-const CredentialsSchema: SchemaObject = {
-  type: 'object',
-  required: ['email', 'password'],
-  properties: {
-    email: {
-      type: 'string',
-      format: 'email',
-    },
-    password: {
-      type: 'string',
-      minLength: 8,
-    },
+
+let transporter = nodemailer.createTransport({
+  host: "smtp.titan.email",
+  port: 465,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: 'arham@planlabsolutions.com', // generated ethereal user
+    pass: 'Arham123!@#', // generated ethereal password
   },
+});
+
+const mailOptions = {
+  from: 'arham@planlabsolutions.com',
+  to: '',
+  subject: 'User Registration',
+  text: ''
 };
 
-export const CredentialsRequestBody = {
-  description: 'The input of login function',
-  required: true,
-  content: {
-    'application/json': {schema: CredentialsSchema},
-  },
-};
 
 export class AppUserController {
   constructor(
@@ -65,10 +37,6 @@ export class AppUserController {
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
-    @inject(SecurityBindings.USER, {optional: true})
-    public user: UserProfile,
-    @repository(UserRepository)
-    protected userRepository: UserRepository,
     @repository(VerificationCodesRepository)
     protected verificationCodesRepository: VerificationCodesRepository,
   ) { }
@@ -116,22 +84,29 @@ export class AppUserController {
     },
   })
   async login(
-    @requestBody(CredentialsRequestBody) credentials: Credentials,
+    @requestBody(CredentialsRequestBody) credentials: CredentialsRequest,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
     let result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {
-      const user = await this.userService.verifyCredentials(credentials);
-      if (user) {
+      const filter = {where: {email: credentials.email}, include: [{'relation': 'userCreds'}]};
+      const user = await this.appUsersRepository.findOne(filter);
 
-        //this.appUsersRepository.updateById(id, appUsers)
-        // convert a User object into a UserProfile object (reduced set of properties)
+      //const user = await this.userService.verifyCredentials(credentials);
+      if (user && user.userCreds) {
+        const salt = user.userCreds.salt;
+        const password = await hash(credentials.password, salt);
+        if (password === user.userCreds.password) {
 
-        // create a JSON Web Token based on the user profile
-        result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
-        result.user = user;
-        result.code = 0;
-        result.msg = "User logged in successfully.";
+          //this.appUsersRepository.updateById(id, appUsers)
+          // convert a User object into a UserProfile object (reduced set of properties)
+
+          // create a JSON Web Token based on the user profile
+          result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+          result.user = user;
+          result.code = 0;
+          result.msg = "User logged in successfully.";
+        }
       }
     } catch (e) {
       result.code = 5;
@@ -166,28 +141,35 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    let token = '';
-    const filter = {where: {email: newUserRequest.email}};
-    const user = await this.appUsersRepository.findOne(filter);
-    let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
-    if (user && user.id) {
-      result = {code: 5, msg: "User already exists", token: '', userId: ''};
-    } else {
-      const password = await hash(newUserRequest.password, await genSalt());
-      newUserRequest.isProfileCompleted = "N";
-      newUserRequest.isMobileVerified = "N";
-      newUserRequest.createdAt = new Date();
-      newUserRequest.roleId = "APPUSER";
-      const savedUser = await this.userRepository.create(
-        _.omit(newUserRequest, 'password'),
-      );
 
-      await this.userRepository.userCredentials(savedUser.id).create({password});
-      const userProfile = this.userService.convertToUserProfile(savedUser);
+    let result = {code: 5, msg: "User registeration failed.", token: '', userId: ''};
+    try {
+      const filter = {where: {email: newUserRequest.email}};
+      const user = await this.appUsersRepository.findOne(filter);
 
-      result.userId = savedUser.id;
-      // create a JSON Web Token based on the user profile
-      result.token = await this.jwtService.generateToken(userProfile);
+      if (user && user.id) {
+        result = {code: 5, msg: "User already exists", token: '', userId: ''};
+      } else {
+        const salt = await genSalt();
+        const password = await hash(newUserRequest.password, salt);
+        newUserRequest.roleId = "APPUSER";
+        const savedUser = await this.appUsersRepository.create(
+          _.omit(newUserRequest, 'password'),
+        );
+        if (savedUser) {
+          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
+          const userProfile = this.userService.convertToUserProfile(savedUser);
+
+          result.userId = savedUser.id;
+          // create a JSON Web Token based on the user profile
+          result.token = await this.jwtService.generateToken(userProfile);
+          result.code = 0;
+          result.msg = "User registered successfully.";
+        }
+      }
+    } catch (e) {
+      result.code = 5;
+      result.msg = e.message;
     }
     return JSON.stringify(result);
   }
@@ -224,11 +206,8 @@ export class AppUserController {
     if (user) {
       result = {code: 5, msg: "User already exists", token: '', userId: ''};
     } else {
-      newUserRequest.isProfileCompleted = "N";
-      newUserRequest.isMobileVerified = "N";
-      newUserRequest.createdAt = new Date();
       newUserRequest.roleId = "APPUSER";
-      const savedUser = await this.userRepository.create(newUserRequest);
+      const savedUser = await this.appUsersRepository.create(newUserRequest);
 
       const userProfile = this.userService.convertToUserProfile(savedUser);
 
@@ -354,155 +333,19 @@ export class AppUserController {
     newUserRequest: AppUsers
   ): Promise<String> {
     let result = {code: 5, msg: "Reset password failed."};
-    console.log(newUserRequest);
-    const password = await hash(newUserRequest.password, await genSalt());
+
     const filter = {where: {email: newUserRequest.email}};
     const user = await this.appUsersRepository.findOne(filter);
     if (user) {
-      await this.userRepository.userCredentials(user.id).delete();
-      await this.userRepository.userCredentials(user.id).create({password});
+      const salt = await genSalt();
+      const password = await hash(newUserRequest.password, salt);
+      const updatedAt = new Date();
+      await this.appUsersRepository.userCreds(user.id).patch({password, salt, updatedAt});
       result.code = 0;
       result.msg = "Password has been reset successfully.";
     }
 
     return JSON.stringify(result);
-  }
-
-  @post('/appUsers/verifyCode', {
-    responses: {
-      '200': {
-        description: 'User',
-        content: {
-          'application/json': {
-            schema: String,
-          },
-        },
-      },
-    },
-  })
-  async verifyCode(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(VerificationRequestObject, {
-            title: 'VerificationRequestObject', partial: true
-          }),
-        },
-      },
-    })
-    verificationRequestObject: VerificationRequestObject
-  ): Promise<String> {
-    let result = {code: 5, msg: "Verification code was not verified."};
-    const verificationCodefilter = {where: {key: verificationRequestObject.email, code: verificationRequestObject.verificationCode, status: 'L'}, order: ['createdAt desc']};
-    const verificationCodeObject = await this.verificationCodesRepository.findOne(verificationCodefilter);
-    if (verificationCodeObject) {
-      const currentDateTime = new Date();
-      if (verificationCodeObject.expiry && currentDateTime < verificationCodeObject.expiry) {
-        await this.verificationCodesRepository.updateById(verificationCodeObject.id, {status: 'V'});
-        result.code = 0;
-        result.msg = "Verification code has been verified.";
-      }
-    }
-
-    return JSON.stringify(result);
-  }
-
-  @post('/appUsers/sendEmailCode', {
-    responses: {
-      '200': {
-        description: 'User',
-        content: {
-          'application/json': {
-            schema: String,
-          },
-        },
-      },
-    },
-  })
-  async sendEmailCode(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(VerificationRequestObject, {
-            title: 'VerificationRequestObject', partial: true
-          }),
-        },
-      },
-    }) verificationRequestObject: VerificationRequestObject,
-  ): Promise<String> {
-    let result = {code: 5, msg: "Verification code not sent."};
-    const filter = {where: {email: verificationRequestObject.email}};
-
-    const user = await this.appUsersRepository.findOne(filter);
-
-    if (verificationRequestObject.type === 'RP') {
-      if (!user || !user.id) {
-        result.code = 5;
-        result.msg = "User does not exits.";
-      } else {
-        try {
-          this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
-          result.code = 0;
-          result.msg = "Verification code sent successfully.";
-        } catch (e) {
-          result.code = 5;
-          result.msg = e.message;
-        }
-      }
-    } else if (verificationRequestObject.type === 'SU') {
-      if (user && user.id) {
-        result.code = 5;
-        result.msg = "User already exits.";
-      } else {
-        try {
-          this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
-          result.code = 0;
-          result.msg = "Verification code sent successfully.";
-        } catch (e) {
-          result.code = 5;
-          result.msg = e.message;
-        }
-      }
-    }
-
-
-    return JSON.stringify(result);
-  }
-  async getRandomInt(max: number): Promise<string> {
-    //return Math.floor(Math.random() * max).toString();
-    return "1234";
-  }
-
-  async addMinutes(date: Date, minutes: number): Promise<Date> {
-    date.setMinutes(date.getMinutes() + minutes);
-    return date;
-  }
-
-  @authenticate('jwt')
-  @post('/appUsers/sendSmsCode/{mobileNumber}', {
-    responses: {
-      '200': {
-        description: 'User',
-        content: {
-          'application/json': {
-            schema: String,
-          },
-        },
-      },
-    },
-  })
-  async sendSmsCode(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: String,
-        },
-      },
-    })
-    @param.path.string('mobileNumber') mobileNumber: string,
-  ): Promise<String> {
-    this.verificationCodesRepository.create({key: mobileNumber, code: await this.getRandomInt(999999), type: 'M', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
-    return "SUCCESS";
   }
 
   @get('/appUsers/count')
@@ -529,7 +372,7 @@ export class AppUserController {
     },
   })
   async find(
-    @param.filter(User) filter?: Filter<User>,
+    @param.filter(AppUsers) filter?: Filter<AppUsers>,
   ): Promise<User[]> {
     return this.appUsersRepository.find(filter);
   }
@@ -565,7 +408,7 @@ export class AppUserController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>
+    @param.filter(AppUsers, {exclude: 'where'}) filter?: FilterExcludingWhere<AppUsers>
   ): Promise<User> {
     return this.appUsersRepository.findById(id, filter);
   }
