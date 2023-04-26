@@ -122,7 +122,7 @@ export class ServicesProviderController {
   }
 
   @authenticate('jwt')
-  @post('/appUsers/updateProfile')
+  @post('/serviceProvider/updateProfile')
   @response(200, {
     description: 'AppUsers model instance',
     content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
