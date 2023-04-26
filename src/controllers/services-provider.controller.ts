@@ -1,7 +1,7 @@
-import {TokenService} from '@loopback/authentication';
+import {TokenService, authenticate} from '@loopback/authentication';
 import {MyUserService, TokenServiceBindings, UserServiceBindings} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
-import {Count, CountSchema, Filter, FilterExcludingWhere, Where, repository, } from '@loopback/repository';
+import {Count, CountSchema, Filter, FilterExcludingWhere, Where, repository} from '@loopback/repository';
 import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response, } from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
@@ -17,10 +17,7 @@ export class ServicesProviderController {
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
   ) { }
-  @response(200, {
-    description: 'AppUsers model instance',
-    content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
-  })
+
   @post('/serviceProvider/signup')
   @response(200, {
     description: 'AppUsers model instance',
@@ -116,6 +113,39 @@ export class ServicesProviderController {
           result.code = 0;
           result.msg = "User logged in successfully.";
         }
+      }
+    } catch (e) {
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+
+  @authenticate('jwt')
+  @post('/appUsers/updateProfile')
+  @response(200, {
+    description: 'AppUsers model instance',
+    content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
+  })
+  async updateProfile(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    serviceProvider: AppUsers,
+  ): Promise<String> {
+    let result = {code: 5, msg: "Some error occured while updating profile.", user: {}};
+    try {
+      const filter = {where: {id: serviceProvider.id}};
+      await this.appUsersRepository.updateById(serviceProvider.id, _.omit(serviceProvider, 'email'));
+      const user = await this.appUsersRepository.findOne(filter);
+      if (user) {
+        result = {code: 0, msg: "User profile updated successfully.", user: user};
       }
     } catch (e) {
       result.code = 5;
