@@ -67,7 +67,7 @@ export class AutoServiceApplication extends BootMixin(
         destination,
         // Use the original file name as is
         filename: (req, file, cb) => {
-          cb(null, path.parse(file.originalname).name + '_' + new Date().getTime() + path.parse(file.originalname).ext);
+          cb(null, path.parse(file.originalname).name.replace(" ","").substring(0,5) + '_' + new Date().getTime() + path.parse(file.originalname).ext);
         },
       }),
     };
