@@ -9,3 +9,4 @@ export * from './vehicle.controller';
 
 export * from './services-provider.controller';
 export * from './code-verification.controller';
+export * from './services.controller';
