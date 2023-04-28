@@ -4,3 +4,4 @@ export * from './vehicle.repository';
 export * from './verification-codes.repository';
 
 export * from './user-docs.repository';
+export * from './services.repository';

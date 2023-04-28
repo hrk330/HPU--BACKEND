@@ -7,3 +7,4 @@ export * from './verification-request-object.model';
 
 export * from './admin-users.model';
 export * from './user-docs.model';
+export * from './services.model';

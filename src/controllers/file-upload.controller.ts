@@ -51,8 +51,11 @@ export class FileUploadController {
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ): Promise<object> {
     return new Promise<object>((resolve, reject) => {
-      this.handler(request, response, (err: unknown) => {
-        if (err) reject(err);
+      this.handler(request, response, (err) => {
+        if (err) {
+          err.code = 5;
+          resolve(err);
+        }
         else {
           resolve(this.getFilesAndFields(request));
         }
@@ -71,7 +74,7 @@ export class FileUploadController {
     if (Array.isArray(uploadedFiles)) {
       for (const entry of uploadedFiles) {
         const result = await this.InsertFilesDate(request, entry);
-        files.push(_.pick(result.userDoc, ['id', 'docType', 'docName', 'docSize','userId', 'creadtedAt']));
+        files.push(_.pick(result.userDoc, ['id', 'docType', 'docName', 'docSize', 'userId', 'creadtedAt']));
       }
     }
     return {code: 0, msg: "Document uploaded successfully", files};
