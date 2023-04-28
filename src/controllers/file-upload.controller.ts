@@ -71,7 +71,7 @@ export class FileUploadController {
     if (Array.isArray(uploadedFiles)) {
       for (const entry of uploadedFiles) {
         const result = await this.InsertFilesDate(request, entry);
-        files.push(_.pick(result.userDoc, ['id', 'docType', 'docName', 'userId', 'creadtedAt']));
+        files.push(_.pick(result.userDoc, ['id', 'docType', 'docName', 'docSize','userId', 'creadtedAt']));
       }
     }
     return {code: 0, msg: "Document uploaded successfully", files};
