@@ -4,6 +4,7 @@
 // License text available at https://opensource.org/licenses/MIT
 
 import {inject} from '@loopback/core';
+import {repository} from '@loopback/repository';
 import {
   post,
   Request,
@@ -11,7 +12,9 @@ import {
   Response,
   RestBindings,
 } from '@loopback/rest';
+import _ from 'lodash';
 import {FILE_UPLOAD_SERVICE} from '../keys';
+import {AppUsersRepository} from '../repositories';
 import {FileUploadHandler} from '../types';
 
 /**
@@ -24,7 +27,10 @@ export class FileUploadController {
    */
   constructor(
     @inject(FILE_UPLOAD_SERVICE) private handler: FileUploadHandler,
+    @repository(AppUsersRepository) public appUsersRepository: AppUsersRepository,
   ) { }
+
+
   @post('/files', {
     responses: {
       200: {
@@ -48,7 +54,7 @@ export class FileUploadController {
       this.handler(request, response, (err: unknown) => {
         if (err) reject(err);
         else {
-          resolve(FileUploadController.getFilesAndFields(request));
+          resolve(this.getFilesAndFields(request));
         }
       });
     });
@@ -58,22 +64,30 @@ export class FileUploadController {
    * Get files and fields for the request
    * @param request - Http request
    */
-  private static getFilesAndFields(request: Request) {
+  private async getFilesAndFields(request: Request) {
+
     const uploadedFiles = request.files;
-    const mapper = (f: globalThis.Express.Multer.File) => ({
-      fieldname: f.fieldname,
-      originalname: f.originalname,
-      mimetype: f.mimetype,
-      size: f.size,
-    });
-    let files: object[] = [];
+    let files: Array<any> = [];
     if (Array.isArray(uploadedFiles)) {
-      files = uploadedFiles.map(mapper);
-    } else {
-      for (const filename in uploadedFiles) {
-        files.push(...uploadedFiles[filename].map(mapper));
+      for (const entry of uploadedFiles) {
+        const result = await this.InsertFilesDate(request, entry);
+        files.push(_.pick(result.userDoc, ['id', 'docType', 'docName', 'userId', 'creadtedAt']));
       }
     }
-    return {files, fields: request.body};
+    return {code: 0, msg: "Document uploaded successfully", files};
+  }
+
+  private async InsertFilesDate(request: Request, file: Express.Multer.File) {
+    let result = {code: 5, msg: "Some error occured while updating doc.", userDoc: {}};
+    try {
+      const userDoc = await this.appUsersRepository.userDocs(request.body.userId).create({docType: request.body.docType, docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination});
+      result.userDoc = userDoc;
+      result.code = 0;
+      result.msg = "Document uploaded successfully";
+    } catch (e) {
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return result;
   }
 }

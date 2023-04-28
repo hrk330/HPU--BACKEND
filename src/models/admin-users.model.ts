@@ -1,18 +1,14 @@
 import {UserCredentials} from '@loopback/authentication-jwt';
-import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
-import {UserCreds} from './user-creds.model';
-import {Vehicle} from './vehicle.model';
-import {UserDocs} from './user-docs.model';
+import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class AppUsers extends Entity {
-
+export class AdminUsers extends Entity {
   @property({
     type: 'string',
     id: true,
     generated: true,
   })
-  id: string;
+  id?: string;
 
   @property({
     type: 'string',
@@ -127,44 +123,16 @@ export class AppUsers extends Entity {
   })
   isProfileCompleted?: string;
 
-  @property({
-    type: 'string',
-  })
-  isServiceProviderVerified?: string;
-
-  @property({
-    type: 'string',
-  })
-  serviceProviderType?: string;
-
-  @property({
-    type: 'string'
-  })
-  socialId?: string;
-
-  @property({
-    type: 'string'
-  })
-  socialIdType?: string;
-  
   userCredentials: UserCredentials;
 
-  @hasMany(() => Vehicle, {keyTo: 'userId'})
-  vehicles: Vehicle[];
 
-  @hasOne(() => UserCreds, {keyTo: 'userId'})
-  userCreds: UserCreds;
-
-  @hasMany(() => UserDocs, {keyTo: 'userId'})
-  userDocs: UserDocs[];
-
-  constructor(data?: Partial<AppUsers>) {
+  constructor(data?: Partial<AdminUsers>) {
     super(data);
   }
 }
 
-export interface AppUsersRelations {
+export interface AdminUsersRelations {
   // describe navigational properties here
 }
 
-export type AppUsersWithRelations = AppUsers & AppUsersRelations;
+export type AdminUsersWithRelations = AdminUsers & AdminUsersRelations;
