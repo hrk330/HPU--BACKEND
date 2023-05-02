@@ -7,13 +7,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,8 +23,8 @@ import {ServicesRepository} from '../repositories';
 export class ServicesController {
   constructor(
     @repository(ServicesRepository)
-    public servicesRepository : ServicesRepository,
-  ) {}
+    public servicesRepository: ServicesRepository,
+  ) { }
 
   @post('/services')
   @response(200, {
@@ -112,7 +112,7 @@ export class ServicesController {
   }
 
   @patch('/services/{id}')
-  @response(204, {
+  @response(200, {
     description: 'Services PATCH success',
   })
   async updateById(
@@ -125,8 +125,9 @@ export class ServicesController {
       },
     })
     services: Services,
-  ): Promise<void> {
+  ): Promise<object> {
     await this.servicesRepository.updateById(id, services);
+    return {success: {code: 0, msg: "Record updated successfully."}};
   }
 
   @put('/services/{id}')
