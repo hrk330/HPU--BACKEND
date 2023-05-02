@@ -37,6 +37,11 @@ export class AppUsers extends Entity {
   @property({
     type: 'string',
   })
+  userType: string;
+
+  @property({
+    type: 'string',
+  })
   firstName: string;
 
   @property({
@@ -146,7 +151,7 @@ export class AppUsers extends Entity {
     type: 'string'
   })
   socialIdType?: string;
-  
+
   userCredentials: UserCredentials;
 
   @hasMany(() => Vehicle, {keyTo: 'userId'})
