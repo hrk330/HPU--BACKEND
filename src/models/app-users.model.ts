@@ -95,17 +95,6 @@ export class AppUsers extends Entity {
   phoneNo?: string;
 
   @property({
-    type: 'date',
-    default: "$now"
-  })
-  createdAt?: Date;
-
-  @property({
-    type: 'date',
-  })
-  updatedAt?: Date;
-
-  @property({
     type: 'string',
   })
   isBlocked?: string;
@@ -151,6 +140,17 @@ export class AppUsers extends Entity {
     type: 'string'
   })
   socialIdType?: string;
+
+  @property({
+    type: 'date',
+    default: "$now"
+  })
+  createdAt?: Date;
+
+  @property({
+    type: 'date',
+  })
+  updatedAt?: Date;
 
   userCredentials: UserCredentials;
 

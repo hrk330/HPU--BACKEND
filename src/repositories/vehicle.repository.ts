@@ -5,7 +5,7 @@ import {Vehicle, VehicleRelations} from '../models';
 
 export class VehicleRepository extends DefaultCrudRepository<
   Vehicle,
-  typeof Vehicle.prototype.id,
+  typeof Vehicle.prototype.vehicleId,
   VehicleRelations
 > {
   constructor(

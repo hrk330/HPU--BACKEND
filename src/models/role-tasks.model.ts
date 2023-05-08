@@ -4,8 +4,10 @@ import {Entity, model, property} from '@loopback/repository';
 export class RoleTasks extends Entity {
   @property({
     type: 'string',
+    id: true,
+    generated: true,
   })
-  id?: string;
+  roleTaskId?: string;
 
   @property({
     type: 'string',

@@ -8,7 +8,7 @@ export class Vehicle extends Entity {
     id: true,
     generated: true,
   })
-  id?: string;
+  vehicleId?: string;
 
   @property({
     type: 'string',

@@ -2,12 +2,17 @@ import {Entity, model, property} from '@loopback/repository';
 
 @model()
 export class Tasks extends Entity {
-  
+
   @property({
     type: 'string',
     id: true,
   })
   taskId?: string;
+
+  @property({
+    type: 'string',
+  })
+  taskType?: string;
 
   @property({
     type: 'string',

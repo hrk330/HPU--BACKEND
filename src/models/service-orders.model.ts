@@ -3,11 +3,11 @@ import {Entity, model, property} from '@loopback/repository';
 @model()
 export class ServiceOrders extends Entity {
   @property({
-    type: 'number',
+    type: 'string',
     id: true,
     generated: true,
   })
-  id?: number;
+  serviceOrderId?: string;
 
   @property({
     type: 'string',
@@ -32,7 +32,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  serviceType?: string;
+  serviceName?: string;
 
   @property({
     type: 'string',
@@ -42,7 +42,47 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  location?: string;
+  pickupLocation?: string;
+
+  @property({
+    type: 'string',
+  })
+  dropLocation?: string;
+
+  @property({
+    type: 'string',
+  })
+  startingTime?: string;
+
+  @property({
+    type: 'string',
+  })
+  arrivalTime?: string;
+
+  @property({
+    type: 'string',
+  })
+  endingTime?: string;
+
+  @property({
+    type: 'string',
+  })
+  instructions?: string;
+
+  @property({
+    type: 'string',
+  })
+  promoCode?: string;
+
+  @property({
+    type: 'string',
+  })
+  discount?: string;
+
+  @property({
+    type: 'string',
+  })
+  discountType?: string;
 
   @property({
     type: 'string',
@@ -52,7 +92,22 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  amount?: string;
+  taxPercentage?: string;
+
+  @property({
+    type: 'string',
+  })
+  taxAmount?: string;
+
+  @property({
+    type: 'string',
+  })
+  grossAmount?: string;
+
+  @property({
+    type: 'string',
+  })
+  netAmount?: string;
 
   @property({
     type: 'date',

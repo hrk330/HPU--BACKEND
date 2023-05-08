@@ -37,12 +37,12 @@ export class ServiceOrdersController {
         'application/json': {
           schema: getModelSchemaRef(ServiceOrders, {
             title: 'NewServiceOrders',
-            exclude: ['id'],
+            exclude: ['serviceOrderId'],
           }),
         },
       },
     })
-    serviceOrders: Omit<ServiceOrders, 'id'>,
+    serviceOrders: Omit<ServiceOrders, 'serviceOrderId'>,
   ): Promise<ServiceOrders> {
     return this.serviceOrdersRepository.create(serviceOrders);
   }
@@ -105,7 +105,7 @@ export class ServiceOrdersController {
     },
   })
   async findById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @param.filter(ServiceOrders, {exclude: 'where'}) filter?: FilterExcludingWhere<ServiceOrders>
   ): Promise<ServiceOrders> {
     return this.serviceOrdersRepository.findById(id, filter);
@@ -116,7 +116,7 @@ export class ServiceOrdersController {
     description: 'ServiceOrders PATCH success',
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -134,7 +134,7 @@ export class ServiceOrdersController {
     description: 'ServiceOrders PUT success',
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() serviceOrders: ServiceOrders,
   ): Promise<void> {
     await this.serviceOrdersRepository.replaceById(id, serviceOrders);
@@ -144,7 +144,7 @@ export class ServiceOrdersController {
   @response(204, {
     description: 'ServiceOrders DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.serviceOrdersRepository.deleteById(id);
   }
 }
