@@ -37,12 +37,12 @@ export class VehicleController {
         'application/json': {
           schema: getModelSchemaRef(Vehicle, {
             title: 'NewVehicle',
-            exclude: ['id'],
+            exclude: ['vehicleId'],
           }),
         },
       },
     })
-    vehicle: Omit<Vehicle, 'id'>,
+    vehicle: Omit<Vehicle, 'vehicleId'>,
   ): Promise<Vehicle> {
     return this.vehicleRepository.create(vehicle);
   }

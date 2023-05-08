@@ -7,7 +7,7 @@ export class Menus extends Entity {
     id: true,
     generated: true,
   })
-  id?: string;
+  menuId?: string;
 
   @property({
     type: 'string',

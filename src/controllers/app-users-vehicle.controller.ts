@@ -60,12 +60,12 @@ export class AppUsersVehicleController {
         'application/json': {
           schema: getModelSchemaRef(Vehicle, {
             title: 'NewVehicleInAppUsers',
-            exclude: ['id'],
+            exclude: ['vehicleId'],
             optional: ['userId']
           }),
         },
       },
-    }) vehicle: Omit<Vehicle, 'id'>,
+    }) vehicle: Omit<Vehicle, 'vehicleId'>,
   ): Promise<Vehicle> {
     return this.appUsersRepository.vehicles(id).create(vehicle);
   }

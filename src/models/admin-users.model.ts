@@ -1,5 +1,6 @@
 import {UserCredentials} from '@loopback/authentication-jwt';
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, hasOne} from '@loopback/repository';
+import {UserTasks} from './user-tasks.model';
 
 @model()
 export class AdminUsers extends Entity {
@@ -86,17 +87,6 @@ export class AdminUsers extends Entity {
   phoneNo?: string;
 
   @property({
-    type: 'date',
-    default: "$now"
-  })
-  createdAt?: Date;
-
-  @property({
-    type: 'date',
-  })
-  updatedAt?: Date;
-
-  @property({
     type: 'string',
   })
   isBlocked?: string;
@@ -105,6 +95,11 @@ export class AdminUsers extends Entity {
     type: 'string',
   })
   roleId?: string;
+
+  @property({
+    type: 'string',
+  })
+  userTaskId?: string;
 
   @property({
     type: 'date',
@@ -123,8 +118,36 @@ export class AdminUsers extends Entity {
   })
   isProfileCompleted?: string;
 
+  @property({
+    type: 'number',
+  })
+  wrongTries?: number;
+
+  @property({
+    type: 'date',
+  })
+  lastSuccessfulLogin?: Date;
+
+  @property({
+    type: 'date',
+  })
+  lastUnsuccessfulLogin?: Date;
+
+  @property({
+    type: 'date',
+    default: "$now"
+  })
+  createdAt?: Date;
+
+  @property({
+    type: 'date',
+  })
+  updatedAt?: Date;
+
   userCredentials: UserCredentials;
 
+  @hasOne(() => UserTasks, {keyTo: 'userTaskId'})
+  userTasks: UserTasks;
 
   constructor(data?: Partial<AdminUsers>) {
     super(data);

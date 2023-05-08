@@ -7,7 +7,7 @@ export class UserTasks extends Entity {
     id: true,
     generated: true,
   })
-  id?: string;
+  userTaskId?: string;
 
   @property({
     type: 'string',

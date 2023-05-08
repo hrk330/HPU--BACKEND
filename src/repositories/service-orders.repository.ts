@@ -5,7 +5,7 @@ import {ServiceOrders, ServiceOrdersRelations} from '../models';
 
 export class ServiceOrdersRepository extends DefaultCrudRepository<
   ServiceOrders,
-  typeof ServiceOrders.prototype.id,
+  typeof ServiceOrders.prototype.serviceOrderId,
   ServiceOrdersRelations
 > {
   constructor(

@@ -11,3 +11,11 @@ export * from './services.controller';
 export * from './user.controller';
 export * from './vehicle.controller';
 
+export * from './admin-users.controller';
+export * from './promo-codes.controller';
+export * from './roles.controller';
+export * from './tasks.controller';
+export * from './role-tasks.controller';
+export * from './menus.controller';
+export * from './user-tasks.controller';
+export * from './admin-users-user-tasks.controller';
