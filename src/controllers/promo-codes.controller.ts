@@ -7,13 +7,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,10 +23,10 @@ import {PromoCodesRepository} from '../repositories';
 export class PromoCodesController {
   constructor(
     @repository(PromoCodesRepository)
-    public promoCodesRepository : PromoCodesRepository,
-  ) {}
+    public promoCodesRepository: PromoCodesRepository,
+  ) { }
 
-  @post('/promoCodes')
+  @post('/promoCodes/createPromoCode')
   @response(200, {
     description: 'PromoCodes model instance',
     content: {'application/json': {schema: getModelSchemaRef(PromoCodes)}},
@@ -58,7 +58,7 @@ export class PromoCodesController {
     return this.promoCodesRepository.count(where);
   }
 
-  @get('/promoCodes')
+  @get('/promoCodes/getPromoCodes')
   @response(200, {
     description: 'Array of PromoCodes model instances',
     content: {
@@ -111,12 +111,11 @@ export class PromoCodesController {
     return this.promoCodesRepository.findById(promoId, filter);
   }
 
-  @patch('/promoCodes/{promoId}')
+  @post('/promoCodes/updatePromoCode')
   @response(204, {
     description: 'PromoCodes PATCH success',
   })
   async updateById(
-    @param.path.string('promoId') promoId: string,
     @requestBody({
       content: {
         'application/json': {
@@ -126,7 +125,7 @@ export class PromoCodesController {
     })
     promoCodes: PromoCodes,
   ): Promise<void> {
-    await this.promoCodesRepository.updateById(promoId, promoCodes);
+    await this.promoCodesRepository.updateById(promoCodes.promoId, promoCodes);
   }
 
   @put('/promoCodes/{promoId}')

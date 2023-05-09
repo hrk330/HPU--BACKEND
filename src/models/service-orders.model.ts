@@ -22,6 +22,11 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
+  userId?: string;
+
+  @property({
+    type: 'string',
+  })
   serviceProviderName?: string;
 
   @property({
@@ -47,7 +52,17 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
+  pickupLocationCoordinates?: string;
+
+  @property({
+    type: 'string',
+  })
   dropLocation?: string;
+
+  @property({
+    type: 'string',
+  })
+  dropLocationCoordinates?: string;
 
   @property({
     type: 'string',
@@ -67,7 +82,22 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
+  distance?: string;
+
+  @property({
+    type: 'string',
+  })
+  extraDistance?: string;
+
+  @property({
+    type: 'string',
+  })
   instructions?: string;
+
+  @property({
+    type: 'string',
+  })
+  promoId?: string;
 
   @property({
     type: 'string',
@@ -77,7 +107,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  discount?: string;
+  discountValue?: string;
 
   @property({
     type: 'string',
