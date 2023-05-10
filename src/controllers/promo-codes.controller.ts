@@ -173,7 +173,7 @@ export class PromoCodesController {
       }
     }
     result.code = 0;
-    result.msg = "Record updated successfully.";
+    result.msg = "Promo code generated successfully.";
 
     return result;
   }
