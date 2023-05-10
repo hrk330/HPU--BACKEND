@@ -43,8 +43,16 @@ export class PromoCodesController {
       },
     })
     promoCodes: Omit<PromoCodes, 'promoId'>,
-  ): Promise<PromoCodes> {
-    return this.promoCodesRepository.create(promoCodes);
+  ): Promise<Object> {
+    let result = {code: 5, msg: "", promoCode: {}};
+    if (!await this.checkPromoExists("", promoCodes.promoCode)) {
+      result.promoCode = await this.promoCodesRepository.create(promoCodes);
+      result.code = 0;
+      result.msg = "Promo code generated successfully.";
+    } else {
+      result.msg = "Promo code already exists.";
+    }
+    return result;
   }
 
   @get('/promoCodes/count')
@@ -112,7 +120,7 @@ export class PromoCodesController {
   }
 
   @post('/promoCodes/updatePromoCode')
-  @response(204, {
+  @response(200, {
     description: 'PromoCodes PATCH success',
   })
   async updateById(
@@ -123,9 +131,63 @@ export class PromoCodesController {
         },
       },
     })
-    promoCodes: PromoCodes,
-  ): Promise<void> {
-    await this.promoCodesRepository.updateById(promoCodes.promoId, promoCodes);
+    requestPromoCode: PromoCodes,
+  ): Promise<Object> {
+    let result = {code: 5, msg: "", promoCode: {}};
+    if (!await this.checkPromoExists(requestPromoCode.promoId, requestPromoCode.promoCode)) {
+      await this.promoCodesRepository.updateById(requestPromoCode.promoId, requestPromoCode);
+      result.promoCode = await this.findById(requestPromoCode.promoId);
+      result.code = 0;
+      result.msg = "Record updated successfully.";
+    } else {
+      result.msg = "Duplicate promo code.";
+    }
+    return result;
+  }
+
+  async checkPromoExists(promoId: string, promoCode: string): Promise<boolean> {
+    let result: boolean = true;
+    try {
+      const dbPromoCode: PromoCodes[] = await this.find({where: {promoCode: promoCode}});
+      if (dbPromoCode.length < 1 || (dbPromoCode.length < 2 && dbPromoCode[0].promoId === promoId)) {
+        result = false;
+      }
+    } catch (e) {
+      console.log(e);
+      result = false
+    }
+    return result;
+  }
+
+  @post('/promoCodes/generateRandomPromoCode')
+  @response(200, {
+    description: 'PromoCodes PATCH success',
+  })
+  async generateRandomPromo(): Promise<Object> {
+    let result = {code: 5, msg: "Invalid Request", promoCode: ""};
+    for (let i = 0; i < 50; i++) {
+      result.promoCode = await this.generateRandomString(8);
+      console.log(result.promoCode);
+      if (!await this.checkPromoExists("", result.promoCode)) {
+        break;
+      }
+    }
+    result.code = 0;
+    result.msg = "Record updated successfully.";
+
+    return result;
+  }
+
+  async generateRandomString(length: number) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
   }
 
   @put('/promoCodes/{promoId}')

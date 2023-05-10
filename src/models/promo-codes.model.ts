@@ -7,7 +7,7 @@ export class PromoCodes extends Entity {
     id: true,
     generated: true,
   })
-  promoId?: string;
+  promoId: string;
 
   @property({
     type: 'string',
