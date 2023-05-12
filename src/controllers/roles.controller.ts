@@ -48,8 +48,10 @@ export class RolesController {
   ): Promise<Object> {
     let result = {code: 5, msg: "", role: {}};
     if (!await this.checkRoleExists("", roles.roleName)) {
+      const roleTasks: RoleTasks[] = roles.roleTasks;
+      roles.roleTasks = new Array<RoleTasks>;
       let dbRole = await this.addRole(roles);
-      const dbRoletasks: RoleTasks[] = await this.addRoltasks(roles.roleTasks, dbRole.roleId)
+      const dbRoletasks: RoleTasks[] = await this.addRoltasks(roleTasks, dbRole.roleId)
       dbRole.roleTasks = [...dbRoletasks];
       result.role = dbRole;
       result.code = 0;
