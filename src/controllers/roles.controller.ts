@@ -45,11 +45,33 @@ export class RolesController {
       },
     })
     roles: Roles,
-  ): Promise<Roles> {
-    let dbRole = await this.addRole(roles);
-    const dbRoletasks: RoleTasks[] = await this.addRoltasks(roles.roleTasks, dbRole.roleId)
-    dbRole.roleTasks = [...dbRoletasks];
-    return dbRole;
+  ): Promise<Object> {
+    let result = {code: 5, msg: "", role: {}};
+    if (!await this.checkRoleExists("", roles.roleName)) {
+      let dbRole = await this.addRole(roles);
+      const dbRoletasks: RoleTasks[] = await this.addRoltasks(roles.roleTasks, dbRole.roleId)
+      dbRole.roleTasks = [...dbRoletasks];
+      result.role = dbRole;
+      result.code = 0;
+      result.msg = "Role and tasks created successfully.";
+    } else {
+      result.msg = "Role already exists.";
+    }
+    return result;
+  }
+
+  async checkRoleExists(roleId: string, roleName: string): Promise<boolean> {
+    let result: boolean = true;
+    try {
+      const dbRoles: Roles[] = await this.find({where: {roleName: roleName}});
+      if (dbRoles.length < 1 || (dbRoles.length < 2 && dbRoles[0].roleId === roleId)) {
+        result = false;
+      }
+    } catch (e) {
+      console.log(e);
+      result = false
+    }
+    return result;
   }
 
   async addRole(roles: Roles): Promise<Roles>{
@@ -57,11 +79,13 @@ export class RolesController {
   }
 
   async addRoltasks(roleTasks: RoleTasks[], roleId: string): Promise<RoleTasks[]>{
-    roleTasks = await this.checkTasks(roleTasks);
     const dbRoletasks: RoleTasks[] = new Array<RoleTasks>;
-    for(const roleTask of roleTasks){
-      const dbRoleTask: RoleTasks = await this.rolesRepository.roleTasks(roleId).create(roleTask);
-      dbRoletasks.push(dbRoleTask);
+    if(Array.isArray(roleTasks) && roleTasks.length > 0) {
+      roleTasks = await this.checkTasks(roleTasks);
+      for(const roleTask of roleTasks){
+        const dbRoleTask: RoleTasks = await this.rolesRepository.roleTasks(roleId).create(roleTask);
+        dbRoletasks.push(dbRoleTask);
+      }
     }
     return dbRoletasks;
   }
@@ -97,7 +121,7 @@ export class RolesController {
     return this.rolesRepository.count(where);
   }
 
-  @get('/roles')
+  @get('/roles/getRoles')
   @response(200, {
     description: 'Array of Roles model instances',
     content: {
@@ -150,12 +174,11 @@ export class RolesController {
     return this.rolesRepository.findById(id, filter);
   }
 
-  @patch('/roles/{id}')
-  @response(204, {
+  @post('/roles/updateRoles')
+  @response(200, {
     description: 'Roles PATCH success',
   })
   async updateById(
-    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -164,8 +187,17 @@ export class RolesController {
       },
     })
     roles: Roles,
-  ): Promise<void> {
-    await this.rolesRepository.updateById(id, roles);
+  ): Promise<Object> {
+    let result = {code: 5, msg: "", role: {}};
+    if (!await this.checkRoleExists(roles.roleId, roles.roleName)) {
+      await this.rolesRepository.updateById(roles.roleId, roles);
+      result.role = await this.findById(roles.roleId);
+      result.code = 0;
+      result.msg = "Record updated successfully.";
+    } else {
+      result.msg = "Duplicate role name.";
+    }
+    return result;
   }
 
   @put('/roles/{id}')
