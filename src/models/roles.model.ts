@@ -13,7 +13,7 @@ export class Roles extends Entity {
   @property({
     type: 'string',
   })
-  roleName?: string;
+  roleName: string;
 
   @property({
     type: 'string',
