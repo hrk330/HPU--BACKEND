@@ -1,12 +1,14 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, hasMany, model, property} from '@loopback/repository';
+import {RoleTasks} from './role-tasks.model';
 
 @model()
 export class Roles extends Entity {
   @property({
     type: 'string',
     id: true,
+    generated: true,
   })
-  roleId?: string;
+  roleId: string;
 
   @property({
     type: 'string',
@@ -29,6 +31,14 @@ export class Roles extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
+
+  @property({
+    type: 'any',
+  })
+  roleTasks: RoleTasks[];
+
+  @hasMany(() => RoleTasks, {keyTo: 'roleId'})
+  roleTaskList: RoleTasks[];
 
   constructor(data?: Partial<Roles>) {
     super(data);

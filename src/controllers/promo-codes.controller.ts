@@ -159,7 +159,7 @@ export class PromoCodesController {
     return result;
   }
 
-  @post('/promoCodes/generateRandomPromoCode')
+  @get('/promoCodes/generateRandomPromoCode')
   @response(200, {
     description: 'PromoCodes PATCH success',
   })

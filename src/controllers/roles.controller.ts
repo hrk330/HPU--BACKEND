@@ -17,16 +17,18 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Roles} from '../models';
-import {RolesRepository} from '../repositories';
+import {Roles, RoleTasks, Tasks} from '../models';
+import {RolesRepository, TasksRepository} from '../repositories';
 
 export class RolesController {
   constructor(
     @repository(RolesRepository)
     public rolesRepository : RolesRepository,
+    @repository(TasksRepository)
+    public tasksRepository : TasksRepository,
   ) {}
 
-  @post('/roles')
+  @post('/roles/createRoleAndTasks')
   @response(200, {
     description: 'Roles model instance',
     content: {'application/json': {schema: getModelSchemaRef(Roles)}},
@@ -37,14 +39,51 @@ export class RolesController {
         'application/json': {
           schema: getModelSchemaRef(Roles, {
             title: 'NewRoles',
-            
+
           }),
         },
       },
     })
     roles: Roles,
   ): Promise<Roles> {
-    return this.rolesRepository.create(roles);
+    let dbRole = await this.addRole(roles);
+    const dbRoletasks: RoleTasks[] = await this.addRoltasks(roles.roleTasks, dbRole.roleId)
+    dbRole.roleTasks = [...dbRoletasks];
+    return dbRole;
+  }
+
+  async addRole(roles: Roles): Promise<Roles>{
+    return await this.rolesRepository.create(roles);
+  }
+
+  async addRoltasks(roleTasks: RoleTasks[], roleId: string): Promise<RoleTasks[]>{
+    roleTasks = await this.checkTasks(roleTasks);
+    const dbRoletasks: RoleTasks[] = new Array<RoleTasks>;
+    for(const roleTask of roleTasks){
+      const dbRoleTask: RoleTasks = await this.rolesRepository.roleTasks(roleId).create(roleTask);
+      dbRoletasks.push(dbRoleTask);
+    }
+    return dbRoletasks;
+  }
+
+  async checkTasks(roleTasks: RoleTasks[]): Promise<RoleTasks[]> {
+    let tasks: string[] = new Array<string>;
+    for(const roleTask of roleTasks){
+      tasks.push(roleTask.taskId);
+    }
+    let filter: Filter<Tasks> = {where: {taskId: {inq: tasks}}, fields: ['taskId']};
+    const dbTasks: Tasks[] = await this.tasksRepository.find(filter);
+    for(const dbTask of dbTasks) {
+      tasks = new Array<string>;
+      tasks.push(dbTask.taskId);
+    }
+    for(const index in roleTasks){
+      const taskId = roleTasks[index].taskId;
+      if(tasks.indexOf(taskId) < 0) {
+        roleTasks.splice(+index, 1);
+      }
+    }
+    return roleTasks;
   }
 
   @get('/roles/count')
