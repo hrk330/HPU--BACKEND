@@ -7,7 +7,7 @@ export class Tasks extends Entity {
     type: 'string',
     id: true,
   })
-  taskId?: string;
+  taskId: string;
 
   @property({
     type: 'string',
@@ -22,7 +22,22 @@ export class Tasks extends Entity {
   @property({
     type: 'string',
   })
-  isAllowed?: string;
+  isViewAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isUpdateAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isDeleteAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isCreateAllowed?: string;
 
   @property({
     type: 'string',

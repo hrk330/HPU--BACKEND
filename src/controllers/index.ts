@@ -19,3 +19,4 @@ export * from './role-tasks.controller';
 export * from './menus.controller';
 export * from './user-tasks.controller';
 export * from './admin-users-user-tasks.controller';
+export * from './roles-role-tasks.controller';

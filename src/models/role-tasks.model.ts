@@ -7,22 +7,37 @@ export class RoleTasks extends Entity {
     id: true,
     generated: true,
   })
-  roleTaskId?: string;
+  roleTaskId: string;
 
   @property({
     type: 'string',
   })
-  roleId?: string;
+  roleId: string;
 
   @property({
     type: 'string',
   })
-  taskId?: string;
+  taskId: string;
 
   @property({
     type: 'string',
   })
-  isAllowed?: string;
+  isViewAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isUpdateAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isDeleteAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isCreateAllowed?: string;
 
   @property({
     type: 'string',
