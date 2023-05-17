@@ -7,27 +7,32 @@ export class Menus extends Entity {
     id: true,
     generated: true,
   })
-  menuId?: string;
+  menuId: string;
 
   @property({
     type: 'string',
   })
-  menuName?: string;
+  menuName: string;
 
   @property({
     type: 'string',
   })
-  taskId?: string;
+  taskId: string;
 
   @property({
     type: 'string',
   })
-  parentMenuId?: string;
+  parentMenuId: string;
+
+  @property({
+    type: 'number',
+  })
+  order: number;
 
   @property({
     type: 'string',
   })
-  isActive?: string;
+  isActive: string;
 
   @property({
     type: 'date',
@@ -39,6 +44,11 @@ export class Menus extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
+
+  @property({
+    type: 'any',
+  })
+  children: Array<Menus>;
 
   constructor(data?: Partial<Menus>) {
     super(data);

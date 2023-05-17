@@ -7,13 +7,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,8 +23,8 @@ import {MenusRepository} from '../repositories';
 export class MenusController {
   constructor(
     @repository(MenusRepository)
-    public menusRepository : MenusRepository,
-  ) {}
+    public menusRepository: MenusRepository,
+  ) { }
 
   @post('/menus')
   @response(200, {
@@ -58,7 +58,7 @@ export class MenusController {
     return this.menusRepository.count(where);
   }
 
-  @get('/menus')
+  @get('/menus/getAllMenus')
   @response(200, {
     description: 'Array of Menus model instances',
     content: {
@@ -73,7 +73,28 @@ export class MenusController {
   async find(
     @param.filter(Menus) filter?: Filter<Menus>,
   ): Promise<Menus[]> {
-    return this.menusRepository.find(filter);
+    const dbMenusList: Menus[] = await this.menusRepository.find({where: {isActive: 'Y'}});
+    const parentChildMenuStructure = new Array<Menus>;
+
+    dbMenusList.forEach((parentMenu) => {
+      dbMenusList.forEach((childMenu) => {
+        if (childMenu.parentMenuId && childMenu.parentMenuId.toString() === parentMenu.menuId.toString()) {
+          if (parentMenu.children === undefined) {
+            parentMenu.children = new Array<Menus>;
+          }
+          parentMenu.children.push(childMenu);
+        }
+      });
+      parentChildMenuStructure.push(parentMenu);
+    });
+    for (let index = 0; index < parentChildMenuStructure.length;) {
+      if (parentChildMenuStructure[index].parentMenuId !== '') {
+        parentChildMenuStructure.splice(index, 1);
+      } else {
+        index++;
+      }
+    }
+    return parentChildMenuStructure;
   }
 
   @patch('/menus')
