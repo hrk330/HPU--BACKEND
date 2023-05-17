@@ -29,20 +29,20 @@ export class AdminUsersUserTasksController {
   @get('/admin-users/{id}/user-tasks', {
     responses: {
       '200': {
-        description: 'AdminUsers has one UserTasks',
+        description: 'Array of AdminUsers has many UserTasks',
         content: {
           'application/json': {
-            schema: getModelSchemaRef(UserTasks),
+            schema: {type: 'array', items: getModelSchemaRef(UserTasks)},
           },
         },
       },
     },
   })
-  async get(
+  async find(
     @param.path.string('id') id: string,
     @param.query.object('filter') filter?: Filter<UserTasks>,
-  ): Promise<UserTasks> {
-    return this.adminUsersRepository.userTasks(id).get(filter);
+  ): Promise<UserTasks[]> {
+    return this.adminUsersRepository.userTasks(id).find(filter);
   }
 
   @post('/admin-users/{id}/user-tasks', {
@@ -54,14 +54,14 @@ export class AdminUsersUserTasksController {
     },
   })
   async create(
-    @param.path.string('id') id: typeof AdminUsers.prototype.id,
+    @param.path.string('id') id: typeof AdminUsers.prototype.adminUsersId,
     @requestBody({
       content: {
         'application/json': {
           schema: getModelSchemaRef(UserTasks, {
             title: 'NewUserTasksInAdminUsers',
             exclude: ['userTaskId'],
-            optional: ['userTaskId']
+            optional: ['adminUsersId']
           }),
         },
       },

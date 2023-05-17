@@ -17,13 +17,15 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {AdminUsers} from '../models';
-import {AdminUsersRepository} from '../repositories';
+import {AdminUsers, UserTasks, Tasks} from '../models';
+import {AdminUsersRepository, TasksRepository} from '../repositories';
 
 export class AdminUsersController {
   constructor(
     @repository(AdminUsersRepository)
     public adminUsersRepository : AdminUsersRepository,
+    @repository(TasksRepository)
+    public tasksRepository : TasksRepository,
   ) {}
 
   @post('/adminUsers')
@@ -37,14 +39,71 @@ export class AdminUsersController {
         'application/json': {
           schema: getModelSchemaRef(AdminUsers, {
             title: 'NewAdminUsers',
-            exclude: ['id'],
+            exclude: ['adminUsersId'],
           }),
         },
       },
     })
-    adminUsers: Omit<AdminUsers, 'id'>,
-  ): Promise<AdminUsers> {
-    return this.adminUsersRepository.create(adminUsers);
+    adminUsers: Omit<AdminUsers, 'adminUsersId'>,
+  ): Promise<Object> {
+    let result = {code: 5, msg: "", adminUser: {}};
+    if (!await this.checkAdminUserExists(adminUsers.email)) {
+      const userTasks: UserTasks[] = adminUsers.userTasksList;
+      adminUsers.userTasksList = new Array<UserTasks>;
+      let dbAdminUser = await this.adminUsersRepository.create(adminUsers);
+      const dbUserTasks: UserTasks[] = await this.addUserTasks(userTasks, dbAdminUser.adminUsersId)
+      dbAdminUser.userTasks = [...dbUserTasks];
+      result.adminUser = dbAdminUser;
+      result.code = 0;
+      result.msg = "User and tasks created successfully.";
+    } else {
+      result.msg = "User already exists.";
+    }
+    return result;
+  }
+
+  async checkAdminUserExists(email: string): Promise<boolean> {
+    let result: boolean = true;
+    try {
+      const adminUsers: AdminUsers[] = await this.find({where: {email: email}});
+      if (adminUsers.length < 1) {
+        result = false;
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    return result;
+  }
+
+  async addUserTasks(userTasks: UserTasks[], adminUsersId: string): Promise<UserTasks[]>{
+    const dbUserTasks: UserTasks[] = new Array<UserTasks>;
+    if(Array.isArray(userTasks) && userTasks.length > 0) {
+      userTasks = await this.checkTasks(userTasks);
+      for(const userTask of userTasks){
+        const dbRoleTask: UserTasks = await this.adminUsersRepository.userTasks(adminUsersId).create(userTask);
+        dbUserTasks.push(dbRoleTask);
+      }
+    }
+    return dbUserTasks;
+  }
+
+  async checkTasks(userTasks: UserTasks[]): Promise<UserTasks[]> {
+    let tasks: string[] = new Array<string>;
+    for(const userTask of userTasks){
+      tasks.push(userTask.taskId);
+    }
+    const dbTasks: Tasks[] = await this.tasksRepository.find({where: {taskId: {inq: tasks}}, fields: ['taskId']});
+    for(const dbTask of dbTasks) {
+      tasks = new Array<string>;
+      tasks.push(dbTask.taskId);
+    }
+    for(const index in userTasks){
+      const taskId = userTasks[index].taskId;
+      if(tasks.indexOf(taskId) < 0) {
+        userTasks.splice(+index, 1);
+      }
+    }
+    return userTasks;
   }
 
   @get('/adminUsers/count')
