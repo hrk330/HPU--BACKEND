@@ -50,6 +50,11 @@ export class Menus extends Entity {
   })
   children: Array<Menus>;
 
+  @property({
+    type: 'any',
+  })
+  subChildren: Array<Menus>;
+
   constructor(data?: Partial<Menus>) {
     super(data);
   }

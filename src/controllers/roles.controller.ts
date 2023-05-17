@@ -51,7 +51,7 @@ export class RolesController {
       const roleTasks: RoleTasks[] = roles.roleTasks;
       roles.roleTasks = new Array<RoleTasks>;
       let dbRole = await this.addRole(roles);
-      const dbRoletasks: RoleTasks[] = await this.addRoltasks(roleTasks, dbRole.roleId)
+      const dbRoletasks: RoleTasks[] = await this.addRoleTasks(roleTasks, dbRole.roleId)
       dbRole.roleTasks = [...dbRoletasks];
       result.role = dbRole;
       result.code = 0;
@@ -71,7 +71,6 @@ export class RolesController {
       }
     } catch (e) {
       console.log(e);
-      result = false
     }
     return result;
   }
@@ -80,7 +79,7 @@ export class RolesController {
     return await this.rolesRepository.create(roles);
   }
 
-  async addRoltasks(roleTasks: RoleTasks[], roleId: string): Promise<RoleTasks[]>{
+  async addRoleTasks(roleTasks: RoleTasks[], roleId: string): Promise<RoleTasks[]>{
     const dbRoletasks: RoleTasks[] = new Array<RoleTasks>;
     if(Array.isArray(roleTasks) && roleTasks.length > 0) {
       roleTasks = await this.checkTasks(roleTasks);

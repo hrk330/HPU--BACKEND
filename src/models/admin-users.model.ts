@@ -1,5 +1,5 @@
 import {UserCredentials} from '@loopback/authentication-jwt';
-import {Entity, model, property, hasOne} from '@loopback/repository';
+import {Entity, model, property, hasOne, hasMany} from '@loopback/repository';
 import {UserTasks} from './user-tasks.model';
 
 @model()
@@ -9,7 +9,7 @@ export class AdminUsers extends Entity {
     id: true,
     generated: true,
   })
-  id?: string;
+  adminUsersId: string;
 
   @property({
     type: 'string',
@@ -146,8 +146,13 @@ export class AdminUsers extends Entity {
 
   userCredentials: UserCredentials;
 
-  @hasOne(() => UserTasks, {keyTo: 'userTaskId'})
-  userTasks: UserTasks;
+  @property({
+    type: 'any',
+  })
+  userTasksList: UserTasks[];
+
+  @hasMany(() => UserTasks, {keyTo: 'adminUsersId'})
+  userTasks: UserTasks[];
 
   constructor(data?: Partial<AdminUsers>) {
     super(data);

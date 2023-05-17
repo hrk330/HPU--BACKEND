@@ -82,7 +82,13 @@ export class MenusController {
           if (parentMenu.children === undefined) {
             parentMenu.children = new Array<Menus>;
           }
-          parentMenu.children.push(childMenu);
+          childMenu.subChildren = new Array<Menus>;
+          if (parentMenu.subChildren !== undefined) {
+            childMenu.parentMenuId = parentMenu.parentMenuId;
+            parentMenu.subChildren.push(childMenu);
+          } else {
+            parentMenu.children.push(childMenu);
+          }
         }
       });
       parentChildMenuStructure.push(parentMenu);

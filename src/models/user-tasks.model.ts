@@ -7,23 +7,37 @@ export class UserTasks extends Entity {
     id: true,
     generated: true,
   })
-  userTaskId?: string;
+  userTaskId: string;
 
   @property({
     type: 'string',
   })
-  userId?: string;
+  adminUsersId: string;
 
   @property({
     type: 'string',
   })
-  taskId?: string;
+  taskId: string;
 
   @property({
     type: 'string',
-    default: 'Y',
   })
-  isAllowed?: string;
+  isViewAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isUpdateAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isDeleteAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isCreateAllowed?: string;
 
   @property({
     type: 'string',
