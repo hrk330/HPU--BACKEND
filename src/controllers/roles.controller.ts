@@ -138,7 +138,7 @@ export class RolesController {
   async find(
     @param.filter(Roles) filter?: Filter<Roles>,
   ): Promise<Roles[]> {
-    return this.rolesRepository.find(filter);
+    return this.rolesRepository.find({include: [ "roleTasks" ]});
   }
 
   @patch('/roles')
