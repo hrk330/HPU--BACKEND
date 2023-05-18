@@ -19,6 +19,7 @@ import {
 } from '@loopback/rest';
 import {Services} from '../models';
 import {ServicesRepository} from '../repositories';
+import _ from 'lodash';
 
 export class ServicesController {
   constructor(
@@ -26,7 +27,7 @@ export class ServicesController {
     public servicesRepository: ServicesRepository,
   ) { }
 
-  @post('/services')
+  @post('/services/createService')
   @response(200, {
     description: 'Services model instance',
     content: {'application/json': {schema: getModelSchemaRef(Services)}},
@@ -58,7 +59,7 @@ export class ServicesController {
     return this.servicesRepository.count(where);
   }
 
-  @get('/services')
+  @get('/services/getAllServices')
   @response(200, {
     description: 'Array of Services model instances',
     content: {
@@ -95,7 +96,7 @@ export class ServicesController {
     return this.servicesRepository.updateAll(services, where);
   }
 
-  @get('/services/{id}')
+  @get('/services/getService/{id}')
   @response(200, {
     description: 'Services model instance',
     content: {
@@ -111,7 +112,7 @@ export class ServicesController {
     return this.servicesRepository.findById(id, filter);
   }
 
-  @patch('/services/{id}')
+  @patch('/services/updateService/{id}')
   @response(200, {
     description: 'Services PATCH success',
   })
@@ -126,7 +127,18 @@ export class ServicesController {
     })
     services: Services,
   ): Promise<object> {
-    await this.servicesRepository.updateById(id, services);
+    services.updatedAt =  new Date();
+    if(services.price !== undefined && services.price.length > 0 && isNaN(+services.price)){
+      services.price = "0"
+    }
+    if(services.pricePerKm !== undefined && services.pricePerKm.length > 0 && isNaN(+services.pricePerKm)){
+      services.pricePerKm = "0"
+    }
+    if(services.salesTax !== undefined && services.salesTax.length > 0 && isNaN(+services.salesTax)){
+      services.salesTax = "0"
+    }
+
+    await this.servicesRepository.updateById(id, _.pick(services, ['price', 'pricePerKm', 'salesTax', 'updatedAt']));
     return {success: {code: 0, msg: "Record updated successfully."}};
   }
 
