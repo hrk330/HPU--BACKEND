@@ -27,7 +27,17 @@ export class Services extends Entity {
   @property({
     type: 'string',
   })
-  price?: string;
+  price: string;
+
+  @property({
+    type: 'string',
+  })
+  pricePerKm: string;
+
+  @property({
+    type: 'string',
+  })
+  salesTax: string;
 
   @property({
     type: 'string',
