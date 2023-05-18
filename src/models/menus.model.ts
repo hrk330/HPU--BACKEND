@@ -32,6 +32,26 @@ export class Menus extends Entity {
   @property({
     type: 'string',
   })
+  isViewAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isUpdateAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isDeleteAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
+  isCreateAllowed?: string;
+
+  @property({
+    type: 'string',
+  })
   isActive: string;
 
   @property({
