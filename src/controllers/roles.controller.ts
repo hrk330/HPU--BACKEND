@@ -7,26 +7,27 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
+import _ from 'lodash';
 import {Roles, RoleTasks, Tasks} from '../models';
 import {RolesRepository, TasksRepository} from '../repositories';
 
 export class RolesController {
   constructor(
     @repository(RolesRepository)
-    public rolesRepository : RolesRepository,
+    public rolesRepository: RolesRepository,
     @repository(TasksRepository)
-    public tasksRepository : TasksRepository,
-  ) {}
+    public tasksRepository: TasksRepository,
+  ) { }
 
   @post('/roles/createRoleAndTasks')
   @response(200, {
@@ -65,7 +66,7 @@ export class RolesController {
   async checkRoleExists(roleId: string, roleName: string): Promise<boolean> {
     let result: boolean = true;
     try {
-      const dbRoles: Roles[] = await this.find({where: {roleName: roleName}});
+      const dbRoles: Roles[] = await this.rolesRepository.find({where: {roleName: roleName}});
       if (dbRoles.length < 1 || (dbRoles.length < 2 && dbRoles[0].roleId === roleId)) {
         result = false;
       }
@@ -75,15 +76,15 @@ export class RolesController {
     return result;
   }
 
-  async addRole(roles: Roles): Promise<Roles>{
+  async addRole(roles: Roles): Promise<Roles> {
     return await this.rolesRepository.create(roles);
   }
 
-  async addRoleTasks(roleTasks: RoleTasks[], roleId: string): Promise<RoleTasks[]>{
+  async addRoleTasks(roleTasks: RoleTasks[], roleId: string): Promise<RoleTasks[]> {
     const dbRoletasks: RoleTasks[] = new Array<RoleTasks>;
-    if(Array.isArray(roleTasks) && roleTasks.length > 0) {
+    if (Array.isArray(roleTasks) && roleTasks.length > 0) {
       roleTasks = await this.checkTasks(roleTasks);
-      for(const roleTask of roleTasks){
+      for (const roleTask of roleTasks) {
         const dbRoleTask: RoleTasks = await this.rolesRepository.roleTasks(roleId).create(roleTask);
         dbRoletasks.push(dbRoleTask);
       }
@@ -91,20 +92,30 @@ export class RolesController {
     return dbRoletasks;
   }
 
+  async updateRoleTasks(roleTasks: RoleTasks[], roleId: string): Promise<void> {
+    if (Array.isArray(roleTasks) && roleTasks.length > 0) {
+      roleTasks = await this.checkTasks(roleTasks);
+      for (const roleTask of roleTasks) {
+        roleTask.updatedAt = new Date();
+        this.rolesRepository.roleTasks(roleId).patch(_.pick(roleTask, ['isViewAllowed', 'isUpdateAllowed', 'isDeleteAllowed', 'isCreateAllowed', 'updatedAt']), {taskId: roleTask.taskId});
+
+      }
+    }
+  }
+
   async checkTasks(roleTasks: RoleTasks[]): Promise<RoleTasks[]> {
     let tasks: string[] = new Array<string>;
-    for(const roleTask of roleTasks){
+    for (const roleTask of roleTasks) {
       tasks.push(roleTask.taskId);
     }
-    let filter: Filter<Tasks> = {where: {taskId: {inq: tasks}}, fields: ['taskId']};
-    const dbTasks: Tasks[] = await this.tasksRepository.find(filter);
-    for(const dbTask of dbTasks) {
+    const dbTasks: Tasks[] = await this.tasksRepository.find({where: {taskId: {inq: tasks}}, fields: ['taskId']});
+    for (const dbTask of dbTasks) {
       tasks = new Array<string>;
       tasks.push(dbTask.taskId);
     }
-    for(const index in roleTasks){
+    for (const index in roleTasks) {
       const taskId = roleTasks[index].taskId;
-      if(tasks.indexOf(taskId) < 0) {
+      if (tasks.indexOf(taskId) < 0) {
         roleTasks.splice(+index, 1);
       }
     }
@@ -137,7 +148,7 @@ export class RolesController {
   async find(
     @param.filter(Roles) filter?: Filter<Roles>,
   ): Promise<Roles[]> {
-    return this.rolesRepository.find({include: [ "roleTasks" ]});
+    return this.rolesRepository.find({include: ["roleTasks"]});
   }
 
   @patch('/roles')
@@ -191,8 +202,14 @@ export class RolesController {
   ): Promise<Object> {
     let result = {code: 5, msg: "", role: {}};
     if (!await this.checkRoleExists(roles.roleId, roles.roleName)) {
-      await this.rolesRepository.updateById(roles.roleId, roles);
-      result.role = await this.findById(roles.roleId);
+      const roleTasks: RoleTasks[] = roles.roleTasks;
+      roles.roleTasks = new Array<RoleTasks>;
+      await this.rolesRepository.updateById(roles.roleId, _.pick(roles, ['roleName', 'isActive']));
+      const dbRole = await this.findById(roles.roleId);
+      await this.updateRoleTasks(roleTasks, roles.roleId);
+      const dbRoletasks = await this.rolesRepository.roleTasks(roles.roleId).find({});
+      dbRole.roleTasks = [...dbRoletasks];
+      result.role = dbRole;
       result.code = 0;
       result.msg = "Record updated successfully.";
     } else {
