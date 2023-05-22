@@ -97,10 +97,13 @@ export class AdminUsersController {
       tasks = new Array<string>;
       tasks.push(dbTask.taskId);
     }
-    for(const index in userTasks){
+    
+    for(let index = 0; index < userTasks.length;){
       const taskId = userTasks[index].taskId;
       if(tasks.indexOf(taskId) < 0) {
         userTasks.splice(+index, 1);
+      } else {
+        index++;
       }
     }
     return userTasks;

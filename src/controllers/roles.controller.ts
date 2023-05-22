@@ -96,9 +96,12 @@ export class RolesController {
     if (Array.isArray(roleTasks) && roleTasks.length > 0) {
       roleTasks = await this.checkTasks(roleTasks);
       for (const roleTask of roleTasks) {
-        roleTask.updatedAt = new Date();
-        this.rolesRepository.roleTasks(roleId).patch(_.pick(roleTask, ['isViewAllowed', 'isUpdateAllowed', 'isDeleteAllowed', 'isCreateAllowed', 'updatedAt']), {taskId: roleTask.taskId});
-
+        if (roleTask.roleTaskId !== undefined) {
+          roleTask.updatedAt = new Date();
+          await this.rolesRepository.roleTasks(roleId).patch(_.pick(roleTask, ['isViewAllowed', 'isUpdateAllowed', 'isDeleteAllowed', 'isCreateAllowed', 'updatedAt']), {taskId: roleTask.taskId});
+        } else {
+          await this.rolesRepository.roleTasks(roleId).create(roleTask);
+        }
       }
     }
   }
@@ -109,14 +112,17 @@ export class RolesController {
       tasks.push(roleTask.taskId);
     }
     const dbTasks: Tasks[] = await this.tasksRepository.find({where: {taskId: {inq: tasks}}, fields: ['taskId']});
+    tasks = new Array<string>;
     for (const dbTask of dbTasks) {
-      tasks = new Array<string>;
       tasks.push(dbTask.taskId);
     }
-    for (const index in roleTasks) {
+
+    for (let index = 0; index < roleTasks.length;) {
       const taskId = roleTasks[index].taskId;
       if (tasks.indexOf(taskId) < 0) {
         roleTasks.splice(+index, 1);
+      } else {
+        index++;
       }
     }
     return roleTasks;
