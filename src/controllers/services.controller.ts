@@ -17,9 +17,9 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import _ from 'lodash';
 import {Services} from '../models';
 import {ServicesRepository} from '../repositories';
-import _ from 'lodash';
 
 export class ServicesController {
   constructor(
@@ -127,19 +127,19 @@ export class ServicesController {
     })
     services: Services,
   ): Promise<object> {
-    services.updatedAt =  new Date();
-    if(services.price !== undefined && services.price.length > 0 && isNaN(+services.price)){
+    services.updatedAt = new Date();
+    if (services.price !== undefined && services.price.length > 0 && isNaN(+services.price)) {
       services.price = "0"
     }
-    if(services.pricePerKm !== undefined && services.pricePerKm.length > 0 && isNaN(+services.pricePerKm)){
+    if (services.pricePerKm !== undefined && services.pricePerKm.length > 0 && isNaN(+services.pricePerKm)) {
       services.pricePerKm = "0"
     }
-    if(services.salesTax !== undefined && services.salesTax.length > 0 && isNaN(+services.salesTax)){
+    if (services.salesTax !== undefined && services.salesTax.length > 0 && isNaN(+services.salesTax)) {
       services.salesTax = "0"
     }
 
     await this.servicesRepository.updateById(id, _.pick(services, ['price', 'pricePerKm', 'salesTax', 'updatedAt']));
-    return {success: {code: 0, msg: "Record updated successfully."}};
+    return {success: {code: 0, msg: "Record updated successfully.", service: await this.servicesRepository.findById(id, {})}};
   }
 
   @put('/services/{id}')

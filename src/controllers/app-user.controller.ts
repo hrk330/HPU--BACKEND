@@ -299,9 +299,41 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    const filter = {where: {id: newUserRequest.id}};
     await this.appUsersRepository.updateById(newUserRequest.id, _.omit(newUserRequest, 'email'));
-    const user = await this.appUsersRepository.findOne(filter);
+    const user = await this.appUsersRepository.findById(newUserRequest.id, {});
+    let result = {code: 0, msg: "User profile updated successfully.", user: user};
+    return JSON.stringify(result);
+  }
+
+  @authenticate('jwt')
+  @post('/appUsers/updateEndpoint', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async updateEndpoint(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+    await this.appUsersRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'endpoint'));
+    const user = await this.appUsersRepository.findById(newUserRequest.id, {});
     let result = {code: 0, msg: "User profile updated successfully.", user: user};
     return JSON.stringify(result);
   }
