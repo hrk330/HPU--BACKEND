@@ -134,6 +134,11 @@ export class AppUsers extends Entity {
   @property({
     type: 'string'
   })
+  endpoint?: string;
+
+  @property({
+    type: 'string'
+  })
   socialId?: string;
 
   @property({
