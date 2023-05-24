@@ -148,13 +148,12 @@ export class PromoCodesController {
   async checkPromoExists(promoId: string, promoCode: string): Promise<boolean> {
     let result: boolean = true;
     try {
-      const dbPromoCode: PromoCodes[] = await this.find({where: {promoCode: promoCode}});
+      const dbPromoCode: PromoCodes[] = await this.promoCodesRepository.find({where: {promoCode: promoCode}});
       if (dbPromoCode.length < 1 || (dbPromoCode.length < 2 && dbPromoCode[0].promoId === promoId)) {
         result = false;
       }
     } catch (e) {
       console.log(e);
-      result = false
     }
     return result;
   }
