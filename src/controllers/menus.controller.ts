@@ -91,10 +91,10 @@ export class MenusController {
           }
         }
       });
-      parentMenu.isViewAllowed = "";
-      parentMenu.isCreateAllowed = "";
-      parentMenu.isUpdateAllowed = "";
-      parentMenu.isDeleteAllowed = "";
+      parentMenu.isViewAllowed = false;
+      parentMenu.isCreateAllowed = false;
+      parentMenu.isUpdateAllowed = false;
+      parentMenu.isDeleteAllowed = false;
       parentChildMenuStructure.push(parentMenu);
     });
     for (let index = 0; index < parentChildMenuStructure.length;) {

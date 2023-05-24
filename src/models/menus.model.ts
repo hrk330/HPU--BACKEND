@@ -30,24 +30,24 @@ export class Menus extends Entity {
   order: number;
 
   @property({
-    type: 'string',
+    type: 'boolean',
   })
-  isViewAllowed?: string;
+  isViewAllowed?: boolean;
 
   @property({
-    type: 'string',
+    type: 'boolean',
   })
-  isUpdateAllowed?: string;
+  isUpdateAllowed?: boolean;
 
   @property({
-    type: 'string',
+    type: 'boolean',
   })
-  isDeleteAllowed?: string;
+  isDeleteAllowed?: boolean;
 
   @property({
-    type: 'string',
+    type: 'boolean',
   })
-  isCreateAllowed?: string;
+  isCreateAllowed?: boolean;
 
   @property({
     type: 'string',
