@@ -42,6 +42,11 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
+  serviceType?: string;
+
+  @property({
+    type: 'string',
+  })
   company?: string;
 
   @property({
@@ -138,6 +143,16 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   netAmount?: string;
+
+  @property({
+    type: 'string',
+  })
+  paymentMethod?: string;
+
+  @property({
+    type: 'string',
+  })
+  rating?: string;
 
   @property({
     type: 'date',

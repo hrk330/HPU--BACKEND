@@ -105,6 +105,11 @@ export class AppUsers extends Entity {
   roleId?: string;
 
   @property({
+    type: 'string',
+  })
+  verificationCode: string;
+
+  @property({
     type: 'date',
   })
   passwordUpdatedAt?: string;
