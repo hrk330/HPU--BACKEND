@@ -10,22 +10,22 @@ export class VerificationRequestObject extends Model {
   @property({
     type: 'string',
   })
-  userId?: string;
+  userId: string;
 
   @property({
     type: 'string',
   })
-  verificationCode?: string;
+  verificationCode: string;
 
   @property({
     type: 'string',
   })
-  phoneNo?: string;
+  phoneNo: string;
 
   @property({
     type: 'string',
   })
-  type?: string;
+  type: string;
 
 
   constructor(data?: Partial<VerificationRequestObject>) {

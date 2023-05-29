@@ -5,13 +5,16 @@ import {Count, CountSchema, Filter, FilterExcludingWhere, Where, repository} fro
 import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response, } from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AppUsers, CredentialsRequest, CredentialsRequestBody} from '../models';
-import {AppUsersRepository} from '../repositories';
+import {AppUsers, CredentialsRequest, CredentialsRequestBody, UserCreds, VerificationRequestObject} from '../models';
+import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
+import {CodeVerificationController} from './code-verification.controller';
 
 export class ServicesProviderController {
   constructor(
     @repository(AppUsersRepository)
     public appUsersRepository: AppUsersRepository,
+    @repository(AppUsersRepository)
+    public verificationCodesRepository: VerificationCodesRepository,
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
@@ -109,6 +112,7 @@ export class ServicesProviderController {
 
           // create a JSON Web Token based on the user profile
           result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+          user.userCreds = new UserCreds();
           result.user = user;
           result.code = 0;
           result.msg = "User logged in successfully.";
@@ -141,18 +145,19 @@ export class ServicesProviderController {
   ): Promise<String> {
     let result = {code: 5, msg: "Some error occured while updating profile.", user: {}};
     try {
-      const filter = {where: {id: serviceProvider.id}};
-      await this.appUsersRepository.updateById(serviceProvider.id, _.omit(serviceProvider, 'email'));
-      const user = await this.appUsersRepository.findOne(filter);
+      await this.appUsersRepository.updateById(serviceProvider.id, _.omit(serviceProvider, 'email', 'phoneNo'));
+      const user = await this.appUsersRepository.findById(serviceProvider.id, {});
       if (user) {
         result = {code: 0, msg: "User profile updated successfully.", user: user};
       }
     } catch (e) {
+      console.log(e);
       result.code = 5;
       result.msg = e.message;
     }
     return JSON.stringify(result);
   }
+
 
   @post('/serviceProvider')
   @response(200, {

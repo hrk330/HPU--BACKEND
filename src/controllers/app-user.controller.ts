@@ -7,7 +7,7 @@ import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
 import nodemailer from "nodemailer";
-import {AppUsers, CredentialsRequest, CredentialsRequestBody} from '../models';
+import {AppUsers, CredentialsRequest, CredentialsRequestBody, UserCreds} from '../models';
 import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
 
 
@@ -103,6 +103,7 @@ export class AppUserController {
 
           // create a JSON Web Token based on the user profile
           result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+          user.userCreds = new UserCreds();
           result.user = user;
           result.code = 0;
           result.msg = "User logged in successfully.";

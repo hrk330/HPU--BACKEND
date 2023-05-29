@@ -31,21 +31,20 @@ export class VerificationCodes extends Entity {
   status?: string;
 
   @property({
-    type: 'string',
+    type: 'date',
   })
-  lastTry?: string;
+  lastTry: Date;
 
   @property({
     type: 'date',
     default: "$now"
   })
-  createdAt?: string;
+  createdAt?: Date;
 
   @property({
     type: 'date',
   })
   expiry?: Date;
-
 
   constructor(data?: Partial<VerificationCodes>) {
     super(data);
