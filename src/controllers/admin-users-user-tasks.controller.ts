@@ -54,7 +54,7 @@ export class AdminUsersUserTasksController {
     },
   })
   async create(
-    @param.path.string('id') id: typeof AdminUsers.prototype.adminUsersId,
+    @param.path.string('id') id: typeof AdminUsers.prototype.id,
     @requestBody({
       content: {
         'application/json': {
