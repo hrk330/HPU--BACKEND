@@ -149,7 +149,7 @@ export class AdminUsersController {
   async addUserTasks(userTasks: UserTasks[], adminUsersId: string): Promise<UserTasks[]> {
     const dbUserTasks: UserTasks[] = new Array<UserTasks>;
     if (Array.isArray(userTasks) && userTasks.length > 0) {
-      userTasks = await this.checkTasks(userTasks);
+      userTasks = await this.checkTasks(userTasks, adminUsersId);
       for (const userTask of userTasks) {
         const dbRoleTask: UserTasks = await this.adminUsersRepository.userTasks(adminUsersId).create(userTask);
         dbUserTasks.push(dbRoleTask);
@@ -158,13 +158,12 @@ export class AdminUsersController {
     return dbUserTasks;
   }
 
-  async checkTasks(userTasks: UserTasks[]): Promise<UserTasks[]> {
+  async checkTasks(userTasks: UserTasks[], adminUsersId: string): Promise<UserTasks[]> {
     let tasks: string[] = new Array<string>;
     for (const userTask of userTasks) {
       tasks.push(userTask.taskId);
     }
     const dbTasks: Tasks[] = await this.tasksRepository.find({where: {taskId: {inq: tasks}}, fields: ['taskId']});
-    console.log(dbTasks);
     tasks = new Array<string>;
     for (const dbTask of dbTasks) {
       tasks.push(dbTask.taskId);
@@ -178,16 +177,25 @@ export class AdminUsersController {
         index++;
       }
     }
+
+    const dbUsertasks = await this.adminUsersRepository.userTasks(adminUsersId).find({fields: ['userTaskId', 'taskId']});
+    for (const dbUsertask of dbUsertasks) {
+      for (const userTask of userTasks) {
+        if (dbUsertask.taskId === userTask.taskId) {
+          userTask.userTaskId = dbUsertask.userTaskId;
+        }
+      }
+    }
     return userTasks;
   }
 
   async updateUserTasks(userTasks: UserTasks[], adminUsersId: string): Promise<void> {
     if (Array.isArray(userTasks) && userTasks.length > 0) {
-      userTasks = await this.checkTasks(userTasks);
+      userTasks = await this.checkTasks(userTasks, adminUsersId);
       for (const userTask of userTasks) {
         if (userTask.userTaskId !== undefined) {
           userTask.updatedAt = new Date();
-          await this.adminUsersRepository.userTasks(adminUsersId).patch(_.pick(userTask, ['isViewAllowed', 'isUpdateAllowed', 'isDeleteAllowed', 'isCreateAllowed', 'updatedAt']), {taskId: userTask.userTaskId});
+          await this.adminUsersRepository.userTasks(adminUsersId).patch(_.pick(userTask, ['isViewAllowed', 'isUpdateAllowed', 'isDeleteAllowed', 'isCreateAllowed', 'updatedAt']), {userTaskId: userTask.userTaskId, adminUsersId: userTask.adminUsersId, taskId: userTask.taskId});
         } else {
           await this.adminUsersRepository.userTasks(adminUsersId).create(userTask);
         }
@@ -212,7 +220,7 @@ export class AdminUsersController {
     let result = {code: 5, msg: "", adminUser: {}};
 
     const userTasks: UserTasks[] = adminUsers.userTasksList;
-      adminUsers.userTasksList = new Array<UserTasks>;
+    adminUsers.userTasksList = new Array<UserTasks>;
     await this.adminUsersRepository.updateById(adminUsers.id, adminUsers);
     const dbAdminUser = await this.adminUsersRepository.findById(adminUsers.id, {});
     await this.updateUserTasks(userTasks, dbAdminUser.id);
