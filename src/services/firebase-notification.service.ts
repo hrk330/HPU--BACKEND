@@ -7,9 +7,9 @@ initializeApp({
 })
 
 export interface IPushNotificacion {
-  data: {
+  notification: {
     title: string,
-    message: string
+    body: string
   },
   token: string
 }

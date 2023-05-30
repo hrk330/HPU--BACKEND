@@ -87,14 +87,15 @@ export class ServiceOrdersController {
     return this.serviceOrdersRepository.count(where);
   }
 
-  @get('/serviceOrders/sendNotification')
+  @get('/serviceOrders/sendNotification/{token}')
   @response(200, {
     description: 'ServiceOrders model count',
     content: {'application/json': {schema: CountSchema}},
   })
   async sendNotification(
+    @param.path.string('token') token: string,
   ): Promise<string> {
-    await sendMessage({data: {title: "abc", message: "abc"}, token: "fumyymdaSQuM0VMgPSXzBj:APA91bGvgOKe8UtPfGqOvyEHoU_NfFk2OaOi1aTDkmJ7BsJPsdI3JLtlFxj19Rh_-IcocZJnGrncIp0IX9xAdvwPzsUhvhk7mYovL3AdbFvuj8IYMFMXkvDP0hpNP7LcPt4f7x77frOC"});
+    await sendMessage({notification: {title: "Test Notification ", body: "This is a sample test msg."}, token: token});
     return "SUCCESS";
   }
 
@@ -117,7 +118,7 @@ export class ServiceOrdersController {
     return this.serviceOrdersRepository.updateAll(serviceOrders, where);
   }
 
-  @get('/serviceOrders/{id}')
+  @get('/serviceOrders/getServiceOrder/{serviceOrderId}/{serviceProviderId}')
   @response(200, {
     description: 'ServiceOrders model instance',
     content: {
@@ -127,10 +128,23 @@ export class ServiceOrdersController {
     },
   })
   async findById(
-    @param.path.string('id') id: string,
-    @param.filter(ServiceOrders, {exclude: 'where'}) filter?: FilterExcludingWhere<ServiceOrders>
-  ): Promise<ServiceOrders> {
-    return this.serviceOrdersRepository.findById(id, filter);
+    @param.path.string('serviceOrderId') serviceOrderId: string,
+    @param.path.string('serviceProviderId') serviceProviderId: string,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
+    try {
+      if (serviceProviderId && serviceProviderId.length > 0 && serviceOrderId && serviceOrderId.length > 0) {
+        const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, serviceProviderId: serviceProviderId}});
+        if(dbServiceOrders && dbServiceOrders.length > 0) {
+          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
   }
 
   @patch('/serviceOrders/{id}')
