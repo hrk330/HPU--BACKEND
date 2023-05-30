@@ -114,7 +114,6 @@ export class AdminUsersController {
     if (!await this.checkAdminUserExists(adminUsers.email)) {
       const userTasks: UserTasks[] = adminUsers.userTasksList;
       adminUsers.userTasksList = new Array<UserTasks>;
-      adminUsers.roleId = "ADMINUSER";
       const dbAdminUser = await this.adminUsersRepository.create(_.omit(adminUsers, 'password'));
       if (dbAdminUser) {
         const salt = await genSalt();
@@ -126,7 +125,6 @@ export class AdminUsersController {
         result.code = 0;
         result.msg = "User and tasks created successfully.";
       }
-
     } else {
       result.msg = "User already exists.";
     }
@@ -221,6 +219,7 @@ export class AdminUsersController {
 
     const userTasks: UserTasks[] = adminUsers.userTasksList;
     adminUsers.userTasksList = new Array<UserTasks>;
+    adminUsers.updatedAt = new Date();
     await this.adminUsersRepository.updateById(adminUsers.id, adminUsers);
     const dbAdminUser = await this.adminUsersRepository.findById(adminUsers.id, {});
     await this.updateUserTasks(userTasks, dbAdminUser.id);
@@ -244,7 +243,7 @@ export class AdminUsersController {
     return this.adminUsersRepository.count(where);
   }
 
-  @get('/adminUsers')
+  @get('/adminUsers/getAllAdminUsers')
   @response(200, {
     description: 'Array of AdminUsers model instances',
     content: {
@@ -259,7 +258,7 @@ export class AdminUsersController {
   async find(
     @param.filter(AdminUsers) filter?: Filter<AdminUsers>,
   ): Promise<AdminUsers[]> {
-    return this.adminUsersRepository.find(filter);
+    return this.adminUsersRepository.find({});
   }
 
   @patch('/adminUsers')
@@ -281,7 +280,7 @@ export class AdminUsersController {
     return this.adminUsersRepository.updateAll(adminUsers, where);
   }
 
-  @get('/adminUsers/{id}')
+  @get('/adminUsers/getAdminUser/{id}')
   @response(200, {
     description: 'AdminUsers model instance',
     content: {
@@ -294,7 +293,10 @@ export class AdminUsersController {
     @param.path.string('id') id: string,
     @param.filter(AdminUsers, {exclude: 'where'}) filter?: FilterExcludingWhere<AdminUsers>
   ): Promise<AdminUsers> {
-    return this.adminUsersRepository.findById(id, filter);
+    let adminUser = await this.adminUsersRepository.findById(id, {});
+    const dbUsertasks: UserTasks[] = await this.adminUsersRepository.userTasks((adminUser).id).find({});
+    adminUser.userTasks = [...dbUsertasks];
+    return adminUser
   }
 
   @patch('/adminUsers/{id}')
@@ -326,7 +328,7 @@ export class AdminUsersController {
     await this.adminUsersRepository.replaceById(id, adminUsers);
   }
 
-  @del('/adminUsers/{id}')
+  @del('/adminUsers/deleteAdminUser/{id}')
   @response(204, {
     description: 'AdminUsers DELETE success',
   })
