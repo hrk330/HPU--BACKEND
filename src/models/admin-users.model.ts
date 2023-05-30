@@ -95,6 +95,11 @@ export class AdminUsers extends Entity {
   @property({
     type: 'string',
   })
+  status?: string;
+
+  @property({
+    type: 'string',
+  })
   roleId?: string;
 
   @property({
