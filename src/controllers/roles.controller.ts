@@ -154,7 +154,7 @@ export class RolesController {
   async find(
     @param.filter(Roles) filter?: Filter<Roles>,
   ): Promise<Roles[]> {
-    return this.rolesRepository.find({include: ["roleTasks"]});
+    return this.rolesRepository.find({fields: ['roleId', 'roleName', 'isActive']});
   }
 
   @patch('/roles')
@@ -189,7 +189,7 @@ export class RolesController {
     @param.path.string('id') id: string,
     @param.filter(Roles, {exclude: 'where'}) filter?: FilterExcludingWhere<Roles>
   ): Promise<Roles> {
-    return this.rolesRepository.findById(id, filter);
+    return this.rolesRepository.findById(id, {include: ["roleTasks"]});
   }
 
   @post('/roles/updateRoles')

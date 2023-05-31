@@ -1,5 +1,5 @@
 import {TokenService, authenticate} from '@loopback/authentication';
-import {MyUserService, TokenServiceBindings, UserServiceBindings} from '@loopback/authentication-jwt';
+import {MyUserService, TokenServiceBindings, User, UserServiceBindings} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
 import {Count, CountSchema, Filter, FilterExcludingWhere, Where, repository} from '@loopback/repository';
 import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response, } from '@loopback/rest';
@@ -158,6 +158,38 @@ export class ServicesProviderController {
     return JSON.stringify(result);
   }
 
+  @authenticate('jwt')
+  @post('/serviceProvider/updateEndpoint', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async updateEndpoint(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+    await this.appUsersRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'endpoint'));
+    const user = await this.appUsersRepository.findById(newUserRequest.id, {});
+    let result = {code: 0, msg: "Endpoint updated successfully.", user: user};
+    return JSON.stringify(result);
+  }
 
   @post('/serviceProvider')
   @response(200, {
