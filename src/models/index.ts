@@ -19,3 +19,4 @@ export * from './verification-codes.model';
 export * from './verification-request-object.model';
 
 export * from './withdrawl-requests.model';
+export * from './withdrawal-request.model';
