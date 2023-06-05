@@ -10,7 +10,6 @@ import {
   repository,
 } from '@loopback/repository';
 import {
-  del,
   get,
   getModelSchemaRef,
   param,
@@ -22,8 +21,8 @@ import {
 } from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AdminUsers, CredentialsRequest, CredentialsRequestBody, Tasks, UserCreds, UserTasks} from '../models';
-import {AdminUsersRepository, AppUsersRepository, TasksRepository} from '../repositories';
+import {AdminUsers, CredentialsRequest, CredentialsRequestBody, Roles, Tasks, UserCreds, UserTasks} from '../models';
+import {AdminUsersRepository, AppUsersRepository, RolesRepository, TasksRepository} from '../repositories';
 
 export class AdminUsersController {
   constructor(
@@ -37,6 +36,8 @@ export class AdminUsersController {
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
+    @repository(RolesRepository)
+    public rolesRepository: RolesRepository,
   ) { }
 
 
@@ -63,13 +64,13 @@ export class AdminUsersController {
     @requestBody(CredentialsRequestBody) credentials: CredentialsRequest,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    let result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
+    const result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {
       const filter = {where: {email: credentials.email}, include: [{'relation': 'userCreds'}]};
       const user = await this.adminUsersRepository.findOne(filter);
 
       //const user = await this.userService.verifyCredentials(credentials);
-      if (user && user.userCreds) {
+      if (user?.userCreds) {
         const salt = user.userCreds.salt;
         const password = await hash(credentials.password, salt);
         if (password === user.userCreds.password) {
@@ -110,29 +111,47 @@ export class AdminUsersController {
     })
     adminUsers: Omit<AdminUsers, 'id'>,
   ): Promise<Object> {
-    let result = {code: 5, msg: "", adminUser: {}};
+    const result = {code: 5, msg: "", adminUser: {}};
     if (!await this.checkAdminUserExists(adminUsers.email)) {
-      const userTasks: UserTasks[] = adminUsers.userTasksList;
-      adminUsers.userTasksList = new Array<UserTasks>;
-      const dbAdminUser = await this.adminUsersRepository.create(_.omit(adminUsers, 'password'));
-      if (dbAdminUser) {
-        const salt = await genSalt();
-        const password = await hash(adminUsers.password, salt);
-        await this.adminUsersRepository.userCreds(dbAdminUser.id).create({password, salt});
-        const dbUserTasks: UserTasks[] = await this.addUserTasks(userTasks, dbAdminUser.id)
-        dbAdminUser.userTasks = [...dbUserTasks];
-        result.adminUser = dbAdminUser;
-        result.code = 0;
-        result.msg = "User and tasks created successfully.";
-      }
+			if (await this.checkIfValidRole(adminUsers.roleId)) {
+	      const userTasks: UserTasks[] = adminUsers.userTasksList;
+	      adminUsers.userTasksList = [];
+	      const dbAdminUser = await this.adminUsersRepository.create(_.omit(adminUsers, 'password'));
+	      if (dbAdminUser) {
+	        const salt = await genSalt();
+	        const password = await hash(adminUsers.password, salt);
+	        await this.adminUsersRepository.userCreds(dbAdminUser.id).create({password, salt});
+	        const dbUserTasks: UserTasks[] = await this.addUserTasks(userTasks, dbAdminUser.id)
+	        dbAdminUser.userTasks = [...dbUserTasks];
+	        result.adminUser = dbAdminUser;
+	        result.code = 0;
+	        result.msg = "User and tasks created successfully.";
+	     
+	      }
+      }else {
+	      result.msg = "Invalid role.";
+	    }
     } else {
       result.msg = "User already exists.";
     }
     return result;
   }
-
+  
+  async checkIfValidRole(roleId: string): Promise<boolean> {
+    let result = false;
+    try {
+      const dbRole: Roles = await this.rolesRepository.findById(roleId);
+      if (dbRole) {
+        result = true;
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    return result;
+  }
+  
   async checkAdminUserExists(email: string): Promise<boolean> {
-    let result: boolean = true;
+    let result = true;
     try {
       const adminUsers: AdminUsers[] = await this.adminUsersRepository.find({where: {email: email}});
       if (adminUsers && adminUsers.length < 1) {
@@ -145,7 +164,7 @@ export class AdminUsersController {
   }
 
   async addUserTasks(userTasks: UserTasks[], adminUsersId: string): Promise<UserTasks[]> {
-    const dbUserTasks: UserTasks[] = new Array<UserTasks>;
+    const dbUserTasks: UserTasks[] = [];
     if (Array.isArray(userTasks) && userTasks.length > 0) {
       userTasks = await this.checkTasks(userTasks, adminUsersId);
       for (const userTask of userTasks) {
@@ -157,12 +176,12 @@ export class AdminUsersController {
   }
 
   async checkTasks(userTasks: UserTasks[], adminUsersId: string): Promise<UserTasks[]> {
-    let tasks: string[] = new Array<string>;
+    let tasks: string[] = [];
     for (const userTask of userTasks) {
       tasks.push(userTask.taskId);
     }
     const dbTasks: Tasks[] = await this.tasksRepository.find({where: {taskId: {inq: tasks}}, fields: ['taskId']});
-    tasks = new Array<string>;
+    tasks = [];
     for (const dbTask of dbTasks) {
       tasks.push(dbTask.taskId);
     }
@@ -215,19 +234,24 @@ export class AdminUsersController {
     })
     adminUsers: AdminUsers,
   ): Promise<Object> {
-    let result = {code: 5, msg: "", adminUser: {}};
+    const result = {code: 5, msg: "", adminUser: {}};
 
     const userTasks: UserTasks[] = adminUsers.userTasksList;
-    adminUsers.userTasksList = new Array<UserTasks>;
+    adminUsers.userTasksList = [];
     adminUsers.updatedAt = new Date();
-    await this.adminUsersRepository.updateById(adminUsers.id, adminUsers);
-    const dbAdminUser = await this.adminUsersRepository.findById(adminUsers.id, {});
-    await this.updateUserTasks(userTasks, dbAdminUser.id);
-    const dbUsertasks = await this.adminUsersRepository.userTasks(dbAdminUser.id).find({});
-    dbAdminUser.userTasks = [...dbUsertasks];
-    result.adminUser = dbAdminUser;
-    result.code = 0;
-    result.msg = "Record updated successfully.";
+    if (await this.checkIfValidRole(adminUsers.roleId)) {
+	    await this.adminUsersRepository.updateById(adminUsers.id, _.pick(adminUsers, ['firstName', 'lastName', 'updatedAt', 'roleId']));
+	    const dbAdminUser = await this.adminUsersRepository.findById(adminUsers.id, {});
+	    await this.updateUserTasks(userTasks, dbAdminUser.id);
+	    const dbUsertasks = await this.adminUsersRepository.userTasks(dbAdminUser.id).find({});
+	    dbAdminUser.userTasks = [...dbUsertasks];
+	    result.adminUser = dbAdminUser;
+	    result.code = 0;
+	    result.msg = "Record updated successfully.";
+    } else {
+			result.msg = "Invalid role";
+		}
+	
 
     return result;
   }
@@ -258,7 +282,27 @@ export class AdminUsersController {
   async find(
     @param.filter(AdminUsers) filter?: Filter<AdminUsers>,
   ): Promise<AdminUsers[]> {
-    return this.adminUsersRepository.find({});
+	  const dbAdminUsers: AdminUsers[] = await this.adminUsersRepository.find({});
+	  const userRolesList = [];
+	  
+	  for(const adminUser of dbAdminUsers){
+		  userRolesList.push(adminUser.roleId);
+	  }
+	  
+	  const dbRoles: Roles[] = await this.rolesRepository.find({where: {roleId: {inq: userRolesList}}});
+	  const rolesMap = new Map <string, Roles>();
+	  
+	  for(const role of dbRoles) {
+		  rolesMap.set(role.roleId, role);
+	  }
+	  
+	  for (let index = 0; index < dbAdminUsers.length; ) {
+		 	const role: Roles | undefined = rolesMap.get(dbAdminUsers[index].roleId+'');      
+      dbAdminUsers[index].roleName = role?.roleName;
+      ++index;
+    }
+	  
+    return dbAdminUsers;
   }
 
   @patch('/adminUsers')
@@ -293,7 +337,7 @@ export class AdminUsersController {
     @param.path.string('id') id: string,
     @param.filter(AdminUsers, {exclude: 'where'}) filter?: FilterExcludingWhere<AdminUsers>
   ): Promise<AdminUsers> {
-    let adminUser = await this.adminUsersRepository.findById(id, {});
+    const adminUser = await this.adminUsersRepository.findById(id, {});
     const dbUsertasks: UserTasks[] = await this.adminUsersRepository.userTasks((adminUser).id).find({});
     adminUser.userTasks = [...dbUsertasks];
     return adminUser

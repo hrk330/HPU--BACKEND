@@ -1,7 +1,7 @@
 // Uncomment these imports to begin using these cool features!
 
 import {repository} from '@loopback/repository';
-import {getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
+import {getModelSchemaRef, post, requestBody} from '@loopback/rest';
 import {AppUsers, VerificationRequestObject} from '../models';
 import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
 import {authenticate} from '@loopback/authentication';
@@ -42,7 +42,7 @@ export class CodeVerificationController {
     })
     verificationRequestObject: VerificationRequestObject
   ): Promise<String> {
-    let result = {code: 5, msg: "Verification code was not verified."};
+    const result = {code: 5, msg: "Verification code was not verified."};
     if(await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
       result.msg = "Verification code has been verified.";
@@ -51,8 +51,8 @@ export class CodeVerificationController {
   }
 
   async verifyVerificationCode(verificationRequestObject: VerificationRequestObject) : Promise<boolean> {
-    let result: boolean = false;
-    let verificationKey: string = "";
+    let result = false;
+    let verificationKey = "";
 
     if(verificationRequestObject.type === "E") { verificationKey = verificationRequestObject.email; }
     else if(verificationRequestObject.type === "U") { verificationKey = verificationRequestObject.userId;}
@@ -65,7 +65,7 @@ export class CodeVerificationController {
         await this.verificationCodesRepository.updateById(verificationCodeObject.id, {status: 'V', lastTry: currentDateTime});
         result = true;
       } else {
-        this.verificationCodesRepository.updateById(verificationCodeObject.id, {status: 'E', lastTry: currentDateTime});
+        await this.verificationCodesRepository.updateById(verificationCodeObject.id, {status: 'E', lastTry: currentDateTime});
       }
     }
     return result;
@@ -257,19 +257,19 @@ export class CodeVerificationController {
       },
     }) verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    let result = {code: 5, msg: "Verification code not sent."};
+    const result = {code: 5, msg: "Verification code not sent."};
     const filter = {where: {email: verificationRequestObject.email}};
 
     const user = await this.appUsersRepository.findOne(filter);
 
     if (verificationRequestObject.type === 'RP') {
-      if (!user || !user.id) {
+      if (!user?.id) {
         result.code = 5;
         result.msg = "User does not exits.";
       } else {
         try {
           const verificationCode = await this.getRandomInt(999999);
-          this.verificationCodesRepository.create({key: verificationRequestObject.email, code: verificationCode, type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+          await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: verificationCode, type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
           // mailOptions.to = verificationRequestObject.email;
           // mailOptions.text = "Your Verification Code is: " + verificationCode;
           // console.log("before sending");
@@ -284,12 +284,12 @@ export class CodeVerificationController {
         }
       }
     } else if (verificationRequestObject.type === 'SU') {
-      if (user && user.id) {
+      if (user?.id) {
         result.code = 5;
         result.msg = "User already exits.";
       } else {
         try {
-          this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+          await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
           result.code = 0;
           result.msg = "Verification code sent successfully.";
         } catch (e) {
@@ -327,7 +327,7 @@ export class CodeVerificationController {
     })
     verificationRequestObject: VerificationRequestObject
   ): Promise<String> {
-    let result = {code: 5, msg: "Verification code not sent."};
+    const result = {code: 5, msg: "Verification code not sent."};
     try {
       await this.verificationCodesRepository.create({key: verificationRequestObject.userId, code: await this.getRandomInt(999999), type: 'U', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
       result.code = 0;

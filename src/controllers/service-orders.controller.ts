@@ -16,17 +16,20 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {ServiceOrders} from '../models';
-import {ServiceOrdersRepository} from '../repositories';
+import {AppUsers, ServiceOrders} from '../models';
+import {AppUsersRepository, ServiceOrdersRepository} from '../repositories';
 import {sendMessage} from '../services/firebase-notification.service';
+import _ from 'lodash';
 
 export class ServiceOrdersController {
   constructor(
     @repository(ServiceOrdersRepository)
     public serviceOrdersRepository: ServiceOrdersRepository,
+    @repository(AppUsersRepository)
+    public appUsersRepository: AppUsersRepository,
   ) { }
 
-  @post('/serviceOrders/createOrder')
+  @post('/serviceOrders/appUser/createOrder')
   @response(200, {
     description: 'ServiceOrders model instance',
     content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
@@ -44,7 +47,24 @@ export class ServiceOrdersController {
     })
     serviceOrders: Omit<ServiceOrders, 'serviceOrderId'>,
   ): Promise<ServiceOrders> {
-    return this.serviceOrdersRepository.create(serviceOrders);
+    serviceOrders.status = "L";
+    serviceOrders.taxPercentage = 15;
+    const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
+    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(_.pick(serviceOrders, ['userId', 'serviceId', 'serviceName', 'serviceType', 'vehicleType', 'pickupLocation',
+        'pickupLocationCoordinates', 'dropLocation', 'dropLocationCoordinates', 'instructions', 'promoId', 'promoCode', 'discountValue', 'discountType', 'status', 'taxPercentage'
+      ]
+    ));
+    this.sendCreateOrderNotification(serviceProviders, createdOrder.serviceOrderId);
+    return createdOrder;
+  }
+
+  async sendCreateOrderNotification(serviceProviders: AppUsers[], createdOrderId: string): Promise<void> {
+    if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
+      for(const serviceProvider of serviceProviders) {
+        sendMessage({notification: { title: "Order Received", body: "A new order is created."}, data: { createdOrderId: createdOrderId}, token: serviceProvider.endpoint});
+      }
+
+    }
   }
 
   @get('/serviceOrders/getAllOrders/{id}')
@@ -95,7 +115,7 @@ export class ServiceOrdersController {
   async sendNotification(
     @param.path.string('token') token: string,
   ): Promise<string> {
-    await sendMessage({notification: {title: "Test Notification ", body: "This is a sample test msg."}, token: token});
+    await sendMessage({notification: {title: "Test Notification ", body: "This is a sample test msg."}, data:{}, token: token});
     return "SUCCESS";
   }
 
@@ -118,7 +138,7 @@ export class ServiceOrdersController {
     return this.serviceOrdersRepository.updateAll(serviceOrders, where);
   }
 
-  @get('/serviceOrders/getServiceOrder/{serviceOrderId}/{serviceProviderId}')
+  @get('/serviceOrders/serviceProvider/getServiceOrder/{serviceOrderId}/{serviceProviderId}')
   @response(200, {
     description: 'ServiceOrders model instance',
     content: {
@@ -127,7 +147,7 @@ export class ServiceOrdersController {
       },
     },
   })
-  async findById(
+  async findByServiceProviderId(
     @param.path.string('serviceOrderId') serviceOrderId: string,
     @param.path.string('serviceProviderId') serviceProviderId: string,
   ): Promise<string> {
@@ -135,6 +155,35 @@ export class ServiceOrdersController {
     try {
       if (serviceProviderId && serviceProviderId.length > 0 && serviceOrderId && serviceOrderId.length > 0) {
         const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, serviceProviderId: serviceProviderId}});
+        if(dbServiceOrders && dbServiceOrders.length > 0) {
+          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+
+  @get('/serviceOrders/appUser/getServiceOrder/{serviceOrderId}/{appUserId}')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(ServiceOrders, {includeRelations: true}),
+      },
+    },
+  })
+  async findByAppUserId(
+    @param.path.string('serviceOrderId') serviceOrderId: string,
+    @param.path.string('appUserId') appUserId: string,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
+    try {
+      if (appUserId && appUserId.length > 0 && serviceOrderId && serviceOrderId.length > 0) {
+        const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, userId: appUserId}});
         if(dbServiceOrders && dbServiceOrders.length > 0) {
           result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
         }

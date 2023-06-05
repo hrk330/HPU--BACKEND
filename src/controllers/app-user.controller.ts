@@ -89,8 +89,7 @@ export class AppUserController {
     // ensure the user exists, and the password is correct
     let result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {
-      const filter = {where: {email: credentials.email}, include: [{'relation': 'userCreds'}]};
-      const user = await this.appUsersRepository.findOne(filter);
+      const user = await this.appUsersRepository.findOne({where: {email: credentials.email}, include: [{'relation': 'userCreds'}]});
 
       //const user = await this.userService.verifyCredentials(credentials);
       if (user && user.userCreds) {
