@@ -139,7 +139,7 @@ export class AppUsers extends Entity {
   @property({
     type: 'string'
   })
-  endpoint?: string;
+  endpoint: string;
 
   @property({
     type: 'string'
@@ -150,6 +150,12 @@ export class AppUsers extends Entity {
     type: 'string'
   })
   socialIdType?: string;
+
+  @property({
+    type: 'string',
+    default: 'A'
+  })
+  userStatus?: string;
 
   @property({
     type: 'date',

@@ -11,6 +11,7 @@ export interface IPushNotificacion {
     title: string,
     body: string
   },
+  data: any,
   token: string
 }
 
@@ -20,7 +21,7 @@ const notification_options = {
 };
 
 export const sendMessage = async (messages: IPushNotificacion) => {
-  await messaging().send(messages)
+  messaging().send(messages)
     .then(response => {
       console.log(`Successfully sent notification`)
       console.log(response)

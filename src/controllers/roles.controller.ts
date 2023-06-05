@@ -77,7 +77,7 @@ export class RolesController {
   }
 
   async addRole(roles: Roles): Promise<Roles> {
-    return await this.rolesRepository.create(roles);
+    return this.rolesRepository.create(roles);
   }
 
   async addRoleTasks(roleTasks: RoleTasks[], roleId: string): Promise<RoleTasks[]> {

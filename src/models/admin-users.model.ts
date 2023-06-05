@@ -100,7 +100,12 @@ export class AdminUsers extends Entity {
   @property({
     type: 'string',
   })
-  roleId?: string;
+  roleId: string;
+  
+  @property({
+    type: 'string',
+  })
+  roleName?: string;
 
   @property({
     type: 'date',

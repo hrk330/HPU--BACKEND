@@ -7,7 +7,7 @@ export class ServiceOrders extends Entity {
     id: true,
     generated: true,
   })
-  serviceOrderId?: string;
+  serviceOrderId: string;
 
   @property({
     type: 'string',
@@ -43,6 +43,11 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   serviceType?: string;
+
+  @property({
+    type: 'string',
+  })
+  vehicleType?: string;
 
   @property({
     type: 'string',
@@ -85,14 +90,14 @@ export class ServiceOrders extends Entity {
   endingTime?: string;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  distance?: string;
+  distance?: number;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  extraDistance?: string;
+  extraDistance?: number;
 
   @property({
     type: 'string',
@@ -112,7 +117,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  discountValue?: string;
+  discountValue?: number;
 
   @property({
     type: 'string',
@@ -125,24 +130,24 @@ export class ServiceOrders extends Entity {
   status?: string;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  taxPercentage?: string;
+  taxPercentage?: number;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  taxAmount?: string;
+  taxAmount?: number;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  grossAmount?: string;
+  grossAmount?: number;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  netAmount?: string;
+  netAmount?: number;
 
   @property({
     type: 'string',
@@ -150,9 +155,9 @@ export class ServiceOrders extends Entity {
   paymentMethod?: string;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  rating?: string;
+  rating?: number;
 
   @property({
     type: 'date',
