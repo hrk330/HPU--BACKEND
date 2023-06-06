@@ -47,11 +47,11 @@ export class RolesController {
     })
     roles: Roles,
   ): Promise<Object> {
-    let result = {code: 5, msg: "", role: {}};
+    const result = {code: 5, msg: "", role: {}};
     if (!await this.checkRoleExists("", roles.roleName)) {
       const roleTasks: RoleTasks[] = roles.roleTasks;
-      roles.roleTasks = new Array<RoleTasks>;
-      let dbRole = await this.addRole(roles);
+      roles.roleTasks = [];
+      const dbRole = await this.addRole(roles);
       const dbRoletasks: RoleTasks[] = await this.addRoleTasks(roleTasks, dbRole.roleId)
       dbRole.roleTasks = [...dbRoletasks];
       result.role = dbRole;
@@ -64,7 +64,7 @@ export class RolesController {
   }
 
   async checkRoleExists(roleId: string, roleName: string): Promise<boolean> {
-    let result: boolean = true;
+    let result = true;
     try {
       const dbRoles: Roles[] = await this.rolesRepository.find({where: {roleName: roleName}});
       if (dbRoles.length < 1 || (dbRoles.length < 2 && dbRoles[0].roleId === roleId)) {
@@ -81,7 +81,7 @@ export class RolesController {
   }
 
   async addRoleTasks(roleTasks: RoleTasks[], roleId: string): Promise<RoleTasks[]> {
-    const dbRoletasks: RoleTasks[] = new Array<RoleTasks>;
+    const dbRoletasks: RoleTasks[] = [];
     if (Array.isArray(roleTasks) && roleTasks.length > 0) {
       roleTasks = await this.checkTasks(roleTasks);
       for (const roleTask of roleTasks) {
@@ -107,12 +107,12 @@ export class RolesController {
   }
 
   async checkTasks(roleTasks: RoleTasks[]): Promise<RoleTasks[]> {
-    let tasks: string[] = new Array<string>;
+    let tasks: string[] = [];
     for (const roleTask of roleTasks) {
       tasks.push(roleTask.taskId);
     }
     const dbTasks: Tasks[] = await this.tasksRepository.find({where: {taskId: {inq: tasks}}, fields: ['taskId']});
-    tasks = new Array<string>;
+    tasks = [];
     for (const dbTask of dbTasks) {
       tasks.push(dbTask.taskId);
     }
@@ -206,10 +206,10 @@ export class RolesController {
     })
     roles: Roles,
   ): Promise<Object> {
-    let result = {code: 5, msg: "", role: {}};
+    const result = {code: 5, msg: "", role: {}};
     if (!await this.checkRoleExists(roles.roleId, roles.roleName)) {
       const roleTasks: RoleTasks[] = roles.roleTasks;
-      roles.roleTasks = new Array<RoleTasks>;
+      roles.roleTasks = [];
       await this.rolesRepository.updateById(roles.roleId, _.pick(roles, ['roleName', 'isActive']));
       const dbRole = await this.findById(roles.roleId);
       await this.updateRoleTasks(roleTasks, roles.roleId);

@@ -1,7 +1,6 @@
 import {
   Count,
   CountSchema,
-  FilterExcludingWhere,
   repository,
   Where
 } from '@loopback/repository';
@@ -54,20 +53,20 @@ export class ServiceOrdersController {
         'pickupLocationCoordinates', 'dropLocation', 'dropLocationCoordinates', 'instructions', 'promoId', 'promoCode', 'discountValue', 'discountType', 'status', 'taxPercentage'
       ]
     ));
-    this.sendCreateOrderNotification(serviceProviders, createdOrder.serviceOrderId);
+    await this.sendCreateOrderNotification(serviceProviders, createdOrder.serviceOrderId);
     return createdOrder;
   }
 
   async sendCreateOrderNotification(serviceProviders: AppUsers[], createdOrderId: string): Promise<void> {
     if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
       for(const serviceProvider of serviceProviders) {
-        sendMessage({notification: { title: "Order Received", body: "A new order is created."}, data: { createdOrderId: createdOrderId}, token: serviceProvider.endpoint});
+        await sendMessage({notification: { title: "Order Received", body: "A new order is created."}, data: { createdOrderId: createdOrderId}, token: serviceProvider.endpoint});
       }
 
     }
   }
 
-  @get('/serviceOrders/getAllOrders/{id}')
+  @get('/serviceOrders/getAllOrders/{serviceProviderId}')
   @response(200, {
     description: 'Array of ServiceOrders model instances',
     content: {
@@ -80,7 +79,7 @@ export class ServiceOrdersController {
     },
   })
   async find(
-    @param.path.string('id') serviceProviderId: string,
+    @param.path.string('serviceProviderId') serviceProviderId: string,
   ): Promise<Object> {
     let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
     try {
@@ -88,6 +87,56 @@ export class ServiceOrdersController {
         const orders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceProviderId: serviceProviderId}})
         result = {code: 0, msg: "Orders fetched successfully.", orders: orders};
       }
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+  
+  @get('/serviceOrders/adminUser/getAllOrders')
+  @response(200, {
+    description: 'Array of ServiceOrders model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(ServiceOrders, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async getAllOrdersForAdmin(): Promise<Object> {
+    let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
+    try {
+        const orders: ServiceOrders[] = await this.serviceOrdersRepository.find();
+        result = {code: 0, msg: "Orders fetched successfully.", orders: orders};      
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+  
+  @get('/serviceOrders/adminUser/getOrderDetails/{serviceOrderId}')
+  @response(200, {
+    description: 'Array of ServiceOrders model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(ServiceOrders, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async getOrderDetailsForAdmin(@param.path.string('serviceOrderId') serviceOrderId: string,): Promise<Object> {
+    let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
+    try {
+        const order: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrderId);
+        result = {code: 0, msg: "Order fetched successfully.", order: order};      
     } catch (e) {
       console.log(e);
       result.code = 5;
