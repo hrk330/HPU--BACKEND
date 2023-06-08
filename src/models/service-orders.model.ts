@@ -75,21 +75,6 @@ export class ServiceOrders extends Entity {
   dropLocationCoordinates?: string;
 
   @property({
-    type: 'string',
-  })
-  startingTime?: string;
-
-  @property({
-    type: 'string',
-  })
-  arrivalTime?: string;
-
-  @property({
-    type: 'string',
-  })
-  endingTime?: string;
-
-  @property({
     type: 'number',
   })
   distance?: number;
@@ -169,6 +154,26 @@ export class ServiceOrders extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
+  
+  @property({
+    type: 'date',
+  })
+  acceptedAt?: Date;
+  
+  @property({
+    type: 'date',
+  })
+  arrivedAt?: Date;
+  
+  @property({
+    type: 'date',
+  })
+  startedAt?: Date;
+  
+  @property({
+    type: 'date',
+  })
+  completedAt?: Date;
 
   constructor(data?: Partial<ServiceOrders>) {
     super(data);

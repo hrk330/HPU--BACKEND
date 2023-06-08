@@ -89,7 +89,7 @@ export class AppUserController {
     // ensure the user exists, and the password is correct
     let result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {
-      const user = await this.appUsersRepository.findOne({where: {email: credentials.email}, include: [{'relation': 'userCreds'}]});
+      const user = await this.appUsersRepository.findOne({where: {email: credentials.email, roleId : "APPUSER"}, include: [{'relation': 'userCreds'}]});
 
       //const user = await this.userService.verifyCredentials(credentials);
       if (user && user.userCreds) {
@@ -252,7 +252,7 @@ export class AppUserController {
     // ensure the user exists, and the password is correct
     let result = {code: 5, msg: "Invalid Login.", token: '', user: {}};
     try {
-      const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType}};
+      const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType, roleId : "APPUSER"}};
       const user = await this.appUsersRepository.findOne(filter);
       if (user) {
 
