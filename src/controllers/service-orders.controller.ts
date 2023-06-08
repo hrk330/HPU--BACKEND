@@ -58,7 +58,9 @@ export class ServiceOrdersController {
     const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
     if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
       for(const serviceProvider of serviceProviders) {
-	    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder.serviceOrderId);
+			  if(serviceProvider?.endpoint?.length > 20){
+		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder.serviceOrderId);
+	    	}
 	    }
     }
     return createdOrder;
@@ -66,7 +68,7 @@ export class ServiceOrdersController {
 
   async sendOrderNotification(appUser: AppUsers, title: string, body: string, orderId: string): Promise<void> {
     
-      await sendMessage({notification: { title: title, body: body}, data: { orderId: orderId}, token: appUser.endpoint});
+      await sendMessage({notification: { title: title, body: body}, data: { orderId: orderId+''}, token: appUser?.endpoint});
   }
   
   @post('/serviceOrders/serviceProvider/updateOrder')

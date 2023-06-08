@@ -21,13 +21,18 @@ const notification_options = {
 };
 
 export const sendMessage = async (messages: IPushNotificacion) => {	
-  messaging().send(messages)
-    .then(response => {
-      console.log(`Successfully sent notification`)
-      console.log(response)
-    })
-    .catch(err => {
-      console.log('Notification could not be sent ')
-      console.log(err)
-    })
+	console.log(messages);
+	try{
+	  messaging().send(messages)
+	    .then(response => {
+	      console.log(`Successfully sent notification`)
+	      console.log(response)
+	    })
+	    .catch(err => {
+	      console.log('Notification could not be sent ')
+	      console.log(err)
+	    })
+  }catch(e) {
+		console.log(e.message);
+	}
 }
