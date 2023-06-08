@@ -128,14 +128,14 @@ export class ServicesController {
     services: Services,
   ): Promise<object> {
     services.updatedAt = new Date();
-    if (services.price !== undefined && services.price.length > 0 && isNaN(+services.price)) {
-      services.price = "0"
+    if (services.price && isNaN(services.price)) {
+      services.price = 0;
     }
-    if (services.pricePerKm !== undefined && services.pricePerKm.length > 0 && isNaN(+services.pricePerKm)) {
-      services.pricePerKm = "0"
+    if (services.pricePerKm && isNaN(+services.pricePerKm)) {
+      services.pricePerKm = 0;
     }
-    if (services.salesTax !== undefined && services.salesTax.length > 0 && isNaN(+services.salesTax)) {
-      services.salesTax = "0"
+    if (services.salesTax && isNaN(+services.salesTax)) {
+      services.salesTax = 0;
     }
 
     await this.servicesRepository.updateById(id, _.pick(services, ['price', 'pricePerKm', 'salesTax', 'updatedAt']));
