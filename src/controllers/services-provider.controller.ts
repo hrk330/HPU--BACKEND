@@ -41,8 +41,7 @@ export class ServicesProviderController {
 
     let result = {code: 5, msg: "User registeration failed.", token: '', userId: ''};
     try {
-      const filter = {where: {email: serviceProvider.email}};
-      const user = await this.appUsersRepository.findOne(filter);
+      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email}});
 
       if (user?.id) {
         result = {code: 5, msg: "User already exists", token: '', userId: ''};
@@ -96,9 +95,8 @@ export class ServicesProviderController {
   ): Promise<String> {
     // ensure the user exists, and the password is correct
     const result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
-    try {
-      const filter = {where: {email: credentials.email}, include: [{'relation': 'userCreds'}]};
-      const user = await this.appUsersRepository.findOne(filter);
+    try {      
+      const user = await this.appUsersRepository.findOne({where: {email: credentials.email, roleId: "SERVICEPROVIDER"}, include: [{'relation': 'userCreds'}]});
 
       //const user = await this.userService.verifyCredentials(credentials);
       if (user?.userCreds) {

@@ -58,13 +58,13 @@ export class ServiceOrdersController {
     const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
     if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
       for(const serviceProvider of serviceProviders) {
-	    	await this.sendCreateOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder.serviceOrderId);
+	    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder.serviceOrderId);
 	    }
     }
     return createdOrder;
   }
 
-  async sendCreateOrderNotification(appUser: AppUsers, title: string, body: string, orderId: string): Promise<void> {
+  async sendOrderNotification(appUser: AppUsers, title: string, body: string, orderId: string): Promise<void> {
     
       await sendMessage({notification: { title: title, body: body}, data: { orderId: orderId}, token: appUser.endpoint});
   }
@@ -87,29 +87,13 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
     if((serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,AC,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
 	    try {
-		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, _.pick(serviceOrders, ['serviceProviderId', 'serviceProviderName', 'serviceProviderUsername', 'status']));
-		 		const order: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);   
-		    
-		    let title = "", body = "";
-		    if(serviceOrders?.status) {
-					const appUser: AppUsers = await this.appUsersRepository.findById(order.userId, {fields: ['endpoint']});
-					if(serviceOrders?.status === "AC") {				
-						title = "Order Accepted"; 
-						body = "Your Order has been accepted.";
-					} else if(serviceOrders?.status === "AR") {
-						title = "Service Provider Arrived"; 
-						body = "Service Provider has arrived at your location.";
-					} else if(serviceOrders?.status === "ST") {
-						title = "Order Started"; 
-						body = "Your order has started.";
-					} else if(serviceOrders?.status === "CO") {
-						title = "Order Completed"; 
-						body = "Your Order has been completed.";
-					}
-				
-					await this.sendCreateOrderNotification(appUser, title, body, order.serviceOrderId);
-				}
-
+			
+				await this.populateStatusDates(serviceOrders);
+		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+		 		const order: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+		 		serviceOrders.serviceOrderId = order.serviceOrderId;
+		 		serviceOrders.userId = order.userId;
+		    await this.sendOrderUpdateNotification(serviceOrders);
 	      result = {code: 0, msg: "Order updated successfully.", order: order};      
 	    } catch (e) {
 	      console.log(e);
@@ -118,6 +102,43 @@ export class ServiceOrdersController {
 	    }
     }
     return JSON.stringify(result);
+  }
+  
+  async sendOrderUpdateNotification(serviceOrders: ServiceOrders, ): Promise<void>{
+	  let title = "", body = "";
+    if(serviceOrders?.status) {
+			const appUser: AppUsers = await this.appUsersRepository.findById(serviceOrders.userId, {fields: ['endpoint']});
+			if(serviceOrders?.status === "AC") {				
+				title = "Order Accepted"; 
+				body = "Your Order has been accepted.";
+			} else if(serviceOrders?.status === "AR") {
+				title = "Service Provider Arrived"; 
+				body = "Service Provider has arrived at your location.";
+			} else if(serviceOrders?.status === "ST") {
+				title = "Order Started"; 
+				body = "Your order has started.";
+			} else if(serviceOrders?.status === "CO") {
+				title = "Order Completed"; 
+				body = "Your Order has been completed.";
+			}
+		
+			await this.sendOrderNotification(appUser, title, body, serviceOrders.serviceOrderId);
+		}
+  }
+  
+  async populateStatusDates(serviceOrders: ServiceOrders): Promise<void> {
+	  if(serviceOrders?.status) {
+		  const date = new Date();	
+			if(serviceOrders?.status === "AC") {
+				serviceOrders.acceptedAt = date;								
+			} else if(serviceOrders?.status === "AR") {
+				serviceOrders.arrivedAt = date;
+			} else if(serviceOrders?.status === "ST") {
+				serviceOrders.startedAt = date;				
+			} else if(serviceOrders?.status === "CO") {
+				serviceOrders.completedAt = date;
+			}
+		}
   }
 
   @get('/serviceOrders/serviceProvider/getAllOrders/{serviceProviderId}')
