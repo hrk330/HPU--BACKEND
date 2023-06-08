@@ -5,9 +5,8 @@ import {Count, CountSchema, Filter, FilterExcludingWhere, Where, repository} fro
 import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response, } from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AppUsers, CredentialsRequest, CredentialsRequestBody, UserCreds, VerificationRequestObject} from '../models';
+import {AppUsers, CredentialsRequest, CredentialsRequestBody, UserCreds} from '../models';
 import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
-import {CodeVerificationController} from './code-verification.controller';
 
 export class ServicesProviderController {
   constructor(
@@ -45,7 +44,7 @@ export class ServicesProviderController {
       const filter = {where: {email: serviceProvider.email}};
       const user = await this.appUsersRepository.findOne(filter);
 
-      if (user && user.id) {
+      if (user?.id) {
         result = {code: 5, msg: "User already exists", token: '', userId: ''};
       } else {
         const salt = await genSalt();
@@ -96,13 +95,13 @@ export class ServicesProviderController {
     @requestBody(CredentialsRequestBody) credentials: CredentialsRequest,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    let result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
+    const result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {
       const filter = {where: {email: credentials.email}, include: [{'relation': 'userCreds'}]};
       const user = await this.appUsersRepository.findOne(filter);
 
       //const user = await this.userService.verifyCredentials(credentials);
-      if (user && user.userCreds) {
+      if (user?.userCreds) {
         const salt = user.userCreds.salt;
         const password = await hash(credentials.password, salt);
         if (password === user.userCreds.password) {
@@ -187,7 +186,7 @@ export class ServicesProviderController {
   ): Promise<String> {
     await this.appUsersRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'endpoint'));
     const user = await this.appUsersRepository.findById(newUserRequest.id, {});
-    let result = {code: 0, msg: "Endpoint updated successfully.", user: user};
+    const result = {code: 0, msg: "Endpoint updated successfully.", user: user};
     return JSON.stringify(result);
   }
 

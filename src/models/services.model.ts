@@ -25,19 +25,19 @@ export class Services extends Entity {
   vehicleType?: string;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  price: string;
+  price: number;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  pricePerKm: string;
+  pricePerKm: number;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  salesTax: string;
+  salesTax: number;
 
   @property({
     type: 'string',

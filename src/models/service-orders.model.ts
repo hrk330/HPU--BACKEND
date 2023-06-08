@@ -22,7 +22,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  userId?: string;
+  userId: string;
 
   @property({
     type: 'string',
@@ -127,7 +127,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  status?: string;
+  status: string;
 
   @property({
     type: 'number',

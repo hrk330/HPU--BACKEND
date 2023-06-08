@@ -20,7 +20,7 @@ const notification_options = {
   timeToLive: 60 * 60 * 24
 };
 
-export const sendMessage = async (messages: IPushNotificacion) => {
+export const sendMessage = async (messages: IPushNotificacion) => {	
   messaging().send(messages)
     .then(response => {
       console.log(`Successfully sent notification`)
