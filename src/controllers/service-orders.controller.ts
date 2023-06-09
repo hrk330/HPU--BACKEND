@@ -264,7 +264,7 @@ export class ServiceOrdersController {
     return this.serviceOrdersRepository.updateAll(serviceOrders, where);
   }
 
-  @get('/serviceOrders/serviceProvider/getServiceOrder/{serviceOrderId}/{serviceProviderId}')
+  @get('/serviceOrders/serviceProvider/getServiceOrderDetails/{serviceOrderId}/{serviceProviderId}')
   @response(200, {
     description: 'ServiceOrders model instance',
     content: {
@@ -293,7 +293,7 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
-  @get('/serviceOrders/appUser/getServiceOrder/{serviceOrderId}/{appUserId}')
+  @get('/serviceOrders/appUser/getServiceOrderDetails/{serviceOrderId}/{appUserId}')
   @response(200, {
     description: 'ServiceOrders model instance',
     content: {
@@ -310,6 +310,34 @@ export class ServiceOrdersController {
     try {
       if (appUserId && appUserId.length > 0 && serviceOrderId && serviceOrderId.length > 0) {
         const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, userId: appUserId}});
+        if(dbServiceOrders && dbServiceOrders.length > 0) {
+          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+  
+  @get('/serviceOrders/appUser/getUserServiceOrders/{appUserId}')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(ServiceOrders, {includeRelations: true}),
+      },
+    },
+  })
+  async findUserServiceOrders(    
+    @param.path.string('appUserId') appUserId: string,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
+    try {
+      if (appUserId?.length > 0) {
+        const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: appUserId}});
         if(dbServiceOrders && dbServiceOrders.length > 0) {
           result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
         }
