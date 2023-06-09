@@ -40,10 +40,10 @@ export class Tasks extends Entity {
   isCreateAllowed?: boolean;
 
   @property({
-    type: 'string',
-    default: 'N',
+    type: 'boolean',
+    default: false,
   })
-  isActive?: string;
+  isActive?: boolean;
 
   @property({
     type: 'date',

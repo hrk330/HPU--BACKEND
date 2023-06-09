@@ -22,7 +22,7 @@ import {
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
 import {AdminUsers, CredentialsRequest, CredentialsRequestBody, Roles, Tasks, UserCreds, UserTasks} from '../models';
-import {AdminUsersRepository, AppUsersRepository, RolesRepository, TasksRepository} from '../repositories';
+import {AdminUsersRepository, RolesRepository, TasksRepository} from '../repositories';
 
 export class AdminUsersController {
   constructor(
@@ -30,8 +30,6 @@ export class AdminUsersController {
     public adminUsersRepository: AdminUsersRepository,
     @repository(TasksRepository)
     public tasksRepository: TasksRepository,
-    @repository(AppUsersRepository)
-    public appUsersRepository: AppUsersRepository,
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)

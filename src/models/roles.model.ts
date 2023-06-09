@@ -16,10 +16,10 @@ export class Roles extends Entity {
   roleName: string;
 
   @property({
-    type: 'string',
-    default: 'Y',
+    type: 'boolean',
+    default: true,
   })
-  isActive?: string;
+  isActive?: boolean;
 
   @property({
     type: 'date',

@@ -1,7 +1,6 @@
 import {
   Count,
   CountSchema,
-  Filter,
   FilterExcludingWhere,
   repository,
   Where,
@@ -17,13 +16,17 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Menus} from '../models';
-import {MenusRepository} from '../repositories';
+import {AdminUsers, Menus, RoleTasks} from '../models';
+import {AdminUsersRepository, MenusRepository, RolesRepository} from '../repositories';
 
 export class MenusController {
   constructor(
     @repository(MenusRepository)
     public menusRepository: MenusRepository,
+    @repository(AdminUsersRepository)
+    public adminUsersRepository: AdminUsersRepository,
+    @repository(RolesRepository)
+    public rolesRepository: RolesRepository,
   ) { }
 
   @post('/menus')
@@ -58,7 +61,7 @@ export class MenusController {
     return this.menusRepository.count(where);
   }
 
-  @get('/menus/getAllMenus')
+  @get('/menus/getAllMenus/{userId}')
   @response(200, {
     description: 'Array of Menus model instances',
     content: {
@@ -71,18 +74,48 @@ export class MenusController {
     },
   })
   async find(
-    @param.filter(Menus) filter?: Filter<Menus>,
+    @param.path.string('userId') userId: string,    
   ): Promise<Menus[]> {
-    const dbMenusList: Menus[] = await this.menusRepository.find({where: {isActive: 'Y'}});
-    const parentChildMenuStructure = new Array<Menus>;
-
+    const dbMenusList: Menus[] = await this.menusRepository.find({where: {isActive: true}});
+    const adminUser: AdminUsers = await this.adminUsersRepository.findById(userId, {fields: ['roleId']});
+    const dbRoletasks: RoleTasks[] = await this.rolesRepository.roleTasks(adminUser.roleId).find({where: {isActive: true}});
+    await this.filterMenuForUserRole(dbMenusList, dbRoletasks);
+    const parentChildMenuStructure: Menus[] = [];
+    await this.getParentChildMenuStructure(dbMenusList, parentChildMenuStructure);
+    return parentChildMenuStructure;
+  }
+  
+  async filterMenuForUserRole(dbMenusList: Menus[], dbRoletasks: RoleTasks[]): Promise<void> {
+	  const roleTaskMap = new Map<string, RoleTasks>();  
+    for (const dbRoleTask of dbRoletasks) {
+      roleTaskMap.set(dbRoleTask.taskId, dbRoleTask);
+    }
+	  
+	  for (let index = 0; index < dbMenusList.length;) {
+		  if(roleTaskMap?.has(dbMenusList[index]?.taskId)){
+			  
+			  const roleTask: RoleTasks| undefined = roleTaskMap.get(dbMenusList[index]?.taskId); 
+			  dbMenusList[index].isViewAllowed = roleTask?.isViewAllowed;
+	      dbMenusList[index].isCreateAllowed = roleTask?.isCreateAllowed;
+	      dbMenusList[index].isUpdateAllowed = roleTask?.isUpdateAllowed;
+	      dbMenusList[index].isDeleteAllowed = roleTask?.isDeleteAllowed;
+		  
+			  index++;
+		  }else {
+        dbMenusList.splice(index, 1);
+      }
+    }
+  }
+  
+  async getParentChildMenuStructure(dbMenusList: Menus[], parentChildMenuStructure: Menus[]): Promise<void>{
+	  
     dbMenusList.forEach((parentMenu) => {
       dbMenusList.forEach((childMenu) => {
         if (childMenu.parentMenuId && childMenu.parentMenuId.toString() === parentMenu.menuId.toString()) {
           if (parentMenu.children === undefined) {
-            parentMenu.children = new Array<Menus>;
+            parentMenu.children = [];
           }
-          childMenu.subChildren = new Array<Menus>;
+          childMenu.subChildren = [];
           if (parentMenu.subChildren !== undefined) {
             childMenu.parentMenuId = parentMenu.parentMenuId;
             parentMenu.subChildren.push(childMenu);
@@ -91,20 +124,16 @@ export class MenusController {
           }
         }
       });
-      parentMenu.isViewAllowed = false;
-      parentMenu.isCreateAllowed = false;
-      parentMenu.isUpdateAllowed = false;
-      parentMenu.isDeleteAllowed = false;
+      
       parentChildMenuStructure.push(parentMenu);
     });
     for (let index = 0; index < parentChildMenuStructure.length;) {
       if (parentChildMenuStructure[index].parentMenuId !== '') {
         parentChildMenuStructure.splice(index, 1);
-      } else {
+      } else {		  	
         index++;
       }
-    }
-    return parentChildMenuStructure;
+    }    
   }
 
   @patch('/menus')

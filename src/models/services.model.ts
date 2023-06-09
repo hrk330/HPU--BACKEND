@@ -40,10 +40,10 @@ export class Services extends Entity {
   salesTax: number;
 
   @property({
-    type: 'string',
-    default: "Y"
+    type: 'boolean',
+    default: true
   })
-  isActive?: string;
+  isActive?: boolean;
 
   @property({
     type: 'date',
