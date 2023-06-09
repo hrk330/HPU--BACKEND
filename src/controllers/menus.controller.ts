@@ -61,7 +61,7 @@ export class MenusController {
     return this.menusRepository.count(where);
   }
 
-  @get('/menus/getAllMenus/{userId}')
+  @get('/menus/getAllMenus')
   @response(200, {
     description: 'Array of Menus model instances',
     content: {
@@ -73,7 +73,26 @@ export class MenusController {
       },
     },
   })
-  async find(
+  async find(): Promise<Menus[]> {
+    const dbMenusList: Menus[] = await this.menusRepository.find({where: {isActive: true}});
+    const parentChildMenuStructure: Menus[] = [];
+    await this.getParentChildMenuStructure(dbMenusList, parentChildMenuStructure);
+    return parentChildMenuStructure;
+  }
+  
+  @get('/menus/getSidebarMenus/{userId}')
+  @response(200, {
+    description: 'Array of Menus model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Menus, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async getSidebarMenus(
     @param.path.string('userId') userId: string,    
   ): Promise<Menus[]> {
     const dbMenusList: Menus[] = await this.menusRepository.find({where: {isActive: true}});
