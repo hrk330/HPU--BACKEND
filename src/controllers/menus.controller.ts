@@ -92,7 +92,7 @@ export class MenusController {
     }
 	  
 	  for (let index = 0; index < dbMenusList.length;) {
-		  if(roleTaskMap?.has(dbMenusList[index]?.taskId)){
+		  if(roleTaskMap?.has(dbMenusList[index]?.taskId) && roleTaskMap?.get(dbMenusList[index]?.taskId)?.isViewAllowed){
 			  
 			  const roleTask: RoleTasks| undefined = roleTaskMap.get(dbMenusList[index]?.taskId); 
 			  dbMenusList[index].isViewAllowed = roleTask?.isViewAllowed;
