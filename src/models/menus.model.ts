@@ -50,9 +50,9 @@ export class Menus extends Entity {
   isCreateAllowed?: boolean;
 
   @property({
-    type: 'string',
+    type: 'boolean',
   })
-  isActive: string;
+  isActive: boolean;
 
   @property({
     type: 'date',

@@ -6,27 +6,8 @@ import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, respo
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import nodemailer from "nodemailer";
 import {AppUsers, CredentialsRequest, CredentialsRequestBody, UserCreds} from '../models';
 import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
-
-
-let transporter = nodemailer.createTransport({
-  host: "smtp.titan.email",
-  port: 465,
-  secure: true, // true for 465, false for other ports
-  auth: {
-    user: 'arham@planlabsolutions.com', // generated ethereal user
-    pass: 'Arham123!@#', // generated ethereal password
-  },
-});
-
-const mailOptions = {
-  from: 'arham@planlabsolutions.com',
-  to: '',
-  subject: 'User Registration',
-  text: ''
-};
 
 
 export class AppUserController {
@@ -87,12 +68,12 @@ export class AppUserController {
     @requestBody(CredentialsRequestBody) credentials: CredentialsRequest,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    let result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
+    const result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {
       const user = await this.appUsersRepository.findOne({where: {email: credentials.email, roleId : "APPUSER"}, include: [{'relation': 'userCreds'}]});
 
       //const user = await this.userService.verifyCredentials(credentials);
-      if (user && user.userCreds) {
+      if (user?.userCreds) {
         const salt = user.userCreds.salt;
         const password = await hash(credentials.password, salt);
         if (password === user.userCreds.password) {
@@ -147,7 +128,7 @@ export class AppUserController {
       const filter = {where: {email: newUserRequest.email}};
       const user = await this.appUsersRepository.findOne(filter);
 
-      if (user && user.id) {
+      if (user?.id) {
         result = {code: 5, msg: "User already exists", token: '', userId: ''};
       } else {
         const salt = await genSalt();
@@ -250,7 +231,7 @@ export class AppUserController {
     newUserRequest: AppUsers,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    let result = {code: 5, msg: "Invalid Login.", token: '', user: {}};
+    const result = {code: 5, msg: "Invalid Login.", token: '', user: {}};
     try {
       const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType, roleId : "APPUSER"}};
       const user = await this.appUsersRepository.findOne(filter);
@@ -301,7 +282,7 @@ export class AppUserController {
   ): Promise<String> {
     await this.appUsersRepository.updateById(newUserRequest.id, _.omit(newUserRequest, 'email'));
     const user = await this.appUsersRepository.findById(newUserRequest.id, {});
-    let result = {code: 0, msg: "User profile updated successfully.", user: user};
+    const result = {code: 0, msg: "User profile updated successfully.", user: user};
     return JSON.stringify(result);
   }
 
@@ -334,7 +315,7 @@ export class AppUserController {
   ): Promise<String> {
     await this.appUsersRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'endpoint'));
     const user = await this.appUsersRepository.findById(newUserRequest.id, {});
-    let result = {code: 0, msg: "User profile updated successfully.", user: user};
+    const result = {code: 0, msg: "User profile updated successfully.", user: user};
     return JSON.stringify(result);
   }
 
@@ -364,7 +345,7 @@ export class AppUserController {
     })
     newUserRequest: AppUsers
   ): Promise<String> {
-    let result = {code: 5, msg: "Reset password failed."};
+    const result = {code: 5, msg: "Reset password failed."};
 
     const filter = {where: {email: newUserRequest.email}};
     const user = await this.appUsersRepository.findOne(filter);

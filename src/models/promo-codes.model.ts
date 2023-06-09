@@ -71,10 +71,10 @@ export class PromoCodes extends Entity {
   endTime: string;
 
   @property({
-    type: 'string',
+    type: 'boolean',
     required: true,
   })
-  isActive: string;
+  isActive: boolean;
 
   @property({
     type: 'date',
