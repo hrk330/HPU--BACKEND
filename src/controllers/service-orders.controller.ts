@@ -279,7 +279,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
     try {
-      if (serviceProviderId && serviceProviderId.length > 0 && serviceOrderId && serviceOrderId.length > 0) {
+      if (serviceProviderId?.length > 0 && serviceOrderId?.length > 0) {
         const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, serviceProviderId: serviceProviderId}});
         if(dbServiceOrders && dbServiceOrders.length > 0) {
           result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
@@ -308,10 +308,10 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
     try {
-      if (appUserId && appUserId.length > 0 && serviceOrderId && serviceOrderId.length > 0) {
+      if (appUserId?.length > 0 && serviceOrderId?.length > 0) {
         const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, userId: appUserId}});
-        if(dbServiceOrders && dbServiceOrders.length > 0) {
-          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
+        if(dbServiceOrders?.length > 0) {
+          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders[0]};
         }
       }
     } catch (e) {
