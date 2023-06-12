@@ -59,16 +59,22 @@ export class ServiceOrdersController {
     if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
       for(const serviceProvider of serviceProviders) {
 			  if(serviceProvider?.endpoint?.length > 20){
-		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder.serviceOrderId);
+		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder);
 	    	}
 	    }
     }
     return createdOrder;
   }
 
-  async sendOrderNotification(appUser: AppUsers, title: string, body: string, orderId: string): Promise<void> {
+  async sendOrderNotification(appUser: AppUsers, title: string, body: string, order: ServiceOrders): Promise<void> {
     
-      await sendMessage({notification: { title: title, body: body}, data: { orderId: orderId+''}, token: appUser?.endpoint});
+      await sendMessage({
+		  notification: { title: title, body: body}, 
+	      data: { orderId: order.serviceOrderId+'', serviceName: order.serviceName+'', creationTime: order.createdAt+'', serviceType: order.serviceType+'', 
+	      	orderStatus: order.status+'', price: order.grossAmount+''
+	      },
+	      token: appUser?.endpoint
+      });
   }
   
   @post('/serviceOrders/serviceProvider/updateOrder')
@@ -76,7 +82,7 @@ export class ServiceOrdersController {
     description: 'ServiceOrders model instance',
     content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
   })
-  async acceptOrder(
+  async updateOrder(
     @requestBody({
       content: {
         'application/json': {
@@ -90,12 +96,11 @@ export class ServiceOrdersController {
     if((serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,AC,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
 	    try {
 			
-				await this.populateStatusDates(serviceOrders);
+			await this.populateStatusDates(serviceOrders);
 		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
-		 		const order: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-		 		serviceOrders.serviceOrderId = order.serviceOrderId;
-		 		serviceOrders.userId = order.userId;
-		    await this.sendOrderUpdateNotification(serviceOrders);
+	 		const order: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+		 		
+		    await this.sendOrderUpdateNotification(order);
 	      result = {code: 0, msg: "Order updated successfully.", order: order};      
 	    } catch (e) {
 	      console.log(e);
@@ -106,7 +111,7 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
   
-  async sendOrderUpdateNotification(serviceOrders: ServiceOrders, ): Promise<void>{
+  async sendOrderUpdateNotification(serviceOrders: ServiceOrders): Promise<void>{
 	  let title = "", body = "";
     if(serviceOrders?.status) {
 			const appUser: AppUsers = await this.appUsersRepository.findById(serviceOrders.userId, {fields: ['endpoint']});
@@ -124,7 +129,7 @@ export class ServiceOrdersController {
 				body = "Your Order has been completed.";
 			}
 		
-			await this.sendOrderNotification(appUser, title, body, serviceOrders.serviceOrderId);
+			await this.sendOrderNotification(appUser, title, body, serviceOrders);
 		}
   }
   
@@ -279,7 +284,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
     try {
-      if (serviceProviderId && serviceProviderId.length > 0 && serviceOrderId && serviceOrderId.length > 0) {
+      if (serviceProviderId?.length > 0 && serviceOrderId?.length > 0) {
         const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, serviceProviderId: serviceProviderId}});
         if(dbServiceOrders && dbServiceOrders.length > 0) {
           result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
@@ -308,10 +313,10 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
     try {
-      if (appUserId && appUserId.length > 0 && serviceOrderId && serviceOrderId.length > 0) {
+      if (appUserId?.length > 0 && serviceOrderId?.length > 0) {
         const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, userId: appUserId}});
-        if(dbServiceOrders && dbServiceOrders.length > 0) {
-          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders};
+        if(dbServiceOrders?.length > 0) {
+          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders[0]};
         }
       }
     } catch (e) {
