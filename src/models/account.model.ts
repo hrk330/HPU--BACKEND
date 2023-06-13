@@ -1,13 +1,13 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Balance extends Entity {
+export class Account extends Entity {
   @property({
     type: 'string',
     id: true,
     generated: true,
   })
-  balanceId: string;
+  accountId: string;
 
   @property({
     type: 'string',
@@ -25,18 +25,18 @@ export class Balance extends Entity {
     type: 'number',
     default: 0,
   })
-  lastTransAmount?: number;
+  lastPaymentAmount?: number;
   
   @property({
     type: 'number',
     default: 0,
   })
-  lastTransType?: number;
+  lastPaymentType?: number;
 
   @property({
     type: 'date',
   })
-  lastTransDate?: Date;
+  lastPaymentDate?: Date;
   
   @property({
     type: 'date',
@@ -50,13 +50,13 @@ export class Balance extends Entity {
   updatedAt?: Date;
 
 
-  constructor(data?: Partial<Balance>) {
+  constructor(data?: Partial<Account>) {
     super(data);
   }
 }
 
-export interface BalanceRelations {
+export interface AccountRelations {
   // describe navigational properties here
 }
 
-export type BalanceWithRelations = Balance & BalanceRelations;
+export type BalanceWithRelations = Account & AccountRelations;
