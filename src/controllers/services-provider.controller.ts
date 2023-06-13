@@ -187,6 +187,24 @@ export class ServicesProviderController {
     const result = {code: 0, msg: "Endpoint updated successfully.", user: user};
     return JSON.stringify(result);
   }
+  
+  @get('/serviceProvider/adminUser/fetchAllPendingServiceProviders')
+  @response(200, {
+    description: 'Array of AppUsers model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(AppUsers, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async fetchAllPendingServiceProviders(
+    @param.filter(AppUsers) filter?: Filter<AppUsers>,
+  ): Promise<AppUsers[]> {
+    return this.appUsersRepository.find({where: {roleId: "SERVICEPROVIDER", userStatus: "P"}});
+  }
 
   @post('/serviceProvider')
   @response(200, {

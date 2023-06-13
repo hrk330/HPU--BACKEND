@@ -17,7 +17,5 @@ export * from './user-tasks.model';
 export * from './vehicle.model';
 export * from './verification-codes.model';
 export * from './verification-request-object.model';
-
-export * from './withdrawl-requests.model';
 export * from './withdrawal-request.model';
-export * from './balance.model';
+export * from './account.model';
