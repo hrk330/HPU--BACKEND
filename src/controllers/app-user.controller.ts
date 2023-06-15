@@ -139,6 +139,7 @@ export class AppUserController {
         );
         if (savedUser) {
           await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
+          this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
           const userProfile = this.userService.convertToUserProfile(savedUser);
 
           result.userId = savedUser.id;
@@ -189,6 +190,9 @@ export class AppUserController {
     } else {
       newUserRequest.roleId = "APPUSER";
       const savedUser = await this.appUsersRepository.create(newUserRequest);
+      if(savedUser) {
+      	this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
+      }
 
       const userProfile = this.userService.convertToUserProfile(savedUser);
 
@@ -285,6 +289,7 @@ export class AppUserController {
     const result = {code: 0, msg: "User profile updated successfully.", user: user};
     return JSON.stringify(result);
   }
+  
 
   @authenticate('jwt')
   @post('/appUsers/updateEndpoint', {

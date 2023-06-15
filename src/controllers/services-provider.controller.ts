@@ -54,6 +54,8 @@ export class ServicesProviderController {
           _.omit(serviceProvider, 'password'),
         );
         if (savedUser) {
+			
+      		this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
           await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
           const userProfile = this.userService.convertToUserProfile(savedUser);
 

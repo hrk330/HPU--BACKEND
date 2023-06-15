@@ -3,6 +3,9 @@ import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
 import {UserCreds} from './user-creds.model';
 import {Vehicle} from './vehicle.model';
 import {UserDocs} from './user-docs.model';
+import {Account} from './account.model';
+import {WithdrawalRequest} from './withdrawal-request.model';
+import {Payment} from './payment.model';
 
 @model()
 export class AppUsers extends Entity {
@@ -178,6 +181,15 @@ export class AppUsers extends Entity {
 
   @hasMany(() => UserDocs, {keyTo: 'userId'})
   userDocs: UserDocs[];
+
+  @hasOne(() => Account, {keyTo: 'userId'})
+  account: Account;
+
+  @hasMany(() => WithdrawalRequest, {keyTo: 'serviceProviderId'})
+  withdrawalRequests: WithdrawalRequest[];
+
+  @hasMany(() => Payment, {keyTo: 'payerId'})
+  payments: Payment[];
 
   constructor(data?: Partial<AppUsers>) {
     super(data);

@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {Services} from './services.model';
 
 @model()
 export class ServiceOrders extends Entity {
@@ -12,7 +13,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  serviceProviderId?: string;
+  serviceProviderId: string;
 
   @property({
     type: 'string',
@@ -28,12 +29,7 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   serviceProviderName?: string;
-
-  @property({
-    type: 'string',
-  })
-  serviceId?: string;
-
+  
   @property({
     type: 'string',
   })
@@ -117,22 +113,22 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'number',
   })
-  taxPercentage?: number;
+  taxPercentage: number;
 
   @property({
     type: 'number',
   })
-  taxAmount?: number;
+  taxAmount: number;
 
   @property({
     type: 'number',
   })
-  grossAmount?: number;
+  grossAmount: number;
 
   @property({
     type: 'number',
   })
-  netAmount?: number;
+  netAmount: number;
 
   @property({
     type: 'string',
@@ -154,26 +150,29 @@ export class ServiceOrders extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-  
+
   @property({
     type: 'date',
   })
   acceptedAt?: Date;
-  
+
   @property({
     type: 'date',
   })
   arrivedAt?: Date;
-  
+
   @property({
     type: 'date',
   })
   startedAt?: Date;
-  
+
   @property({
     type: 'date',
   })
   completedAt?: Date;
+
+  @belongsTo(() => Services)
+  serviceId: string;
 
   constructor(data?: Partial<ServiceOrders>) {
     super(data);

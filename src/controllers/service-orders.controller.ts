@@ -15,8 +15,8 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {AppUsers, ServiceOrders, Services} from '../models';
-import {AppUsersRepository, ServiceOrdersRepository, ServicesRepository} from '../repositories';
+import {Account, AppUsers, OrderRequest, ServiceOrders, Services} from '../models';
+import {AppUsersRepository, PaymentRepository, ServiceOrdersRepository, ServicesRepository} from '../repositories';
 import {sendMessage} from '../services/firebase-notification.service';
 import _ from 'lodash';
 
@@ -28,6 +28,8 @@ export class ServiceOrdersController {
     public appUsersRepository: AppUsersRepository,
     @repository(ServicesRepository)
     public servicesRepository: ServicesRepository,
+    @repository(PaymentRepository)
+    public paymentRepository : PaymentRepository,
   ) { }
 
   @post('/serviceOrders/appUser/createOrder')
@@ -50,7 +52,10 @@ export class ServiceOrdersController {
   ): Promise<ServiceOrders> {
     serviceOrders.status = "LO";
     const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
+    
+		
     serviceOrders.taxPercentage = service.salesTax;
+    serviceOrders.netAmount = service.price;
     const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(_.pick(serviceOrders, ['userId', 'serviceId', 'serviceName', 'serviceType', 'vehicleType', 'pickupLocation',
         'pickupLocationCoordinates', 'dropLocation', 'dropLocationCoordinates', 'instructions', 'promoId', 'promoCode', 'discountValue', 'discountType', 'status', 'taxPercentage'
       ]
@@ -71,7 +76,7 @@ export class ServiceOrdersController {
       await sendMessage({
 		  notification: { title: title, body: body}, 
 	      data: { orderId: order.serviceOrderId+'', serviceName: order.serviceName+'', creationTime: order.createdAt+'', serviceType: order.serviceType+'', 
-	      	orderStatus: order.status+'', price: order.grossAmount+''
+	      	orderStatus: order.status+'', price: order.netAmount+''
 	      },
 	      token: appUser?.endpoint
       });
@@ -96,9 +101,9 @@ export class ServiceOrdersController {
     if((serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,AC,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
 	    try {
 			
-			await this.populateStatusDates(serviceOrders);
+				await this.populateStatusDates(serviceOrders);
 		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
-	 		const order: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+	 			const order: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
 		 		
 		    await this.sendOrderUpdateNotification(order);
 	      result = {code: 0, msg: "Order updated successfully.", order: order};      
@@ -110,6 +115,92 @@ export class ServiceOrdersController {
     }
     return JSON.stringify(result);
   }
+  
+  @post('/serviceOrders/serviceProvider/completeOrder')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
+  })
+  async completeOrder(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(OrderRequest, {partial: true}),
+        },
+      },
+    })
+    orderRequest: OrderRequest,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
+    if((orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
+	    try {
+				await this.populateStatusDates(orderRequest.serviceOrder);
+				
+				await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
+				const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest.serviceOrder.serviceOrderId);
+				
+		    await this.sendOrderUpdateNotification(dbOrder);
+	      result = {code: 0, msg: "Order completed successfully.", order: dbOrder};      
+	    } catch (e) {
+	      console.log(e);
+	      result.code = 5;
+	      result.msg = e.message;
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceOrders/serviceProvider/processPayment')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
+  })
+  async processPayment(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(OrderRequest, {partial: true}),
+        },
+      },
+    })
+    orderRequest: OrderRequest,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
+    if(orderRequest?.serviceOrder?.serviceOrderId) {
+	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
+	    if((dbOrder && dbOrder.status === 'CO' && orderRequest?.serviceOrder?.status === "PC")) {
+		    try {
+					await this.populateStatusDates(orderRequest.serviceOrder);
+					
+					if(orderRequest.payment.paymentAmount >= dbOrder?.netAmount) {
+						if((orderRequest.payment.paymentAmount - dbOrder.netAmount) > 0) {
+							const extraAmount = orderRequest.payment.paymentAmount - dbOrder.netAmount;
+							const account: Account = await this.appUsersRepository.account(dbOrder.userId).get({});
+							const creditAmount = extraAmount - account.balanceAmount;
+							this.appUsersRepository.account(dbOrder.userId).patch({balanceAmount: creditAmount}, {});
+						}
+						orderRequest.payment.payerId = dbOrder.userId;
+						orderRequest.payment.receiverId = dbOrder.serviceProviderId;
+						orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
+						await this.paymentRepository.create(orderRequest.payment);
+				    await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
+				    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
+				    await this.sendOrderUpdateNotification(dbOrder);
+				    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder}; 
+		 			} else {
+						 result.msg = "Payment is less than the due amount.";
+					}
+		           
+		    } catch (e) {
+		      console.log(e);
+		      result.code = 5;
+		      result.msg = e.message;
+		    }
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
   
   async sendOrderUpdateNotification(serviceOrders: ServiceOrders): Promise<void>{
 	  let title = "", body = "";
@@ -127,6 +218,9 @@ export class ServiceOrdersController {
 			} else if(serviceOrders?.status === "CO") {
 				title = "Order Completed"; 
 				body = "Your Order has been completed.";
+			} else if(serviceOrders?.status === "PC") {
+				title = "Payment Completed"; 
+				body = "Your payment has been completed.";
 			}
 		
 			await this.sendOrderNotification(appUser, title, body, serviceOrders);
@@ -134,8 +228,8 @@ export class ServiceOrdersController {
   }
   
   async populateStatusDates(serviceOrders: ServiceOrders): Promise<void> {
-	  if(serviceOrders?.status) {
-		  const date = new Date();	
+	  const date = new Date();
+	  if(serviceOrders?.status) {	
 			if(serviceOrders?.status === "AC") {
 				serviceOrders.acceptedAt = date;								
 			} else if(serviceOrders?.status === "AR") {
@@ -146,6 +240,41 @@ export class ServiceOrdersController {
 				serviceOrders.completedAt = date;
 			}
 		}
+		serviceOrders.updatedAt = date;
+  }
+  
+  @post('/serviceOrders/serviceProvider/rateOrder')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
+  })
+  async rateOrder(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceOrders, {partial: true}),
+        },
+      },
+    })
+    serviceOrder: ServiceOrders,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
+    if((serviceOrder?.rating && serviceOrder?.serviceOrderId)) {	
+	    try {
+				serviceOrder.updatedAt = new Date();
+				
+				await this.serviceOrdersRepository.updateById(serviceOrder.serviceOrderId, serviceOrder);
+				const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrder.serviceOrderId);
+				
+		    //await this.sendOrderUpdateNotification(dbOrder);
+	      result = {code: 0, msg: "Order completed successfully.", order: dbOrder};      
+	    } catch (e) {
+	      console.log(e);
+	      result.code = 5;
+	      result.msg = e.message;
+	    }
+    }
+    return JSON.stringify(result);
   }
 
   @get('/serviceOrders/serviceProvider/getAllOrders/{serviceProviderId}')

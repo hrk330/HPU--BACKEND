@@ -13,3 +13,6 @@ export * from './role-tasks.repository';
 export * from './tasks.repository';
 export * from './menus.repository';
 export * from './user-tasks.repository';
+export * from './account.repository';
+export * from './payment.repository';
+export * from './withdrawal-request.repository';

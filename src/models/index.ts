@@ -19,3 +19,5 @@ export * from './verification-codes.model';
 export * from './verification-request-object.model';
 export * from './withdrawal-request.model';
 export * from './account.model';
+export * from './payment.model';
+export * from './order-request.model';

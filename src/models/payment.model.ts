@@ -28,7 +28,6 @@ export class Payment extends Entity {
   
   @property({
     type: 'string',
-    required: true,
   })
   withdrawalRequestId: string;
   
@@ -38,9 +37,9 @@ export class Payment extends Entity {
   paymentType: string;
   
   @property({
-    type: 'string',
+    type: 'number',
   })
-  paymentAmount: string;
+  paymentAmount: number;
   
   @property({
     type: 'date',
