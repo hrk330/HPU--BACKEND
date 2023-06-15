@@ -16,10 +16,10 @@ export class Account extends Entity {
   userId: string;
 
   @property({
-    type: 'string',
+    type: 'number',
     required: true,
   })
-  balanceAmount: string;
+  balanceAmount: number;
 
   @property({
     type: 'number',
@@ -28,10 +28,9 @@ export class Account extends Entity {
   lastPaymentAmount?: number;
   
   @property({
-    type: 'number',
-    default: 0,
+    type: 'string',
   })
-  lastPaymentType?: number;
+  lastPaymentType?: string;
 
   @property({
     type: 'date',
