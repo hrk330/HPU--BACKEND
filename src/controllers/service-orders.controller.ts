@@ -131,16 +131,16 @@ export class ServiceOrdersController {
     })
     orderRequest: OrderRequest,
   ): Promise<string> {
-    let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
+    let result = {code: 5, msg: "Some error occured while getting order.", order: {}, user: {}};
     if((orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
 	    try {
 				await this.populateStatusDates(orderRequest.serviceOrder);
 				
 				await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
 				const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest.serviceOrder.serviceOrderId);
-				
+				const appUser: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'APPUSER', id: dbOrder.userId}});
 		    await this.sendOrderUpdateNotification(dbOrder);
-	      result = {code: 0, msg: "Order completed successfully.", order: dbOrder};      
+	      result = {code: 0, msg: "Order completed successfully.", order: dbOrder, user: appUser};      
 	    } catch (e) {
 	      console.log(e);
 	      result.code = 5;
@@ -177,7 +177,7 @@ export class ServiceOrdersController {
 							const extraAmount = orderRequest.payment.paymentAmount - dbOrder.netAmount;
 							const account: Account = await this.appUsersRepository.account(dbOrder.userId).get({});
 							const creditAmount = extraAmount - account.balanceAmount;
-							this.appUsersRepository.account(dbOrder.userId).patch({balanceAmount: creditAmount}, {});
+							await this.appUsersRepository.account(dbOrder.userId).patch({balanceAmount: creditAmount}, {});
 						}
 						orderRequest.payment.payerId = dbOrder.userId;
 						orderRequest.payment.receiverId = dbOrder.serviceProviderId;
