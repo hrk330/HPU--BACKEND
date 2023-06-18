@@ -234,15 +234,12 @@ export class AdminUsersController {
   ): Promise<Object> {
     const result = {code: 5, msg: "", adminUser: {}};
 
-    const userTasks: UserTasks[] = adminUsers.userTasksList;
+    
     adminUsers.userTasksList = [];
     adminUsers.updatedAt = new Date();
     if (await this.checkIfValidRole(adminUsers.roleId)) {
-	    await this.adminUsersRepository.updateById(adminUsers.id, _.pick(adminUsers, ['firstName', 'lastName', 'updatedAt', 'roleId']));
+	    await this.adminUsersRepository.updateById(adminUsers.id, adminUsers);
 	    const dbAdminUser = await this.adminUsersRepository.findById(adminUsers.id, {});
-	    await this.updateUserTasks(userTasks, dbAdminUser.id);
-	    const dbUsertasks = await this.adminUsersRepository.userTasks(dbAdminUser.id).find({});
-	    dbAdminUser.userTasks = [...dbUsertasks];
 	    result.adminUser = dbAdminUser;
 	    result.code = 0;
 	    result.msg = "Record updated successfully.";
