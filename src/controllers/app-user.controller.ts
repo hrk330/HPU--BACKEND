@@ -139,7 +139,7 @@ export class AppUserController {
         );
         if (savedUser) {
           await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
-          this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
+          await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
           const userProfile = this.userService.convertToUserProfile(savedUser);
 
           result.userId = savedUser.id;
@@ -191,7 +191,7 @@ export class AppUserController {
       newUserRequest.roleId = "APPUSER";
       const savedUser = await this.appUsersRepository.create(newUserRequest);
       if(savedUser) {
-      	this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
+      	await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
       }
 
       const userProfile = this.userService.convertToUserProfile(savedUser);
@@ -352,7 +352,7 @@ export class AppUserController {
   ): Promise<String> {
     const result = {code: 5, msg: "Reset password failed."};
 
-    const filter = {where: {email: newUserRequest.email}};
+    const filter = {where: {email: newUserRequest.email, roleId : "APPUSER"}};
     const user = await this.appUsersRepository.findOne(filter);
     if (user) {
       const salt = await genSalt();
