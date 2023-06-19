@@ -18,7 +18,7 @@ export class CodeVerificationController {
     public appUsersRepository: AppUsersRepository,
   ) { }
 
-  @post('/codeVerification/verifyCode', {
+  @post('/codeVerification/appUser/verifyCode', {
     responses: {
       '200': {
         description: 'User',
@@ -30,7 +30,7 @@ export class CodeVerificationController {
       },
     },
   })
-  async verifyCode(
+  async verifyCodeForAppUser(
     @requestBody({
       content: {
         'application/json': {
@@ -43,7 +43,53 @@ export class CodeVerificationController {
     verificationRequestObject: VerificationRequestObject
   ): Promise<String> {
     const result = {code: 5, msg: "Verification code was not verified."};
-    if(await this.verifyVerificationCode(verificationRequestObject)) {
+    
+    let filter = {};
+    
+    if(verificationRequestObject.type === "E") { filter = {where: {email: verificationRequestObject.email, roleId : "APPUSER"}}; }
+    else if(verificationRequestObject.type === "U") { filter = {where: {id: verificationRequestObject.userId, roleId : "APPUSER"}};}
+    
+    const user = await this.appUsersRepository.findOne(filter);
+    if(user && await this.verifyVerificationCode(verificationRequestObject)) {
+      result.code = 0;
+      result.msg = "Verification code has been verified.";
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/codeVerification/serviceProvider/verifyCode', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: String,
+          },
+        },
+      },
+    },
+  })
+  async verifyCodeForServiceProvider(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(VerificationRequestObject, {
+            title: 'VerificationRequestObject', partial: true
+          }),
+        },
+      },
+    })
+    verificationRequestObject: VerificationRequestObject
+  ): Promise<String> {
+	  const result = {code: 5, msg: "Verification code was not verified."};
+    let filter = {};
+    
+    if(verificationRequestObject.type === "E") { filter = {where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}}; }
+    else if(verificationRequestObject.type === "U") { filter = {where: {id: verificationRequestObject.userId, roleId : "SERVICEPROVIDER"}};}
+    
+    const user = await this.appUsersRepository.findOne(filter);
+    
+    if(user && await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
       result.msg = "Verification code has been verified.";
     }
@@ -234,7 +280,7 @@ export class CodeVerificationController {
     return JSON.stringify(result);
   }
 
-  @post('/codeVerification/sendEmailCode', {
+  @post('/codeVerification/appUser/sendEmailCode', {
     responses: {
       '200': {
         description: 'User',
@@ -246,7 +292,7 @@ export class CodeVerificationController {
       },
     },
   })
-  async sendEmailCode(
+  async sendEmailCodeForAppUser(
     @requestBody({
       content: {
         'application/json': {
@@ -258,11 +304,55 @@ export class CodeVerificationController {
     }) verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
     const result = {code: 5, msg: "Verification code not sent."};
-    const filter = {where: {email: verificationRequestObject.email}};
 
-    const user = await this.appUsersRepository.findOne(filter);
+    const user = await this.appUsersRepository.findOne({where: {email: verificationRequestObject.email, roleId : "APPUSER"}});
 
-    if (verificationRequestObject.type === 'RP') {
+    if(user) {
+			return JSON.stringify(this.insertVerificationCode(user, verificationRequestObject));	
+		}
+
+    return JSON.stringify(result);
+  }
+  
+  @post('/codeVerification/serviceProvider/sendEmailCode', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: String,
+          },
+        },
+      },
+    },
+  })
+  async sendEmailCodeForServiceProvider(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(VerificationRequestObject, {
+            title: 'VerificationRequestObject', partial: true
+          }),
+        },
+      },
+    }) verificationRequestObject: VerificationRequestObject,
+  ): Promise<String> {
+    const result = {code: 5, msg: "Verification code not sent."};
+
+    const user = await this.appUsersRepository.findOne({where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}});
+
+    if(user) {
+			return JSON.stringify(this.insertVerificationCode(user, verificationRequestObject));	
+		}
+
+    return JSON.stringify(result);
+  }
+  
+  async insertVerificationCode(user: AppUsers, verificationRequestObject: VerificationRequestObject): Promise<object>{
+	  
+	  const result = {code: 5, msg: "Verification code not sent."};
+	  const successMessage = "Verification code sent successfully.";
+	  if (verificationRequestObject?.type === 'RP') {
       if (!user?.id) {
         result.code = 5;
         result.msg = "User does not exits.";
@@ -277,13 +367,13 @@ export class CodeVerificationController {
           // const response = await transporter.sendMail(mailOptions);
           // console.log(response)
           result.code = 0;
-          result.msg = "Verification code sent successfully.";
+          result.msg = successMessage;
         } catch (e) {
           result.code = 5;
           result.msg = "Some error occured while sending verification code.";
         }
       }
-    } else if (verificationRequestObject.type === 'SU') {
+    } else if (verificationRequestObject?.type === 'SU') {
       if (user?.id) {
         result.code = 5;
         result.msg = "User already exits.";
@@ -291,17 +381,15 @@ export class CodeVerificationController {
         try {
           await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
           result.code = 0;
-          result.msg = "Verification code sent successfully.";
+          result.msg = successMessage;
         } catch (e) {
           result.code = 5;
           result.msg = e.message;
         }
       }
     }
-
-
-    return JSON.stringify(result);
-  }
+    return result;
+  } 
 
   @post('/appUsers/sendSmsCode', {
     responses: {
