@@ -55,7 +55,7 @@ export class ServicesProviderController {
         );
         if (savedUser) {
 			
-      		this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
+      		await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
           await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
           const userProfile = this.userService.convertToUserProfile(savedUser);
 
@@ -121,6 +121,47 @@ export class ServicesProviderController {
       result.code = 5;
       result.msg = e.message;
     }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceProvider/resetPassword', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async resetPassword(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser', partial: true
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers
+  ): Promise<String> {
+    const result = {code: 5, msg: "Reset password failed."};
+
+    const user = await this.appUsersRepository.findOne({where: {email: newUserRequest.email, roleId : "SERVICEPROVIDER"}});
+    if (user) {
+      const salt = await genSalt();
+      const password = await hash(newUserRequest.password, salt);
+      const updatedAt = new Date();
+      await this.appUsersRepository.userCreds(user.id).patch({password, salt, updatedAt});
+      result.code = 0;
+      result.msg = "Password has been reset successfully.";
+    }
+
     return JSON.stringify(result);
   }
 
