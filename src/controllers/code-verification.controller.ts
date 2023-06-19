@@ -308,7 +308,7 @@ export class CodeVerificationController {
     const user = await this.appUsersRepository.findOne({where: {email: verificationRequestObject.email, roleId : "APPUSER"}});
 
     if(user) {
-			return JSON.stringify(this.insertVerificationCode(user, verificationRequestObject));	
+			return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject));	
 		}
 
     return JSON.stringify(result);
@@ -342,7 +342,7 @@ export class CodeVerificationController {
     const user = await this.appUsersRepository.findOne({where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}});
 
     if(user) {
-			return JSON.stringify(this.insertVerificationCode(user, verificationRequestObject));	
+			return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject));	
 		}
 
     return JSON.stringify(result);
