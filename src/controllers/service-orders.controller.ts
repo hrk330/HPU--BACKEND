@@ -18,7 +18,7 @@ import {
 import {Account, AppUsers, OrderRequest, ServiceOrders, Services} from '../models';
 import {AppUsersRepository, PaymentRepository, ServiceOrdersRepository, ServicesRepository} from '../repositories';
 import {sendMessage} from '../services/firebase-notification.service';
-import _ from 'lodash';
+//import _ from 'lodash';
 
 export class ServiceOrdersController {
   constructor(
@@ -56,10 +56,7 @@ export class ServiceOrdersController {
 		
     serviceOrders.taxPercentage = service.salesTax;
     serviceOrders.netAmount = service.price;
-    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(_.pick(serviceOrders, ['userId', 'serviceId', 'serviceName', 'serviceType', 'vehicleType', 'pickupLocation',
-        'pickupLocationCoordinates', 'dropLocation', 'dropLocationCoordinates', 'instructions', 'promoId', 'promoCode', 'discountValue', 'discountType', 'status', 'taxPercentage'
-      ]
-    ));
+    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
     const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
     if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
       for(const serviceProvider of serviceProviders) {
