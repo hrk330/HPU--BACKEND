@@ -147,7 +147,7 @@ export class AppUsers extends Entity {
   @property({
     type: 'string'
   })
-  socialId?: string;
+  socialId: string;
 
   @property({
     type: 'string'
