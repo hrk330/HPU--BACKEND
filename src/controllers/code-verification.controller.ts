@@ -46,11 +46,10 @@ export class CodeVerificationController {
     
     let filter = {};
     
-    if(verificationRequestObject.type === "E") { filter = {where: {email: verificationRequestObject.email, roleId : "APPUSER"}}; }
-    else if(verificationRequestObject.type === "U") { filter = {where: {id: verificationRequestObject.userId, roleId : "APPUSER"}};}
+    if(verificationRequestObject.type === "E") { verificationRequestObject.type = "EA"; filter = {where: {email: verificationRequestObject.email, roleId : "APPUSER"}}; }
+    else if(verificationRequestObject.type === "U") { verificationRequestObject.type = "UA"; filter = {where: {id: verificationRequestObject.userId, roleId : "APPUSER"}};}
     
-    const user = await this.appUsersRepository.findOne(filter);
-    if(user && await this.verifyVerificationCode(verificationRequestObject)) {
+    if(await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
       result.msg = "Verification code has been verified.";
     }
@@ -84,12 +83,10 @@ export class CodeVerificationController {
 	  const result = {code: 5, msg: "Verification code was not verified."};
     let filter = {};
     
-    if(verificationRequestObject.type === "E") { filter = {where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}}; }
-    else if(verificationRequestObject.type === "U") { filter = {where: {id: verificationRequestObject.userId, roleId : "SERVICEPROVIDER"}};}
+    if(verificationRequestObject.type === "E") { verificationRequestObject.type = "ES"; filter = {where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}}; }
+    else if(verificationRequestObject.type === "U") { verificationRequestObject.type = "US"; filter = {where: {id: verificationRequestObject.userId, roleId : "SERVICEPROVIDER"}};}
     
-    const user = await this.appUsersRepository.findOne(filter);
-    
-    if(user && await this.verifyVerificationCode(verificationRequestObject)) {
+    if(await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
       result.msg = "Verification code has been verified.";
     }
@@ -100,10 +97,10 @@ export class CodeVerificationController {
     let result = false;
     let verificationKey = "";
 
-    if(verificationRequestObject.type === "E") { verificationKey = verificationRequestObject.email; }
-    else if(verificationRequestObject.type === "U") { verificationKey = verificationRequestObject.userId;}
+    if(verificationRequestObject.type === "ES" || verificationRequestObject.type === "EA") { verificationKey = verificationRequestObject.email; }
+    else if(verificationRequestObject.type === "US" || verificationRequestObject.type === "UA") { verificationKey = verificationRequestObject.userId;}
 
-    const verificationCodefilter = {where: {key: verificationKey, code: verificationRequestObject.verificationCode, status: 'L'}, order: ['createdAt desc']};
+    const verificationCodefilter = {where: {key: verificationKey, code: verificationRequestObject.verificationCode, type: verificationRequestObject.type, status: 'L'}, order: ['createdAt desc']};
     const verificationCodeObject = await this.verificationCodesRepository.findOne(verificationCodefilter);
     if (verificationCodeObject) {
       const currentDateTime = new Date();
@@ -303,15 +300,10 @@ export class CodeVerificationController {
       },
     }) verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    const result = {code: 5, msg: "Verification code not sent."};
 
     const user = await this.appUsersRepository.findOne({where: {email: verificationRequestObject.email, roleId : "APPUSER"}});
+		return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject, "EA"));	
 
-    if(user) {
-			return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject));	
-		}
-
-    return JSON.stringify(result);
   }
   
   @post('/codeVerification/serviceProvider/sendEmailCode', {
@@ -337,18 +329,13 @@ export class CodeVerificationController {
       },
     }) verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    const result = {code: 5, msg: "Verification code not sent."};
-
+  
     const user = await this.appUsersRepository.findOne({where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}});
-
-    if(user) {
-			return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject));	
-		}
-
-    return JSON.stringify(result);
+    return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject, "ES"));
+    	
   }
   
-  async insertVerificationCode(user: AppUsers, verificationRequestObject: VerificationRequestObject): Promise<object>{
+  async insertVerificationCode(user: AppUsers| null, verificationRequestObject: VerificationRequestObject, codeType: string): Promise<object>{
 	  
 	  const result = {code: 5, msg: "Verification code not sent."};
 	  const successMessage = "Verification code sent successfully.";
@@ -358,8 +345,7 @@ export class CodeVerificationController {
         result.msg = "User does not exits.";
       } else {
         try {
-          const verificationCode = await this.getRandomInt(999999);
-          await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: verificationCode, type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+          await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: codeType, status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
           // mailOptions.to = verificationRequestObject.email;
           // mailOptions.text = "Your Verification Code is: " + verificationCode;
           // console.log("before sending");
@@ -379,7 +365,7 @@ export class CodeVerificationController {
         result.msg = "User already exits.";
       } else {
         try {
-          await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: 'E', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+          await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: codeType, status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
           result.code = 0;
           result.msg = successMessage;
         } catch (e) {

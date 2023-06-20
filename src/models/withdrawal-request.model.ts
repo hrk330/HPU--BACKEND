@@ -67,6 +67,11 @@ export class WithdrawalRequest extends Entity {
   })
   updatedAt?: Date;
 
+  @property({
+    type: 'string',
+  })
+  userAccountId?: string;
+
   constructor(data?: Partial<WithdrawalRequest>) {
     super(data);
   }
