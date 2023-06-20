@@ -41,7 +41,7 @@ export class ServicesProviderController {
 
     let result = {code: 5, msg: "User registeration failed.", token: '', userId: ''};
     try {
-      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email}});
+      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
 
       if (user?.id) {
         result = {code: 5, msg: "User already exists", token: '', userId: ''};

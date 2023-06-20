@@ -125,7 +125,7 @@ export class AppUserController {
 
     let result = {code: 5, msg: "User registeration failed.", token: '', userId: ''};
     try {
-      const filter = {where: {email: newUserRequest.email}};
+      const filter = {where: {email: newUserRequest.email, roleId: "APPUSER"}};
       const user = await this.appUsersRepository.findOne(filter);
 
       if (user?.id) {
@@ -182,7 +182,7 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType}};
+    const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType, roleId: "APPUSER"}};
     const user = await this.appUsersRepository.findOne(filter);
     let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
     if (user) {
