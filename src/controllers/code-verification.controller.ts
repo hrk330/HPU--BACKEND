@@ -343,7 +343,11 @@ export class CodeVerificationController {
       if (!user?.id) {
         result.code = 5;
         result.msg = "User does not exits.";
-      } else {
+      } else if (user?.id && user?.socialId?.length > 0) {
+			  result.code = 5;
+        result.msg = "Reset password is not allowed for accounts signed up with social id.";
+		  } else {
+		  	
         try {
           await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: codeType, status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
           // mailOptions.to = verificationRequestObject.email;
