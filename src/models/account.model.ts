@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, hasMany} from '@loopback/repository';
+import {WithdrawalRequest} from './withdrawal-request.model';
 
 @model()
 export class Account extends Entity {
@@ -48,6 +49,8 @@ export class Account extends Entity {
   })
   updatedAt?: Date;
 
+  @hasMany(() => WithdrawalRequest, {keyTo: 'userAccountId'})
+  withdrawalRequests: WithdrawalRequest[];
 
   constructor(data?: Partial<Account>) {
     super(data);

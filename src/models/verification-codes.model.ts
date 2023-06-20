@@ -7,12 +7,12 @@ export class VerificationCodes extends Entity {
     id: true,
     generated: true,
   })
-  id?: string;
+  id: string;
 
   @property({
     type: 'string',
   })
-  type?: string;
+  type: string;
 
   @property({
     type: 'string',
