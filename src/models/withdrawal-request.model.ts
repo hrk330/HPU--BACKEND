@@ -54,7 +54,7 @@ export class WithdrawalRequest extends Entity {
   @property({
     type: 'number',
   })
-  amount?: number;
+  withdrawalAmount?: number;
 
   @property({
     type: 'date',

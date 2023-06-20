@@ -172,9 +172,12 @@ export class ServiceOrdersController {
 					if(orderRequest.payment.paymentAmount >= dbOrder?.netAmount) {
 						if((orderRequest.payment.paymentAmount - dbOrder.netAmount) > 0) {
 							const extraAmount = orderRequest.payment.paymentAmount - dbOrder.netAmount;
-							const account: Account = await this.appUsersRepository.account(dbOrder.userId).get({});
-							const creditAmount = extraAmount - account.balanceAmount;
+							const userAccount: Account = await this.appUsersRepository.account(dbOrder.userId).get({});
+							const creditAmount = extraAmount + userAccount.balanceAmount;
 							await this.appUsersRepository.account(dbOrder.userId).patch({balanceAmount: creditAmount}, {});
+							const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
+							const debitAmount = serviceProviderAccount.balanceAmount - extraAmount;
+							await this.appUsersRepository.account(dbOrder.userId).patch({balanceAmount: debitAmount}, {});
 						}
 						orderRequest.payment.payerId = dbOrder.userId;
 						orderRequest.payment.receiverId = dbOrder.serviceProviderId;
