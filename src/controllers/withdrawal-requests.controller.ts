@@ -26,7 +26,7 @@ export class WithdrawalRequestsController {
     public withdrawalRequestRepository : WithdrawalRequestRepository,
   ) {}
 
-  @post('/withdrawalRequests')
+  @post('/withdrawalRequests/createWithdrawalRequest')
   @response(200, {
     description: 'WithdrawalRequest model instance',
     content: {'application/json': {schema: getModelSchemaRef(WithdrawalRequest)}},
