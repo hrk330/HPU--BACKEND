@@ -393,7 +393,7 @@ export class AppUserController {
     @param.path.string('email') email: string,
   ): Promise<User[]> {
 	 
-    return this.appUsersRepository.find({where: {roleId: "APPUSER", email: {like: email}}, limit: 10});
+    return this.appUsersRepository.find({where: {roleId: "APPUSER", email: {like: email}}, limit: 10, fields: ["id", "firstName","lastName"]});
   }
 
   @get('/appUsers')
