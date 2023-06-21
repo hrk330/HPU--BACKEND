@@ -460,7 +460,10 @@ export class ServiceOrdersController {
       if (appUserId?.length > 0 && serviceOrderId?.length > 0) {
         const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, userId: appUserId}});
         if(dbServiceOrders?.length > 0) {
-					const serviceProvider = await this.appUsersRepository.findById(dbServiceOrders[0].serviceProviderId);
+					let serviceProvider = {};
+					if(dbServiceOrders[0]?.serviceProviderId) {
+						serviceProvider = await this.appUsersRepository.findById(dbServiceOrders[0].serviceProviderId);	
+					}
           result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders[0], serviceProvider: serviceProvider};
         }
       }
