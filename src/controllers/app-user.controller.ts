@@ -376,6 +376,25 @@ export class AppUserController {
   ): Promise<Count> {
     return this.appUsersRepository.count(where);
   }
+  
+  @get('/appUsers/getSearchedUsers/{email}')
+  @response(200, {
+    description: 'Array of AppUsers model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(AppUsers, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findByEmail(
+    @param.path.string('email') email: string,
+  ): Promise<User[]> {
+	 
+    return this.appUsersRepository.find({where: {roleId: "APPUSER", email: {like: email}}, limit: 10});
+  }
 
   @get('/appUsers')
   @response(200, {

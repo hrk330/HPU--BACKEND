@@ -138,7 +138,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'number',
   })
-  rating?: number;
+  rating: number;
 
   @property({
     type: 'date',

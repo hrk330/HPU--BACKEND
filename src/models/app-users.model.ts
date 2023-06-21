@@ -159,6 +159,12 @@ export class AppUsers extends Entity {
     default: 'A'
   })
   userStatus?: string;
+  
+  @property({
+    type: 'number',
+    default: 0,
+  })
+  rating?: number;
 
   @property({
     type: 'date',
