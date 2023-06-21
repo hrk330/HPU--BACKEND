@@ -264,7 +264,7 @@ export class ServicesProviderController {
   async findByEmail(
     @param.path.string('email') email: string,
   ): Promise<User[]> {
-    return this.appUsersRepository.find({where: {roleId: "SERVICEPROVIDER", email: {like: email}}, limit: 10, fields: ["id", "firstName","lastName"]});
+    return this.appUsersRepository.find({where: {roleId: "SERVICEPROVIDER", email: {like: email}}, limit: 10, fields: ["id", "email"]});
   }
 
   @post('/serviceProvider')
