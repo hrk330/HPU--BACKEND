@@ -258,7 +258,7 @@ export class ServiceOrdersController {
     })
     serviceOrder: ServiceOrders,
   ): Promise<string> {
-    let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
+    let result = {code: 5, msg: "Some error occured while rating order.", order: {}};
     if((serviceOrder?.rating && serviceOrder?.serviceOrderId)) {	
 	    try {
 				serviceOrder.updatedAt = new Date();
@@ -266,8 +266,23 @@ export class ServiceOrdersController {
 				await this.serviceOrdersRepository.updateById(serviceOrder.serviceOrderId, serviceOrder);
 				const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrder.serviceOrderId);
 				
+				const serviceProviderOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceProviderId: dbOrder.serviceProviderId, rating: {gt: 0}}});
+				let serviceProviderRating = 0;
+				if(serviceProviderOrders?.length > 0) {
+					let totalRating = 0;
+					serviceProviderOrders.forEach((order) => {
+						if(order?.rating) {
+							totalRating += order.rating;	
+						}
+						
+					});
+					serviceProviderRating = totalRating/serviceProviderOrders.length;	
+				}
+				
+				await this.appUsersRepository.updateById(dbOrder.serviceProviderId, {rating: serviceProviderRating});
+				
 		    //await this.sendOrderUpdateNotification(dbOrder);
-	      result = {code: 0, msg: "Order completed successfully.", order: dbOrder};      
+	      result = {code: 0, msg: "Order rated successfully.", order: dbOrder};      
 	    } catch (e) {
 	      console.log(e);
 	      result.code = 5;
@@ -440,12 +455,13 @@ export class ServiceOrdersController {
     @param.path.string('serviceOrderId') serviceOrderId: string,
     @param.path.string('appUserId') appUserId: string,
   ): Promise<string> {
-    let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
+    let result = {code: 5, msg: "Some error occured while getting order details.", orders: {}, serviceProvider: {}};
     try {
       if (appUserId?.length > 0 && serviceOrderId?.length > 0) {
         const dbServiceOrders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceOrderId: serviceOrderId, userId: appUserId}});
         if(dbServiceOrders?.length > 0) {
-          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders[0]};
+					const serviceProvider = await this.appUsersRepository.findById(dbServiceOrders[0].serviceProviderId);
+          result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders[0], serviceProvider: serviceProvider};
         }
       }
     } catch (e) {

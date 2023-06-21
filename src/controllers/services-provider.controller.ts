@@ -248,6 +248,24 @@ export class ServicesProviderController {
   ): Promise<AppUsers[]> {
     return this.appUsersRepository.find({where: {roleId: "SERVICEPROVIDER", userStatus: "P"}});
   }
+  
+  @get('/serviceProvider/getSearchedUsers/{email}')
+  @response(200, {
+    description: 'Array of AppUsers model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(AppUsers, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findByEmail(
+    @param.path.string('email') email: string,
+  ): Promise<User[]> {
+    return this.appUsersRepository.find({where: {roleId: "SERVICEPROVIDER", email: {like: email}}, limit: 10});
+  }
 
   @post('/serviceProvider')
   @response(200, {
