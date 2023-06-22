@@ -95,15 +95,16 @@ export class ServiceOrdersController {
     serviceOrders: ServiceOrders,
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
-    if((serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,AC,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
+    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+    if((dbOrder?.status && "UC,SC".indexOf(dbOrder?.status) < 0) && (serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,AC,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
 	    try {
 			
 				await this.populateStatusDates(serviceOrders);
 		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
-	 			const order: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+	 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
 		 		
-		    await this.sendOrderUpdateNotification(order);
-	      result = {code: 0, msg: "Order updated successfully.", order: order};      
+		    await this.sendOrderUpdateNotification(dbOrder);
+	      result = {code: 0, msg: "Order updated successfully.", order: dbOrder};      
 	    } catch (e) {
 	      console.log(e);
 	      result.code = 5;
@@ -129,12 +130,13 @@ export class ServiceOrdersController {
     orderRequest: OrderRequest,
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while getting order.", order: {}, user: {}};
-    if((orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
+    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest.serviceOrder.serviceOrderId);
+    if((dbOrder?.status && "UC,SC".indexOf(dbOrder?.status) < 0) && (orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
 	    try {
 				await this.populateStatusDates(orderRequest.serviceOrder);
 				
 				await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
-				const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest.serviceOrder.serviceOrderId);
+				dbOrder = await this.serviceOrdersRepository.findById(orderRequest.serviceOrder.serviceOrderId);
 				const appUser: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'APPUSER', id: dbOrder.userId}});
 		    await this.sendOrderUpdateNotification(dbOrder);
 	      result = {code: 0, msg: "Order completed successfully.", order: dbOrder, user: appUser};      
@@ -283,6 +285,83 @@ export class ServiceOrdersController {
 				
 		    //await this.sendOrderUpdateNotification(dbOrder);
 	      result = {code: 0, msg: "Order rated successfully.", order: dbOrder};      
+	    } catch (e) {
+	      console.log(e);
+	      result.code = 5;
+	      result.msg = e.message;
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceOrders/serviceProvider/cancelOrder')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
+  })
+  async serviceProviderCancelOrder(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceOrders, {partial: true}),
+        },
+      },
+    })
+    serviceOrders: ServiceOrders,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
+    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+    if((dbOrder?.status && "AC".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId === serviceOrders.serviceProviderId) {
+	    try {
+				await this.populateStatusDates(serviceOrders);
+		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+	 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+    		const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
+    
+			  if(appUser?.endpoint?.length > 20){
+		    	await this.sendOrderNotification(appUser, "Order Alert", "Order has been canceled.", dbOrder);
+	  		}
+		 		
+	      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
+	    } catch (e) {
+	      console.log(e);
+	      result.code = 5;
+	      result.msg = e.message;
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceOrders/appUser/cancelOrder')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
+  })
+  async appUserCancelOrder(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceOrders, {partial: true}),
+        },
+      },
+    })
+    serviceOrders: ServiceOrders,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
+    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+    if((dbOrder?.status && "LO,AC,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
+	    try {
+			
+				await this.populateStatusDates(serviceOrders);
+		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+	 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+    		const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+    
+			  if(serviceProvider?.endpoint?.length > 20){
+		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
+	  		}
+		 		
+	      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
 	    } catch (e) {
 	      console.log(e);
 	      result.code = 5;
