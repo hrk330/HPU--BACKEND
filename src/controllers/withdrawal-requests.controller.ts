@@ -17,13 +17,15 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {WithdrawalRequest} from '../models';
-import {WithdrawalRequestRepository} from '../repositories';
+import {Account, WithdrawalRequest} from '../models';
+import {AppUsersRepository, WithdrawalRequestRepository} from '../repositories';
 
 export class WithdrawalRequestsController {
   constructor(
     @repository(WithdrawalRequestRepository)
     public withdrawalRequestRepository : WithdrawalRequestRepository,
+    @repository(AppUsersRepository)
+    public appUsersRepository: AppUsersRepository,
   ) {}
 
   @post('/withdrawalRequests/createWithdrawalRequest')
@@ -43,8 +45,21 @@ export class WithdrawalRequestsController {
       },
     })
     withdrawalRequest: Omit<WithdrawalRequest, 'withdrawlRequestId'>,
-  ): Promise<WithdrawalRequest> {
-    return this.withdrawalRequestRepository.create(withdrawalRequest);
+  ): Promise<string> {
+	  const result = {code: 5, msg: "Some error occured while getting order.", withdrawalRequest: {}};
+	  const userAccount: Account = await this.appUsersRepository.account(withdrawalRequest.serviceProviderId).get({})
+	  if(!withdrawalRequest?.withdrawalAmount || withdrawalRequest?.withdrawalAmount < 1200) {
+	  	result.msg = "Withdrawal amount should be greater than 1200.";
+	  } else if(!userAccount?.balanceAmount || userAccount?.balanceAmount < 1200) {
+	  	result.msg = "Wallet balance should be greater than 1200.";
+	  } else {
+		  const dbwithdrawalRequest: WithdrawalRequest = await this.withdrawalRequestRepository.create(withdrawalRequest);
+		  result.code = 0;
+		  result.msg = "Withdrawal request created successfully.";
+		  result.withdrawalRequest = dbwithdrawalRequest;
+	  }
+	  
+    return JSON.stringify(result);
   }
 
   @get('/withdrawalRequests/count')

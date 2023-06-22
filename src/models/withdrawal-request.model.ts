@@ -12,7 +12,7 @@ export class WithdrawalRequest extends Entity {
   @property({
     type: 'string',
   })
-  serviceProviderId?: string;
+  serviceProviderId: string;
 
   @property({
     type: 'string',
