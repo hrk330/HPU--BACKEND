@@ -156,9 +156,15 @@ export class AppUsers extends Entity {
 
   @property({
     type: 'string',
-    default: 'A'
+    default: 'P'
   })
   userStatus?: string;
+  
+  @property({
+    type: 'string',
+    default: 'OF'
+  })
+  userOnlineStatus?: string;
   
   @property({
     type: 'number',
