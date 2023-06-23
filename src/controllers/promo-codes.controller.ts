@@ -44,13 +44,16 @@ export class PromoCodesController {
     })
     promoCodes: Omit<PromoCodes, 'promoId'>,
   ): Promise<Object> {
-    let result = {code: 5, msg: "", promoCode: {}};
-    if (!await this.checkPromoExists("", promoCodes.promoCode)) {
+    const result = {code: 5, msg: "", promoCode: {}};
+    if (await this.checkPromoExists("", promoCodes.promoCode)) {
+      result.msg = "Promo code already exists.";
+    } else if(promoCodes.totalLimit < promoCodes.userLimit) {
+			result.msg = "User usage limit should be less than total limit.";
+		} else {
       result.promoCode = await this.promoCodesRepository.create(promoCodes);
       result.code = 0;
       result.msg = "Promo code generated successfully.";
-    } else {
-      result.msg = "Promo code already exists.";
+      
     }
     return result;
   }
@@ -133,20 +136,23 @@ export class PromoCodesController {
     })
     requestPromoCode: PromoCodes,
   ): Promise<Object> {
-    let result = {code: 5, msg: "", promoCode: {}};
-    if (!await this.checkPromoExists(requestPromoCode.promoId, requestPromoCode.promoCode)) {
-      await this.promoCodesRepository.updateById(requestPromoCode.promoId, requestPromoCode);
+    const result = {code: 5, msg: "", promoCode: {}};
+    if (await this.checkPromoExists(requestPromoCode.promoId, requestPromoCode.promoCode)) {
+      result.msg = "Duplicate promo code.";
+    }else if(requestPromoCode.totalLimit < requestPromoCode.userLimit) {
+			result.msg = "User usage limit should be less than total limit.";
+		}  else {
+			await this.promoCodesRepository.updateById(requestPromoCode.promoId, requestPromoCode);
       result.promoCode = await this.findById(requestPromoCode.promoId);
       result.code = 0;
       result.msg = "Record updated successfully.";
-    } else {
-      result.msg = "Duplicate promo code.";
+      
     }
     return result;
   }
 
   async checkPromoExists(promoId: string, promoCode: string): Promise<boolean> {
-    let result: boolean = true;
+    let result = true;
     try {
       const dbPromoCode: PromoCodes[] = await this.promoCodesRepository.find({where: {promoCode: promoCode}});
       if (dbPromoCode.length < 1 || (dbPromoCode.length < 2 && dbPromoCode[0].promoId === promoId)) {
@@ -163,7 +169,7 @@ export class PromoCodesController {
     description: 'PromoCodes PATCH success',
   })
   async generateRandomPromo(): Promise<Object> {
-    let result = {code: 5, msg: "Invalid Request", promoCode: ""};
+    const result = {code: 5, msg: "Invalid Request", promoCode: ""};
     for (let i = 0; i < 50; i++) {
       result.promoCode = await this.generateRandomString(8);
       console.log(result.promoCode);

@@ -15,8 +15,8 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Account, AppUsers, OrderRequest, ServiceOrders, Services} from '../models';
-import {AppUsersRepository, PaymentRepository, ServiceOrdersRepository, ServicesRepository} from '../repositories';
+import {Account, AppUsers, OrderRequest, Payment, PromoCodes, ServiceOrders, Services} from '../models';
+import {AppUsersRepository, PaymentRepository, PromoCodesRepository, ServiceOrdersRepository, ServicesRepository} from '../repositories';
 import {sendMessage} from '../services/firebase-notification.service';
 //import _ from 'lodash';
 
@@ -30,6 +30,8 @@ export class ServiceOrdersController {
     public servicesRepository: ServicesRepository,
     @repository(PaymentRepository)
     public paymentRepository : PaymentRepository,
+    @repository(PromoCodesRepository)
+    public promoCodesRepository: PromoCodesRepository,
   ) { }
 
   @post('/serviceOrders/appUser/createOrder')
@@ -56,6 +58,7 @@ export class ServiceOrdersController {
 		
     serviceOrders.taxPercentage = service.salesTax;
     serviceOrders.netAmount = service.price;
+    serviceOrders.grossAmount = service.price;
     const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
     const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
     if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
@@ -94,7 +97,7 @@ export class ServiceOrdersController {
     })
     serviceOrders: ServiceOrders,
   ): Promise<string> {
-    let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
+    let result = {code: 5, msg: "Some error occured while updating order.", order: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
     if((dbOrder?.status && "UC,SC".indexOf(dbOrder?.status) < 0) && (serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,AC,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
 	    try {
@@ -129,7 +132,7 @@ export class ServiceOrdersController {
     })
     orderRequest: OrderRequest,
   ): Promise<string> {
-    let result = {code: 5, msg: "Some error occured while getting order.", order: {}, user: {}};
+    let result = {code: 5, msg: "Some error occured while completing order.", order: {}, user: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest.serviceOrder.serviceOrderId);
     if((dbOrder?.status && "UC,SC".indexOf(dbOrder?.status) < 0) && (orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
 	    try {
@@ -149,12 +152,12 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
   
-  @post('/serviceOrders/serviceProvider/processPayment')
+  @post('/serviceOrders/appUser/initiatePayment')
   @response(200, {
     description: 'ServiceOrders model instance',
     content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
   })
-  async processPayment(
+  async initiatePayment(
     @requestBody({
       content: {
         'application/json': {
@@ -164,10 +167,10 @@ export class ServiceOrdersController {
     })
     orderRequest: OrderRequest,
   ): Promise<string> {
-    let result = {code: 5, msg: "Some error occured while getting order.", order: {}};
+    let result = {code: 5, msg: "Some error occured while initiating payment.", order: {}};
     if(orderRequest?.serviceOrder?.serviceOrderId) {
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
-	    if((dbOrder && dbOrder.status === 'CO' && orderRequest?.serviceOrder?.status === "PC")) {
+	    if((dbOrder && dbOrder.status === 'CO' && orderRequest?.serviceOrder?.status === "PI")) {
 		    try {
 					await this.populateStatusDates(orderRequest.serviceOrder);
 					
@@ -179,20 +182,72 @@ export class ServiceOrdersController {
 							await this.appUsersRepository.account(dbOrder.userId).patch({balanceAmount: creditAmount}, {});
 							const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
 							const debitAmount = serviceProviderAccount.balanceAmount - extraAmount;
-							await this.appUsersRepository.account(dbOrder.userId).patch({balanceAmount: debitAmount}, {});
+							await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: debitAmount}, {});
 						}
 						orderRequest.payment.payerId = dbOrder.userId;
 						orderRequest.payment.receiverId = dbOrder.serviceProviderId;
 						orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
+						orderRequest.payment.paymentStatus = "L";
 						await this.paymentRepository.create(orderRequest.payment);
 				    await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
 				    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
-				    await this.sendOrderUpdateNotification(dbOrder);
+				    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+    
+					  if(serviceProvider?.endpoint?.length > 20){
+				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Payment has been initiated.", dbOrder);
+			  		}
 				    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder}; 
 		 			} else {
 						 result.msg = "Payment is less than the due amount.";
 					}
 		           
+		    } catch (e) {
+		      console.log(e);
+		      result.code = 5;
+		      result.msg = e.message;
+		    }
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceOrders/serviceProvider/completePayment')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
+  })
+  async completePayment(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(OrderRequest, {partial: true}),
+        },
+      },
+    })
+    orderRequest: OrderRequest,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while completing payment.", order: {}};
+    if(orderRequest?.serviceOrder?.serviceOrderId) {
+	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
+	    if((dbOrder && dbOrder.status === 'PI' && orderRequest?.serviceOrder?.status === "PC")) {
+		    try {
+					await this.populateStatusDates(orderRequest.serviceOrder);
+					orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
+						orderRequest.payment.paymentStatus = "L";
+						const paymentObj: Payment | null = await this.paymentRepository.findOne({where: {paymentOrderId: orderRequest.serviceOrder.serviceOrderId}});
+						if(paymentObj){
+							paymentObj.paymentStatus = "C";
+							await this.paymentRepository.updateById(paymentObj.paymentId, paymentObj);
+						  await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
+					    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
+					    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
+    
+					  if(serviceProvider?.endpoint?.length > 20){
+				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Payment has been completed.", dbOrder);
+			  		}
+					    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder};
+				    } 
+		 			     
 		    } catch (e) {
 		      console.log(e);
 		      result.code = 5;
@@ -338,6 +393,105 @@ export class ServiceOrdersController {
     content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
   })
   async appUserCancelOrder(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceOrders, {partial: true}),
+        },
+      },
+    })
+    serviceOrders: ServiceOrders,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
+    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+    if((dbOrder?.status && "LO,AC,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
+	    try {
+			
+				await this.populateStatusDates(serviceOrders);
+		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+	 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+    		const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+    
+			  if(serviceProvider?.endpoint?.length > 20){
+		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
+	  		}
+		 		
+	      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
+	    } catch (e) {
+	      console.log(e);
+	      result.code = 5;
+	      result.msg = e.message;
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceOrders/appUser/applyPromoCode')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
+  })
+  async appUserApplyPromoCode(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceOrders, {partial: true}),
+        },
+      },
+    })
+    serviceOrders: ServiceOrders,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
+    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+    
+    const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
+    if(promoCodeObj && dbOrder) {
+	    try {
+				const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
+				if(promoCodeObj.totalUsed < promoCodeObj.totalLimit && (userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit)){
+					
+					let promoDiscount = 0;
+					if(promoCodeObj.discountType === 'R'){
+						if(promoCodeObj.discountValue > dbOrder.grossAmount){
+							promoDiscount = promoCodeObj.discountValue;	
+						} else {
+							promoDiscount = dbOrder.grossAmount;
+						}
+					}	else if(promoCodeObj.discountType === 'P'){
+						promoDiscount = dbOrder.grossAmount * (promoCodeObj.discountValue/100)
+					}
+					serviceOrders.discountAmount = promoDiscount;
+					serviceOrders.promoCode = promoCodeObj.promoCode;
+					serviceOrders.promoId = promoCodeObj.promoId;
+					serviceOrders.discountType = promoCodeObj.discountType;
+					serviceOrders.discountValue = promoCodeObj.discountValue;
+					serviceOrders.netAmount = serviceOrders.grossAmount - promoDiscount;
+					
+					serviceOrders.updatedAt = new Date();
+			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+		 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+	     		
+		      result = {code: 0, msg: "Promo code applied successfully.", order: dbOrder};
+	      } else if(promoCodeObj.totalUsed < promoCodeObj.totalLimit) {
+			  	result.msg = "Coupon has reached its limit.";
+		  	} else if(userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit) {
+				  result.msg = "User has reached this coupons limit.";
+			  } 	     
+	    } catch (e) {
+	      console.log(e);
+	      result.code = 5;
+	      result.msg = e.message;
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceOrders/adminUser/applyPromoCode')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
+  })
+  async adminUserApplyPromoCode(
     @requestBody({
       content: {
         'application/json': {

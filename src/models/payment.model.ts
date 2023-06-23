@@ -42,6 +42,11 @@ export class Payment extends Entity {
   paymentAmount: number;
   
   @property({
+    type: 'string'
+  })
+  paymentStatus: string;
+  
+  @property({
     type: 'date',
     default: "$now"
   })

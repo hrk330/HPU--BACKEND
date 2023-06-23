@@ -23,10 +23,10 @@ export class PromoCodes extends Entity {
   discountType: string;
 
   @property({
-    type: 'string',
+    type: 'number',
     required: true,
   })
-  discountValue: string;
+  discountValue: number;
 
   @property({
     type: 'number',
