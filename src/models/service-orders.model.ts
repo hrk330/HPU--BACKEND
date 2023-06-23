@@ -95,8 +95,13 @@ export class ServiceOrders extends Entity {
   })
   promoCode?: string;
 
+	@property({
+    type: 'number',
+  })
+  discountAmount?: number;
+  
   @property({
-    type: 'string',
+    type: 'number',
   })
   discountValue?: number;
 
