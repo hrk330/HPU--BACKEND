@@ -165,6 +165,16 @@ export class AppUsers extends Entity {
     default: 0,
   })
   rating?: number;
+  
+  @property({
+    type: 'string',
+  })
+  userLocation?: string;
+
+  @property({
+    type: 'string',
+  })
+  userLocationCoordinates?: string;
 
   @property({
     type: 'date',
