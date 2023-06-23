@@ -232,22 +232,21 @@ export class ServiceOrdersController {
 	    if((dbOrder && dbOrder.status === 'PI' && orderRequest?.serviceOrder?.status === "PC")) {
 		    try {
 					await this.populateStatusDates(orderRequest.serviceOrder);
-					orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
-						orderRequest.payment.paymentStatus = "L";
-						const paymentObj: Payment | null = await this.paymentRepository.findOne({where: {paymentOrderId: orderRequest.serviceOrder.serviceOrderId}});
-						if(paymentObj){
-							paymentObj.paymentStatus = "C";
-							await this.paymentRepository.updateById(paymentObj.paymentId, paymentObj);
-						  await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
-					    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
-					    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
-    
-					  if(serviceProvider?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Payment has been completed.", dbOrder);
-			  		}
-					    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder};
-				    } 
-		 			     
+					
+					const paymentObj: Payment | null = await this.paymentRepository.findOne({where: {paymentOrderId: orderRequest.serviceOrder.serviceOrderId}});
+					if(paymentObj){
+						paymentObj.paymentStatus = "C";
+						await this.paymentRepository.updateById(paymentObj.paymentId, paymentObj);
+					  await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
+				    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
+				    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
+  
+				  if(serviceProvider?.endpoint?.length > 20){
+			    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Payment has been completed.", dbOrder);
+		  		}
+				    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder};
+			    } 
+	 			     
 		    } catch (e) {
 		      console.log(e);
 		      result.code = 5;
@@ -441,13 +440,13 @@ export class ServiceOrdersController {
     })
     serviceOrders: ServiceOrders,
   ): Promise<string> {
-    let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
+    let result = {code: 5, msg: "Some error occured while applying promo code.", order: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
     
     const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
     if(promoCodeObj && dbOrder) {
 	    try {
-				const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
+				const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: dbOrder.userId, promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
 				if(promoCodeObj.totalUsed < promoCodeObj.totalLimit && (userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit)){
 					
 					let promoDiscount = 0;
@@ -460,16 +459,16 @@ export class ServiceOrdersController {
 					}	else if(promoCodeObj.discountType === 'P'){
 						promoDiscount = dbOrder.grossAmount * (promoCodeObj.discountValue/100)
 					}
-					serviceOrders.discountAmount = promoDiscount;
-					serviceOrders.promoCode = promoCodeObj.promoCode;
-					serviceOrders.promoId = promoCodeObj.promoId;
-					serviceOrders.discountType = promoCodeObj.discountType;
-					serviceOrders.discountValue = promoCodeObj.discountValue;
-					serviceOrders.netAmount = serviceOrders.grossAmount - promoDiscount;
+					dbOrder.discountAmount = promoDiscount;
+					dbOrder.promoCode = promoCodeObj.promoCode;
+					dbOrder.promoId = promoCodeObj.promoId;
+					dbOrder.discountType = promoCodeObj.discountType;
+					dbOrder.discountValue = promoCodeObj.discountValue;
+					dbOrder.netAmount = dbOrder.grossAmount - promoDiscount;
 					
-					serviceOrders.updatedAt = new Date();
-			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
-		 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+					dbOrder.updatedAt = new Date();
+			    await this.serviceOrdersRepository.updateById(dbOrder.serviceOrderId, dbOrder);
+		 			dbOrder = await this.serviceOrdersRepository.findById(dbOrder.serviceOrderId);
 	     		
 		      result = {code: 0, msg: "Promo code applied successfully.", order: dbOrder};
 	      } else if(promoCodeObj.totalUsed < promoCodeObj.totalLimit) {
@@ -503,25 +502,24 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    if((dbOrder?.status && "LO,AC,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
-	    try {
-			
-				await this.populateStatusDates(serviceOrders);
-		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
-	 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    		const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
-    
-			  if(serviceProvider?.endpoint?.length > 20){
-		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
-	  		}
-		 		
-	      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
-	    } catch (e) {
-	      console.log(e);
-	      result.code = 5;
-	      result.msg = e.message;
-	    }
+    try {
+		
+			await this.populateStatusDates(serviceOrders);
+	    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+ 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+  		const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+  
+		  if(serviceProvider?.endpoint?.length > 20){
+	    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
+  		}
+	 		
+      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
     }
+  
     return JSON.stringify(result);
   }
 
