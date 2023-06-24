@@ -364,23 +364,27 @@ export class ServiceOrdersController {
     serviceOrders: ServiceOrders,
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
-    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    if((dbOrder?.status && "AC".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId === serviceOrders.serviceProviderId) {
-	    try {
-				await this.populateStatusDates(serviceOrders);
-		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
-	 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    		const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
-    
-			  if(appUser?.endpoint?.length > 20){
-		    	await this.sendOrderNotification(appUser, "Order Alert", "Order has been canceled.", dbOrder);
-	  		}
-		 		
-	      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
-	    } catch (e) {
-	      console.log(e);
-	      result.code = 5;
-	      result.msg = e.message;
+    if(serviceOrders?.serviceOrderId){
+	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+	    if((dbOrder?.status && "AC".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId === serviceOrders.serviceProviderId) {
+		    try {
+					await this.populateStatusDates(serviceOrders);
+			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+		 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+	    		
+	    		if(dbOrder?.userId){
+						const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
+					  if(appUser?.endpoint?.length > 20){
+				    	await this.sendOrderNotification(appUser, "Order Alert", "Order has been canceled.", dbOrder);
+			  		}
+		  		}
+			 		
+		      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
+		    } catch (e) {
+		      console.log(e);
+		      result.code = 5;
+		      result.msg = e.message;
+		    }
 	    }
     }
     return JSON.stringify(result);
@@ -402,24 +406,27 @@ export class ServiceOrdersController {
     serviceOrders: ServiceOrders,
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
-    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    if((dbOrder?.status && "LO,AC,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
-	    try {
-			
-				await this.populateStatusDates(serviceOrders);
-		    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
-	 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    		const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
-    
-			  if(serviceProvider?.endpoint?.length > 20){
-		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
-	  		}
-		 		
-	      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
-	    } catch (e) {
-	      console.log(e);
-	      result.code = 5;
-	      result.msg = e.message;
+    if(serviceOrders?.serviceOrderId){
+	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+	    if((dbOrder?.status && "LO,AC,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
+		    try {
+				
+					await this.populateStatusDates(serviceOrders);
+			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+		 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+		 			if(dbOrder?.serviceProviderId){
+	    			const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+		  			if(serviceProvider?.endpoint?.length > 20){
+				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
+			  		}
+	  			}
+			 	
+		      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
+		    } catch (e) {
+		      console.log(e);
+		      result.code = 5;
+		      result.msg = e.message;
+		    }
 	    }
     }
     return JSON.stringify(result);
