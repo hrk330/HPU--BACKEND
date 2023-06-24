@@ -442,7 +442,8 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-	    if((dbOrder?.status && "AC".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId === serviceOrders.serviceProviderId) {
+	    
+	    if((dbOrder?.status && "AC".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId+'' === serviceOrders.serviceProviderId+'') {
 		    try {
 					await this.populateStatusDates(serviceOrders);
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
