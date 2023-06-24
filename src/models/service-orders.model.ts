@@ -1,4 +1,5 @@
 import {Entity, model, property, belongsTo} from '@loopback/repository';
+import { AppUsers } from './app-users.model';
 import {Services} from './services.model';
 
 @model()
@@ -175,6 +176,11 @@ export class ServiceOrders extends Entity {
     type: 'date',
   })
   completedAt?: Date;
+  
+  @property({
+    type: 'any',
+  })
+  serviceProvider: AppUsers;
 
   @belongsTo(() => Services)
   serviceId: string;

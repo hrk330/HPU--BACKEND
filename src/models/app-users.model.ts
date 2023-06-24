@@ -173,6 +173,12 @@ export class AppUsers extends Entity {
   rating?: number;
   
   @property({
+    type: 'number',
+    default: 0,
+  })
+  totalOrders?: number;
+  
+  @property({
     type: 'string',
   })
   userLocation?: string;

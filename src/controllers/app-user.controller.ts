@@ -6,8 +6,8 @@ import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, respo
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AppUsers, CredentialsRequest, CredentialsRequestBody, UserCreds} from '../models';
-import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
+import {AppUsers, CredentialsRequest, CredentialsRequestBody, ServiceOrders, UserCreds} from '../models';
+import {AppUsersRepository, ServiceOrdersRepository, VerificationCodesRepository} from '../repositories';
 
 
 export class AppUserController {
@@ -20,6 +20,8 @@ export class AppUserController {
     public userService: MyUserService,
     @repository(VerificationCodesRepository)
     protected verificationCodesRepository: VerificationCodesRepository,
+    @repository(ServiceOrdersRepository)
+    public serviceOrdersRepository: ServiceOrdersRepository,
   ) { }
 
   @authenticate('jwt')
@@ -447,7 +449,12 @@ export class AppUserController {
     @param.path.string('id') id: string,
     @param.filter(AppUsers, {exclude: 'where'}) filter?: FilterExcludingWhere<AppUsers>
   ): Promise<User> {
-    return this.appUsersRepository.findById(id, filter);
+	  const orders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: id}});
+	  const appuser: AppUsers = await this.appUsersRepository.findById(id, filter);
+    if(orders?.length > 0) {
+			appuser.totalOrders  = orders?.length;
+		}
+    return appuser;
   }
 
   @patch('/appUsers/{id}')

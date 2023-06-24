@@ -678,6 +678,15 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
     try {
         const orders: ServiceOrders[] = await this.serviceOrdersRepository.find();
+        if(orders?.length > 0) {
+					for(const order of orders) {
+						if(order.serviceProviderId) {
+							const serviceProvider = await this.appUsersRepository.findById(order.serviceProviderId);
+							order.serviceProvider = serviceProvider;
+						}
+					}
+				}
+        
         result = {code: 0, msg: "Orders fetched successfully.", orders: orders};      
     } catch (e) {
       console.log(e);
