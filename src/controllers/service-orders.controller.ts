@@ -553,6 +553,13 @@ export class ServiceOrdersController {
 					dbOrder.updatedAt = new Date();
 			    await this.serviceOrdersRepository.updateById(dbOrder.serviceOrderId, dbOrder);
 		 			dbOrder = await this.serviceOrdersRepository.findById(dbOrder.serviceOrderId);
+		 			
+		 			if(dbOrder?.serviceProviderId){
+	    			const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+		  			if(serviceProvider?.endpoint?.length > 20){
+				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A promo code has been applyed by the user.", dbOrder);
+			  		}
+	  			}
 	     		
 		      result = {code: 0, msg: "Promo code applied successfully.", order: dbOrder};
 	      } else if(promoCodeObj.totalUsed < promoCodeObj.totalLimit) {
