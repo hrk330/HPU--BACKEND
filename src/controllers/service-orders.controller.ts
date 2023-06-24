@@ -33,6 +33,82 @@ export class ServiceOrdersController {
     @repository(PromoCodesRepository)
     public promoCodesRepository: PromoCodesRepository,
   ) { }
+  
+  @post('/serviceOrders/adminUser/createOrder')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
+  })
+  async adminCreateOrder(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceOrders, {
+            title: 'NewServiceOrders',
+            exclude: ['serviceOrderId'],
+          }),
+        },
+      },
+    })
+    serviceOrders: Omit<ServiceOrders, 'serviceOrderId'>,
+  ): Promise<string> {
+    
+    const result = {code: 5, msg: "Some error occured while creating order.", order: {}};
+    try {
+			serviceOrders.status = "AC";
+	    const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
+	    serviceOrders.taxPercentage = service.salesTax;
+	    serviceOrders.netAmount = service.price;
+	    serviceOrders.grossAmount = service.price;
+	    if(serviceOrders?.promoCode) {
+				const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
+				if(promoCodeObj?.promoId) {
+					const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: serviceOrders.userId, promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
+					if(promoCodeObj.totalUsed < promoCodeObj.totalLimit && (userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit)){
+						
+						let promoDiscount = 0;
+						if(promoCodeObj.discountType === 'R'){
+							if(promoCodeObj.discountValue < service.price){
+								promoDiscount = promoCodeObj.discountValue;	
+							} else {
+								promoDiscount = service.price;
+							}
+						}	else if(promoCodeObj.discountType === 'P'){
+							promoDiscount = service.price * (promoCodeObj.discountValue/100)
+						}
+						serviceOrders.discountAmount = promoDiscount;
+						serviceOrders.promoCode = promoCodeObj.promoCode;
+						serviceOrders.promoId = promoCodeObj.promoId;
+						serviceOrders.discountType = promoCodeObj.discountType;
+						serviceOrders.discountValue = promoCodeObj.discountValue;
+						serviceOrders.netAmount = serviceOrders.grossAmount - promoDiscount;
+					}
+				}
+			}
+			
+	    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
+	    const serviceProvider: AppUsers = await this.appUsersRepository.findById(createdOrder.serviceProviderId, {fields: ['endpoint']});
+    
+		  if(serviceProvider?.endpoint?.length > 20){
+	    	await this.sendOrderNotification(serviceProvider, "Order Alert", "New order has been assigned.", createdOrder);
+  		}
+  		
+  		const appUser: AppUsers = await this.appUsersRepository.findById(createdOrder.userId, {fields: ['endpoint']});
+  		
+  		if(appUser?.endpoint?.length > 20){
+	    	await this.sendOrderNotification(appUser, "Order Alert", "New order has been created.", createdOrder);
+  		}
+  		
+  		result.code = 0;
+  		result.msg = "Order created successfully";
+  		result.order = createdOrder;
+    } catch(e) {
+			console.log(e);
+      result.code = 5;
+      result.msg = e.message;
+		}
+    return JSON.stringify(result);
+  }
 
   @post('/serviceOrders/appUser/createOrder')
   @response(200, {
@@ -458,7 +534,7 @@ export class ServiceOrdersController {
 					
 					let promoDiscount = 0;
 					if(promoCodeObj.discountType === 'R'){
-						if(promoCodeObj.discountValue > dbOrder.grossAmount){
+						if(promoCodeObj.discountValue < dbOrder.grossAmount){
 							promoDiscount = promoCodeObj.discountValue;	
 						} else {
 							promoDiscount = dbOrder.grossAmount;
@@ -507,26 +583,45 @@ export class ServiceOrdersController {
     })
     serviceOrders: ServiceOrders,
   ): Promise<string> {
-    let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
-    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    try {
-		
-			await this.populateStatusDates(serviceOrders);
-	    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
- 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-  		const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
-  
-		  if(serviceProvider?.endpoint?.length > 20){
-	    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
-  		}
-	 		
-      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
-    } catch (e) {
-      console.log(e);
-      result.code = 5;
-      result.msg = e.message;
+    let result = {code: 5, msg: "Some error occured while getting promo info.", order: {}};
+    if(serviceOrders?.serviceId && serviceOrders?.promoCode && serviceOrders?.userId) {
+	    const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
+	    const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
+	    if(promoCodeObj && service) {
+		    try {
+					const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: serviceOrders.userId, promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
+					if(promoCodeObj.totalUsed < promoCodeObj.totalLimit && (userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit)){
+						
+						let promoDiscount = 0;
+						if(promoCodeObj.discountType === 'R'){
+							if(promoCodeObj.discountValue < service.price){
+								promoDiscount = promoCodeObj.discountValue;	
+							} else {
+								promoDiscount = service.price;
+							}
+						}	else if(promoCodeObj.discountType === 'P'){
+							promoDiscount = service.price * (promoCodeObj.discountValue/100)
+						}
+						serviceOrders.discountAmount = promoDiscount;
+						serviceOrders.promoCode = promoCodeObj.promoCode;
+						serviceOrders.promoId = promoCodeObj.promoId;
+						serviceOrders.discountType = promoCodeObj.discountType;
+						serviceOrders.discountValue = promoCodeObj.discountValue;
+						serviceOrders.netAmount = service.price - promoDiscount;
+						
+			      result = {code: 0, msg: "Promo code applied successfully.", order: serviceOrders};
+		      } else if(promoCodeObj.totalUsed < promoCodeObj.totalLimit) {
+				  	result.msg = "Coupon has reached its limit.";
+			  	} else if(userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit) {
+					  result.msg = "User has reached this coupons limit.";
+				  } 	     
+		    } catch (e) {
+		      console.log(e);
+		      result.code = 5;
+		      result.msg = e.message;
+		    }
+	    }
     }
-  
     return JSON.stringify(result);
   }
 
