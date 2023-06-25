@@ -266,6 +266,15 @@ export class ServiceOrdersController {
 						orderRequest.payment.paymentStatus = "L";
 						await this.paymentRepository.create(orderRequest.payment);
 				    await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
+				    if(dbOrder?.promoId) {
+				    	const promoCodeObj: PromoCodes = await this.promoCodesRepository.findById(dbOrder.promoId, {});
+				    	if(promoCodeObj) {
+								promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
+								promoCodeObj.updatedAt = new Date();
+								await this.promoCodesRepository.updateById(dbOrder.promoId, promoCodeObj);
+							}
+						}
+				    
 				    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
 				    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
     
