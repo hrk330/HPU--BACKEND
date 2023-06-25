@@ -89,7 +89,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  promoId?: string;
+  promoId: string;
 
   @property({
     type: 'string',
