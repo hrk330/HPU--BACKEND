@@ -80,7 +80,7 @@ export class ServiceOrdersController {
 								promoDiscount = service.price;
 							}
 						}	else if(promoCodeObj.discountType === 'P'){
-							promoDiscount = service.price * promoCodeObj.discountValue / 100;
+							promoDiscount = service.price * (promoCodeObj.discountValue / 100);
 						}
 						serviceOrders.discountAmount = promoDiscount;
 						serviceOrders.promoCode = promoCodeObj.promoCode;
@@ -88,7 +88,7 @@ export class ServiceOrdersController {
 						serviceOrders.discountType = promoCodeObj.discountType;
 						serviceOrders.discountValue = promoCodeObj.discountValue;
 						serviceOrders.grossAmount -= promoDiscount;
-						serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+						serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage / 100);
 	    			serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
 	   	
 						promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
@@ -152,7 +152,7 @@ export class ServiceOrdersController {
 				serviceOrders.grossAmount = service.price; 
 			}
 		  
-		  serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+		  serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage/100);
 		  serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
 		  createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
 		  const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
@@ -578,7 +578,7 @@ export class ServiceOrdersController {
 					dbOrder.discountType = promoCodeObj.discountType;
 					dbOrder.discountValue = promoCodeObj.discountValue;
 					dbOrder.grossAmount -= promoDiscount;
-					dbOrder.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+					dbOrder.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage / 100);
     			dbOrder.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
 					
 					dbOrder.updatedAt = new Date();
