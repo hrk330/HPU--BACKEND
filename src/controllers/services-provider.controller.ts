@@ -266,6 +266,38 @@ export class ServicesProviderController {
   ): Promise<User[]> {
     return this.appUsersRepository.find({where: {roleId: "SERVICEPROVIDER", email: {like: email}}, limit: 10, fields: ["id", "email"]});
   }
+  
+  @authenticate('jwt')
+  @post('/serviceProvider/logoutServiceProvider', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async logoutServiceProvider(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+    await this.appUsersRepository.updateById(newUserRequest.id, {'endpoint': ''});
+    const result = {code: 0, msg: "User logged out successfully."};
+    return JSON.stringify(result);
+  }
 
   @post('/serviceProvider')
   @response(200, {
