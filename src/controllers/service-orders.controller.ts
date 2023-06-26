@@ -58,9 +58,13 @@ export class ServiceOrdersController {
 			serviceOrders.status = "AC";
 	    const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
 	    serviceOrders.taxPercentage = service.salesTax;
-	    serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
-	    serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
-	    serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+	    if(serviceOrders?.distance) {
+				serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
+		  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;	
+			} else {
+				serviceOrders.grossAmount = service.price; 
+			}
+			serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
 	    serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
 	    if(serviceOrders?.promoCode) {
 				const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
@@ -137,21 +141,28 @@ export class ServiceOrdersController {
     serviceOrders: Omit<ServiceOrders, 'serviceOrderId'>,
   ): Promise<ServiceOrders> {
     serviceOrders.status = "LO";
+    let createdOrder: ServiceOrders = new ServiceOrders();
     const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
-    
-		serviceOrders.taxPercentage = service.salesTax;
-    serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
-    serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
-    serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
-    serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
-    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
-    const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
-    if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
-      for(const serviceProvider of serviceProviders) {
-			  if(serviceProvider?.endpoint?.length > 20){
-		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder);
-	    	}
-	    }
+    if(service) {
+			serviceOrders.taxPercentage = service.salesTax;
+			if(serviceOrders?.distance) {
+				serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
+		  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;	
+			} else {
+				serviceOrders.grossAmount = service.price; 
+			}
+		  
+		  serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+		  serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+		  createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
+		  const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
+		  if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
+		    for(const serviceProvider of serviceProviders) {
+				  if(serviceProvider?.endpoint?.length > 20){
+			    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder);
+		    	}
+		    }
+		  }
     }
     return createdOrder;
   }
