@@ -58,8 +58,10 @@ export class ServiceOrdersController {
 			serviceOrders.status = "AC";
 	    const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
 	    serviceOrders.taxPercentage = service.salesTax;
-	    serviceOrders.netAmount = service.price;
-	    serviceOrders.grossAmount = service.price;
+	    serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
+	    serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
+	    serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+	    serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
 	    if(serviceOrders?.promoCode) {
 				const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
 				if(promoCodeObj?.promoId) {
@@ -74,14 +76,20 @@ export class ServiceOrdersController {
 								promoDiscount = service.price;
 							}
 						}	else if(promoCodeObj.discountType === 'P'){
-							promoDiscount = service.price * (promoCodeObj.discountValue/100)
+							promoDiscount = service.price * promoCodeObj.discountValue / 100;
 						}
 						serviceOrders.discountAmount = promoDiscount;
 						serviceOrders.promoCode = promoCodeObj.promoCode;
 						serviceOrders.promoId = promoCodeObj.promoId;
 						serviceOrders.discountType = promoCodeObj.discountType;
 						serviceOrders.discountValue = promoCodeObj.discountValue;
-						serviceOrders.netAmount = serviceOrders.grossAmount - promoDiscount;
+						serviceOrders.grossAmount -= promoDiscount;
+						serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+	    			serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+	   	
+						promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
+						promoCodeObj.updatedAt = new Date();
+						await this.promoCodesRepository.updateById(promoCodeObj?.promoId, promoCodeObj);			
 					}
 				}
 			}
@@ -131,10 +139,11 @@ export class ServiceOrdersController {
     serviceOrders.status = "LO";
     const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
     
-		
-    serviceOrders.taxPercentage = service.salesTax;
-    serviceOrders.netAmount = service.price;
-    serviceOrders.grossAmount = service.price;
+		serviceOrders.taxPercentage = service.salesTax;
+    serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
+    serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
+    serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+    serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
     const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
     const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
     if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
@@ -266,7 +275,7 @@ export class ServiceOrdersController {
 						orderRequest.payment.paymentStatus = "L";
 						await this.paymentRepository.create(orderRequest.payment);
 				    await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
-				    if(dbOrder?.promoId) {
+				    if(dbOrder?.promoId && dbOrder.orderType === 'U') {
 				    	const promoCodeObj: PromoCodes = await this.promoCodesRepository.findById(dbOrder.promoId, {});
 				    	if(promoCodeObj) {
 								promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
@@ -557,7 +566,9 @@ export class ServiceOrdersController {
 					dbOrder.promoId = promoCodeObj.promoId;
 					dbOrder.discountType = promoCodeObj.discountType;
 					dbOrder.discountValue = promoCodeObj.discountValue;
-					dbOrder.netAmount = dbOrder.grossAmount - promoDiscount;
+					dbOrder.grossAmount -= promoDiscount;
+					dbOrder.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+    			dbOrder.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
 					
 					dbOrder.updatedAt = new Date();
 			    await this.serviceOrdersRepository.updateById(dbOrder.serviceOrderId, dbOrder);

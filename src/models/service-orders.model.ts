@@ -25,6 +25,11 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   userId: string;
+  
+  @property({
+    type: 'string',
+  })
+  userName: string;
 
   @property({
     type: 'string',
@@ -45,6 +50,11 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   vehicleType?: string;
+  
+  @property({
+    type: 'string',
+  })
+  orderType?: string;
 
   @property({
     type: 'string',
@@ -74,7 +84,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'number',
   })
-  distance?: number;
+  distance: number;
 
   @property({
     type: 'number',
@@ -135,6 +145,11 @@ export class ServiceOrders extends Entity {
     type: 'number',
   })
   netAmount: number;
+  
+  @property({
+    type: 'number',
+  })
+  distanceAmount: number;
 
   @property({
     type: 'string',
