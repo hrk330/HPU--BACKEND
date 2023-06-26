@@ -325,6 +325,38 @@ export class AppUserController {
     const result = {code: 0, msg: "User profile updated successfully.", user: user};
     return JSON.stringify(result);
   }
+  
+  @authenticate('jwt')
+  @post('/appUsers/logoutAppUser', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async logoutAppUser(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+    await this.appUsersRepository.updateById(newUserRequest.id, {'endpoint': ''});
+    const result = {code: 0, msg: "User logged out successfully."};
+    return JSON.stringify(result);
+  }
 
   @post('/appUsers/resetPassword', {
     responses: {

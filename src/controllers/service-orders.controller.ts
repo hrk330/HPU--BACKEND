@@ -873,6 +873,36 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
+	@get('/serviceOrders/getCurrentOrder/{userType}/{userId}/')
+  @response(200, {
+    description: 'Array of AppUsers model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(AppUsers, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async getCurrentOrder(
+    @param.path.string('userType') userType: string,
+    @param.path.string('userId') userId: string,
+  ): Promise<string> {
+	  const result = {code: 0, msg: "Order fetched successfully.", order: {}};
+	  let dbServiceOrders: ServiceOrders[] = [];
+	  if(userType === "U") {
+			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId, status: {inq: ['LO','AC','AR','ST','CO','PI']}}});  
+	  } else if(userType === "S") {
+		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId, status: {inq: ['LO','AC','AR','ST','CO','PI']}}});
+	  }
+    
+    if(dbServiceOrders?.length > 0) {
+      result.order = dbServiceOrders[0];
+    }
+    return JSON.stringify(result);
+  }
+
   @patch('/serviceOrders/{id}')
   @response(204, {
     description: 'ServiceOrders PATCH success',
