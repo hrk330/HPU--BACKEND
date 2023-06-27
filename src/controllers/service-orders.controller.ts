@@ -64,7 +64,11 @@ export class ServiceOrdersController {
 			} else {
 				serviceOrders.grossAmount = service.price; 
 			}
-			serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage / 100;
+			if(serviceOrders.taxPercentage) {
+				serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage/100;
+			} else {
+				serviceOrders.taxAmount = 0;
+			}
 	    serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
 	    if(serviceOrders?.promoCode) {
 				const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
@@ -87,9 +91,12 @@ export class ServiceOrdersController {
 						serviceOrders.promoId = promoCodeObj.promoId;
 						serviceOrders.discountType = promoCodeObj.discountType;
 						serviceOrders.discountValue = promoCodeObj.discountValue;
-						serviceOrders.grossAmount -= promoDiscount;
-						serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage / 100);
-	    			serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+						if(serviceOrders.taxPercentage) {
+							serviceOrders.taxAmount = (serviceOrders.grossAmount-promoDiscount) * (serviceOrders.taxPercentage / 100);
+						} else {
+							serviceOrders.taxAmount = 0;
+						}
+	    			serviceOrders.netAmount = (serviceOrders.grossAmount-promoDiscount) + serviceOrders.taxAmount;
 	   	
 						promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
 						promoCodeObj.updatedAt = new Date();
@@ -151,8 +158,13 @@ export class ServiceOrdersController {
 			} else {
 				serviceOrders.grossAmount = service.price; 
 			}
+			
+			if(serviceOrders.taxPercentage) {
+				serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage/100);
+			} else {
+				serviceOrders.taxAmount = 0;
+			}
 		  
-		  serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage/100);
 		  serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
 		  createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
 		  const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
@@ -570,16 +582,20 @@ export class ServiceOrdersController {
 							promoDiscount = dbOrder.grossAmount;
 						}
 					}	else if(promoCodeObj.discountType === 'P'){
-						promoDiscount = dbOrder.grossAmount * (promoCodeObj.discountValue/100)
+						promoDiscount = dbOrder.grossAmount*(promoCodeObj.discountValue/100)
 					}
 					dbOrder.discountAmount = promoDiscount;
 					dbOrder.promoCode = promoCodeObj.promoCode;
 					dbOrder.promoId = promoCodeObj.promoId;
 					dbOrder.discountType = promoCodeObj.discountType;
 					dbOrder.discountValue = promoCodeObj.discountValue;
-					dbOrder.grossAmount -= promoDiscount;
-					dbOrder.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage / 100);
-    			dbOrder.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+					if(dbOrder.taxPercentage) {
+						dbOrder.taxAmount = (dbOrder.grossAmount-promoDiscount)*(dbOrder.taxPercentage/100);	
+					} else {
+						dbOrder.taxAmount = 0;
+					}
+					
+    			dbOrder.netAmount = (dbOrder.grossAmount-promoDiscount)+dbOrder.taxAmount;
 					
 					dbOrder.updatedAt = new Date();
 			    await this.serviceOrdersRepository.updateById(dbOrder.serviceOrderId, dbOrder);
@@ -639,14 +655,14 @@ export class ServiceOrdersController {
 								promoDiscount = service.price;
 							}
 						}	else if(promoCodeObj.discountType === 'P'){
-							promoDiscount = service.price * (promoCodeObj.discountValue/100)
+							promoDiscount = service.price*(promoCodeObj.discountValue/100)
 						}
 						serviceOrders.discountAmount = promoDiscount;
 						serviceOrders.promoCode = promoCodeObj.promoCode;
 						serviceOrders.promoId = promoCodeObj.promoId;
 						serviceOrders.discountType = promoCodeObj.discountType;
 						serviceOrders.discountValue = promoCodeObj.discountValue;
-						serviceOrders.netAmount = service.price - promoDiscount;
+						serviceOrders.netAmount = service.price-promoDiscount;
 						
 			      result = {code: 0, msg: "Promo code applied successfully.", order: serviceOrders};
 		      } else if(promoCodeObj.totalUsed < promoCodeObj.totalLimit) {
