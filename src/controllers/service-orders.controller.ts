@@ -1,6 +1,7 @@
 import {
   Count,
   CountSchema,
+  Filter,
   repository,
   Where
 } from '@loopback/repository';
@@ -595,7 +596,7 @@ export class ServiceOrdersController {
 						dbOrder.taxAmount = 0;
 					}
 					
-    			dbOrder.netAmount = (dbOrder.grossAmount-promoDiscount)+dbOrder.taxAmount;
+    			dbOrder.netAmount = (dbOrder.grossAmount-promoDiscount)+(dbOrder.taxAmount);
 					
 					dbOrder.updatedAt = new Date();
 			    await this.serviceOrdersRepository.updateById(dbOrder.serviceOrderId, dbOrder);
@@ -694,6 +695,7 @@ export class ServiceOrdersController {
   })
   async find(
     @param.path.string('serviceProviderId') serviceProviderId: string,
+    @param.filter(ServiceOrders) filter?: Filter<ServiceOrders>,
   ): Promise<Object> {
     let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
     try {
@@ -721,10 +723,12 @@ export class ServiceOrdersController {
       },
     },
   })
-  async getAllOrdersForAdmin(): Promise<Object> {
+  async getAllOrdersForAdmin(
+	  @param.filter(ServiceOrders) filter?: Filter<ServiceOrders>,
+  ): Promise<Object> {
     let result = {code: 5, msg: "Some error occured while getting orders.", orders: {}};
     try {
-        const orders: ServiceOrders[] = await this.serviceOrdersRepository.find();
+        const orders: ServiceOrders[] = await this.serviceOrdersRepository.find(filter);
         if(orders?.length > 0) {
 					for(const order of orders) {
 						if(order.serviceProviderId) {
