@@ -60,13 +60,13 @@ export class ServiceOrdersController {
 	    const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
 	    serviceOrders.taxPercentage = service.salesTax;
 	    if(serviceOrders?.distance) {
-				serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
-		  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;	
+				serviceOrders.distanceAmount = service.pricePerKm*serviceOrders.distance;
+		  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
 			} else {
 				serviceOrders.grossAmount = service.price; 
 			}
 			if(serviceOrders.taxPercentage) {
-				serviceOrders.taxAmount = serviceOrders.grossAmount * serviceOrders.taxPercentage/100;
+				serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage/100);
 			} else {
 				serviceOrders.taxAmount = 0;
 			}
@@ -82,10 +82,10 @@ export class ServiceOrdersController {
 							if(promoCodeObj.discountValue < service.price){
 								promoDiscount = promoCodeObj.discountValue;	
 							} else {
-								promoDiscount = service.price;
+								promoDiscount = serviceOrders.grossAmount;
 							}
 						}	else if(promoCodeObj.discountType === 'P'){
-							promoDiscount = service.price * (promoCodeObj.discountValue / 100);
+							promoDiscount = serviceOrders.grossAmount*(promoCodeObj.discountValue/100);
 						}
 						serviceOrders.discountAmount = promoDiscount;
 						serviceOrders.promoCode = promoCodeObj.promoCode;
@@ -93,7 +93,7 @@ export class ServiceOrdersController {
 						serviceOrders.discountType = promoCodeObj.discountType;
 						serviceOrders.discountValue = promoCodeObj.discountValue;
 						if(serviceOrders.taxPercentage) {
-							serviceOrders.taxAmount = (serviceOrders.grossAmount-promoDiscount) * (serviceOrders.taxPercentage / 100);
+							serviceOrders.taxAmount = (serviceOrders.grossAmount-promoDiscount)*(serviceOrders.taxPercentage/100);
 						} else {
 							serviceOrders.taxAmount = 0;
 						}
@@ -904,7 +904,7 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
-	@get('/serviceOrders/getCurrentOrder/{userType}/{userId}/')
+	@get('/serviceOrders/getCurrentOrder/{userType}/{userId}')
   @response(200, {
     description: 'Array of AppUsers model instances',
     content: {
