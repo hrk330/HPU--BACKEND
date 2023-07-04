@@ -39,6 +39,17 @@ export class UserDocs extends Entity {
     required: true,
   })
   userId: string;
+  
+  @property({
+    type: 'string',
+    default: 'P'
+  })
+  docStatus?: string;
+  
+  @property({
+    type: 'string',
+  })
+  comments?: string;
 
   @property({
     type: 'date',
