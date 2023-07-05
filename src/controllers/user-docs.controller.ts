@@ -111,9 +111,9 @@ export class UserDocsController {
     return this.userDocsRepository.findById(id, filter);
   }
 
-  @patch('/userDocs/{id}')
-  @response(204, {
-    description: 'UserDocs PATCH success',
+  @post('/userDocs/updateUserDocs/{id}')
+  @response(200, {
+    description: 'UserDocs update success',
   })
   async updateById(
     @param.path.string('id') id: string,
@@ -125,8 +125,10 @@ export class UserDocsController {
       },
     })
     userDocs: UserDocs,
-  ): Promise<void> {
+  ): Promise<string> {
+    const result = {code: 0, msg: "Document updated successfully."};
     await this.userDocsRepository.updateById(id, userDocs);
+    return JSON.stringify(result);
   }
 
   @put('/userDocs/{id}')
