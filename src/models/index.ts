@@ -21,3 +21,5 @@ export * from './withdrawal-request.model';
 export * from './account.model';
 export * from './payment.model';
 export * from './order-request.model';
+export * from './service-provider-services.model';
+export * from './service-provider-services-request.model';

@@ -1,11 +1,17 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Services extends Entity {
+export class ServiceProviderServices extends Entity {
   @property({
     type: 'string',
     id: true,
     generated: true,
+  })
+  id: string;
+  
+  @property({
+    type: 'string',
+    required: true,
   })
   serviceId: string;
 
@@ -18,27 +24,13 @@ export class Services extends Entity {
     type: 'string',
   })
   serviceType?: string;
-
+  
   @property({
     type: 'string',
+    required: true,
   })
-  vehicleType?: string;
-
-  @property({
-    type: 'number',
-  })
-  price: number;
-
-  @property({
-    type: 'number',
-  })
-  pricePerKm: number;
-
-  @property({
-    type: 'number',
-  })
-  salesTax: number;
-
+  userId: string;
+  
   @property({
     type: 'boolean',
     default: true
@@ -56,13 +48,13 @@ export class Services extends Entity {
   })
   updatedAt?: Date;
 
-  constructor(data?: Partial<Services>) {
+  constructor(data?: Partial<ServiceProviderServices>) {
     super(data);
   }
 }
 
-export interface ServicesRelations {
+export interface ServiceProviderServicesRelations {
   // describe navigational properties here
 }
 
-export type ServicesWithRelations = Services & ServicesRelations;
+export type ServiceProviderServicesWithRelations = ServiceProviderServices & ServiceProviderServicesRelations;

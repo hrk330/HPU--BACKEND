@@ -70,18 +70,18 @@ export class FileUploadController {
   private async getFilesAndFields(request: Request) {
 
     const uploadedFiles = request.files;
-    let files: Array<any> = [];
+    const files = [];
     if (Array.isArray(uploadedFiles)) {
       for (const entry of uploadedFiles) {
-        const result = await this.InsertFilesDate(request, entry);
+        const result = await this.insertFilesDate(request, entry);
         files.push(_.pick(result.userDoc, ['id', 'docType', 'docName', 'docSize', 'userId', 'creadtedAt']));
       }
     }
     return {code: 0, msg: "Document uploaded successfully", files};
   }
 
-  private async InsertFilesDate(request: Request, file: Express.Multer.File) {
-    let result = {code: 5, msg: "Some error occured while updating doc.", userDoc: {}};
+  private async insertFilesDate(request: Request, file: Express.Multer.File) {
+    const result = {code: 5, msg: "Some error occured while updating doc.", userDoc: {}};
     try {
       const userDoc = await this.appUsersRepository.userDocs(request.body.userId).create({docType: request.body.docType, docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination});
       result.userDoc = userDoc;

@@ -28,3 +28,4 @@ export * from './app-users-withdrawal-request.controller';
 export * from './app-users-payment.controller';
 export * from './service-orders-services.controller';
 export * from './account-withdrawal-request.controller';
+export * from './service-provider-services.controller';
