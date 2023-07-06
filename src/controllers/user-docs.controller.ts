@@ -126,8 +126,10 @@ export class UserDocsController {
     })
     userDocs: UserDocs,
   ): Promise<string> {
-    const result = {code: 0, msg: "Document updated successfully."};
+    const result = {code: 0, msg: "Document updated successfully.", userDoc: {}};
     await this.userDocsRepository.updateById(id, userDocs);
+    const userDoc: UserDocs = await this.userDocsRepository.findById(id, {});
+    result.userDoc = userDoc;
     return JSON.stringify(result);
   }
 
