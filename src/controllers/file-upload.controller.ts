@@ -57,7 +57,7 @@ export class FileUploadController {
           resolve(err);
         }
         else {
-          resolve(this.getFilesAndFields(request));
+          resolve(this.saveUploadedFileRecords(request));
         }
       });
     });
@@ -67,7 +67,7 @@ export class FileUploadController {
    * Get files and fields for the request
    * @param request - Http request
    */
-  private async getFilesAndFields(request: Request) {
+  private async saveUploadedFileRecords(request: Request) {
 
     const uploadedFiles = request.files;
     const files = [];
@@ -77,7 +77,7 @@ export class FileUploadController {
         files.push(_.pick(result.userDoc, ['id', 'docType', 'docName', 'docSize', 'userId', 'creadtedAt']));
       }
     }
-    return {code: 0, msg: "Document uploaded successfully", files};
+    return {code: 0, msg: "File uploaded successfully", files};
   }
 
   private async insertFilesDate(request: Request, file: Express.Multer.File) {
@@ -86,7 +86,7 @@ export class FileUploadController {
       const userDoc = await this.appUsersRepository.userDocs(request.body.userId).create({docType: request.body.docType, docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination});
       result.userDoc = userDoc;
       result.code = 0;
-      result.msg = "Document uploaded successfully";
+      result.msg = "File uploaded successfully";
     } catch (e) {
       result.code = 5;
       result.msg = e.message;
