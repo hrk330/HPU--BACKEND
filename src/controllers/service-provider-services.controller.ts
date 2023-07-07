@@ -81,7 +81,7 @@ export class ServiceProviderServicesController {
   }
   
   async checkServicesExist(servicesArray :Array<string>): Promise<Array<Services>> {
-	  const finalServicesArray: Array<Services> = await this.servicesRepository.find({where: {serviceId: {inq: servicesArray}}, fields: ['serviceId', 'serviceName', 'serviceType']});
+	  const finalServicesArray: Array<Services> = await this.servicesRepository.find({where: {serviceId: {inq: servicesArray}}, fields: ['serviceId', 'serviceName', 'serviceType', 'vehicleType']});
 	  return finalServicesArray;
   }
   

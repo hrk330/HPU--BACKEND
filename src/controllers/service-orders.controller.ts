@@ -283,41 +283,33 @@ export class ServiceOrdersController {
 		    try {
 					await this.populateStatusDates(orderRequest.serviceOrder);
 					
-					if(orderRequest.payment.paymentAmount >= dbOrder?.netAmount) {
-						if((orderRequest.payment.paymentAmount - dbOrder.netAmount) > 0) {
-							const extraAmount = orderRequest.payment.paymentAmount - dbOrder.netAmount;
-							const userAccount: Account = await this.appUsersRepository.account(dbOrder.userId).get({});
-							const creditAmount = extraAmount + userAccount.balanceAmount;
-							await this.appUsersRepository.account(dbOrder.userId).patch({balanceAmount: creditAmount}, {});
-							const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
-							const debitAmount = serviceProviderAccount.balanceAmount - extraAmount;
-							await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: debitAmount}, {});
-						}
-						orderRequest.payment.payerId = dbOrder.userId;
-						orderRequest.payment.receiverId = dbOrder.serviceProviderId;
-						orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
-						orderRequest.payment.paymentStatus = "L";
-						await this.paymentRepository.create(orderRequest.payment);
-				    await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
-				    if(dbOrder?.promoId && dbOrder.orderType === 'U') {
-				    	const promoCodeObj: PromoCodes = await this.promoCodesRepository.findById(dbOrder.promoId, {});
-				    	if(promoCodeObj) {
-								promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
-								promoCodeObj.updatedAt = new Date();
-								await this.promoCodesRepository.updateById(dbOrder.promoId, promoCodeObj);
-							}
-						}
-				    
-				    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
-				    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
-    
-					  if(serviceProvider?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Payment has been initiated.", dbOrder);
-			  		}
-				    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder}; 
-		 			} else {
-						 result.msg = "Payment is less than the due amount.";
+					if(dbOrder.paymentMethod === 'CARD') {
+						const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
+						const creditAmount = serviceProviderAccount.balanceAmount + dbOrder.netAmount;
+						await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: creditAmount}, {});
 					}
+					orderRequest.payment.payerId = dbOrder.userId;
+					orderRequest.payment.receiverId = dbOrder.serviceProviderId;
+					orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
+					orderRequest.payment.paymentStatus = "L";
+					await this.paymentRepository.create(orderRequest.payment);
+			    await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
+			    if(dbOrder?.promoId && dbOrder.orderType === 'U') {
+			    	const promoCodeObj: PromoCodes = await this.promoCodesRepository.findById(dbOrder.promoId, {});
+			    	if(promoCodeObj) {
+							promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
+							promoCodeObj.updatedAt = new Date();
+							await this.promoCodesRepository.updateById(dbOrder.promoId, promoCodeObj);
+						}
+					}
+			    
+			    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
+			    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+  
+				  if(serviceProvider?.endpoint?.length > 20){
+			    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Payment has been initiated.", dbOrder);
+		  		}
+			    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder}; 
 		           
 		    } catch (e) {
 		      console.log(e);

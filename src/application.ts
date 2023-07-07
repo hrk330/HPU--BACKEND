@@ -60,7 +60,7 @@ export class AutoServiceApplication extends BootMixin(
   }
   protected configureFileUpload(destination?: string) {
     // Upload files to `dist/.sandbox` by default
-    destination = destination ?? path.join(__dirname, '../../.sandbox');
+    destination = destination ?? path.join(__dirname, '../public/assets/media');
     this.bind(STORAGE_DIRECTORY).to(destination);
     const multerOptions: multer.Options = {
       limits: {fileSize: 5 * 1000 * 1000},

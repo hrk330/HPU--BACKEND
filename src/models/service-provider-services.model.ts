@@ -27,6 +27,11 @@ export class ServiceProviderServices extends Entity {
   
   @property({
     type: 'string',
+  })
+  vehicleType?: string;
+  
+  @property({
+    type: 'string',
     required: true,
   })
   userId: string;
