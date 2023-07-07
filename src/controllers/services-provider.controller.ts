@@ -231,6 +231,40 @@ export class ServicesProviderController {
     return JSON.stringify(result);
   }
   
+  @authenticate('jwt')
+  @post('/serviceProvider/approveServiceProvider', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async approveServiceProvider(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+    await this.appUsersRepository.updateById(newUserRequest.id, {'userStatus': 'A'});
+    await this.appUsersRepository.userDocs(newUserRequest.id).patch({docStatus: 'A'}, {docType: {inq: ['DL','VR','VFC','CPR','RL1','RL2']}});
+    const user = await this.appUsersRepository.findById(newUserRequest.id, {});
+    const result = {code: 0, msg: "User approved successfully.", user: user};
+    return JSON.stringify(result);
+  }
+  
   @get('/serviceProvider/adminUser/fetchAllPendingServiceProviders')
   @response(200, {
     description: 'Array of AppUsers model instances',

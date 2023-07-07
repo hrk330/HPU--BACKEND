@@ -6,6 +6,7 @@
 import {inject} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {
+    param,
   post,
   Request,
   requestBody,
@@ -31,7 +32,7 @@ export class FileUploadController {
   ) { }
 
 
-  @post('/files', {
+  @post('/files/{userId}', {
     responses: {
       200: {
         content: {
@@ -49,18 +50,23 @@ export class FileUploadController {
     @requestBody.file()
     request: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
+    @param.path.string('userId') userId: string,  
   ): Promise<object> {
-    return new Promise<object>((resolve, reject) => {
-      this.handler(request, response, (err) => {
-        if (err) {
-          err.code = 5;
-          resolve(err);
-        }
-        else {
-          resolve(this.saveUploadedFileRecords(request));
-        }
-      });
-    });
+	  if(userId) {
+	    return new Promise<object>((resolve, reject) => {
+	      this.handler(request, response, (err) => {
+	        if (err) {
+	          err.code = 5;
+	          resolve(err);
+	        }
+	        else {
+	          resolve(this.saveUploadedFileRecords(request));
+	        }
+	      });
+	    });
+    } else {
+			return {code: 5, msg: "Some error occured while uploading doc.", userDoc: {}};
+		}
   }
 
   /**
