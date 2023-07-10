@@ -17,7 +17,7 @@ export class Services extends Entity {
   @property({
     type: 'string',
   })
-  serviceType?: string;
+  serviceType: string;
 
   @property({
     type: 'string',
@@ -44,6 +44,11 @@ export class Services extends Entity {
     default: true
   })
   isActive?: boolean;
+  
+  @property({
+    type: 'boolean',
+  })
+  accidental?: boolean;
 
   @property({
     type: 'date',
