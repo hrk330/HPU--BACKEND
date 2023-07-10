@@ -281,22 +281,20 @@ export class ServiceOrdersController {
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
 	    if((dbOrder && dbOrder.status === 'CO' && orderRequest?.serviceOrder?.status === "PI")) {
 		    try {
-					await this.populateStatusDates(orderRequest.serviceOrder);
-					
-					if(orderRequest?.serviceOrder?.paymentMethod === 'CARD') {
-						const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
-						const creditAmount = serviceProviderAccount.balanceAmount + (dbOrder.netAmount*0.9);
-						await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: creditAmount}, {});
-					}else if(orderRequest?.serviceOrder?.paymentMethod === 'CASH') {
-						const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
-						const creditAmount = serviceProviderAccount.balanceAmount - (dbOrder.netAmount*0.1);
-						await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: creditAmount}, {});
-					}
 					orderRequest.payment.payerId = dbOrder.userId;
 					orderRequest.payment.receiverId = dbOrder.serviceProviderId;
 					orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
 					orderRequest.payment.paymentStatus = "L";
 					await this.paymentRepository.create(orderRequest.payment);
+					await this.populateStatusDates(orderRequest.serviceOrder);
+					const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
+					let balanceAmount = 0;
+					if(orderRequest?.serviceOrder?.paymentMethod === 'CARD') {
+						balanceAmount = serviceProviderAccount.balanceAmount + (dbOrder.netAmount*0.9);
+					}else if(orderRequest?.serviceOrder?.paymentMethod === 'CASH') {
+						balanceAmount = serviceProviderAccount.balanceAmount - (dbOrder.netAmount*0.1);
+					}
+					await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: balanceAmount}, {});
 			    await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
 			    if(dbOrder?.promoId && dbOrder.orderType === 'U') {
 			    	const promoCodeObj: PromoCodes = await this.promoCodesRepository.findById(dbOrder.promoId, {});

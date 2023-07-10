@@ -17,7 +17,6 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import _ from 'lodash';
 import {Services} from '../models';
 import {ServicesRepository} from '../repositories';
 
@@ -138,7 +137,7 @@ export class ServicesController {
       services.salesTax = 0;
     }
 
-    await this.servicesRepository.updateById(id, _.pick(services, ['price', 'pricePerKm', 'salesTax', 'updatedAt']));
+    await this.servicesRepository.updateById(id, services);
     return {success: {code: 0, msg: "Record updated successfully.", service: await this.servicesRepository.findById(id, {})}};
   }
 
