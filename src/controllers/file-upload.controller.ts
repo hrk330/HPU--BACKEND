@@ -90,6 +90,9 @@ export class FileUploadController {
     const result = {code: 5, msg: "Some error occured while updating doc.", userDoc: {}};
     try {
       const userDoc = await this.appUsersRepository.userDocs(request.body.userId).create({docType: request.body.docType, docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination});
+      if(request.body.docType === 'PP') {
+      	await this.appUsersRepository.updateById(request.body.userId, {profilePic: '/assets/media/' + file.filename});
+      }
       result.userDoc = userDoc;
       result.code = 0;
       result.msg = "File uploaded successfully";
