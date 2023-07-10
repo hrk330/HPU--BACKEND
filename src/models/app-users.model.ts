@@ -106,6 +106,11 @@ export class AppUsers extends Entity {
     type: 'string',
   })
   roleId?: string;
+  
+  @property({
+    type: 'string',
+  })
+  profilePic?: string;
 
   @property({
     type: 'string',

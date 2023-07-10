@@ -277,15 +277,19 @@ export class ServiceOrdersController {
     orderRequest: OrderRequest,
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while initiating payment.", order: {}};
-    if(orderRequest?.serviceOrder?.serviceOrderId) {
+    if(orderRequest?.serviceOrder?.serviceOrderId && (orderRequest?.serviceOrder?.paymentMethod === 'CASH' || orderRequest?.serviceOrder?.paymentMethod === 'CARD')) {
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
 	    if((dbOrder && dbOrder.status === 'CO' && orderRequest?.serviceOrder?.status === "PI")) {
 		    try {
 					await this.populateStatusDates(orderRequest.serviceOrder);
 					
-					if(dbOrder.paymentMethod === 'CARD') {
+					if(orderRequest?.serviceOrder?.paymentMethod === 'CARD') {
 						const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
-						const creditAmount = serviceProviderAccount.balanceAmount + dbOrder.netAmount;
+						const creditAmount = serviceProviderAccount.balanceAmount + (dbOrder.netAmount*0.9);
+						await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: creditAmount}, {});
+					}else if(orderRequest?.serviceOrder?.paymentMethod === 'CASH') {
+						const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
+						const creditAmount = serviceProviderAccount.balanceAmount - (dbOrder.netAmount*0.1);
 						await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: creditAmount}, {});
 					}
 					orderRequest.payment.payerId = dbOrder.userId;
