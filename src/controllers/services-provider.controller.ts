@@ -41,30 +41,33 @@ export class ServicesProviderController {
 
     let result = {code: 5, msg: "User registeration failed.", token: '', userId: ''};
     try {
-      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
-
-      if (user?.id) {
-        result = {code: 5, msg: "User already exists", token: '', userId: ''};
-      } else {
-        const salt = await genSalt();
-        const password = await hash(serviceProvider.password, salt);
-        serviceProvider.roleId = "SERVICEPROVIDER";
-        serviceProvider.isServiceProviderVerified = "N";
-        const savedUser = await this.appUsersRepository.create(
-          _.omit(serviceProvider, 'password'),
-        );
-        if (savedUser) {
-			
-      		await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
-          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
-          const userProfile = this.userService.convertToUserProfile(savedUser);
-
-          result.userId = savedUser.id;
-          // create a JSON Web Token based on the user profile
-          result.token = await this.jwtService.generateToken(userProfile);
-          result.code = 0;
-          result.msg = "User registered successfully.";
-        }
+		
+			if(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(serviceProvider.email)) {
+	      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
+	
+	      if (user?.id) {
+	        result = {code: 5, msg: "User already exists", token: '', userId: ''};
+	      } else {
+	        const salt = await genSalt();
+	        const password = await hash(serviceProvider.password, salt);
+	        serviceProvider.roleId = "SERVICEPROVIDER";
+	        serviceProvider.isServiceProviderVerified = "N";
+	        const savedUser = await this.appUsersRepository.create(
+	          _.omit(serviceProvider, 'password'),
+	        );
+	        if (savedUser) {
+				
+	      		await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
+	          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
+	          const userProfile = this.userService.convertToUserProfile(savedUser);
+	
+	          result.userId = savedUser.id;
+	          // create a JSON Web Token based on the user profile
+	          result.token = await this.jwtService.generateToken(userProfile);
+	          result.code = 0;
+	          result.msg = "User registered successfully.";
+	        }
+	      }
       }
     } catch (e) {
       result.code = 5;
@@ -94,26 +97,28 @@ export class ServicesProviderController {
 
     let result = {code: 5, msg: "User registeration failed.", user: {}};
     try {
-      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
-
-      if (user?.id) {
-        result = {code: 5, msg: "User already exists", user: {}};
-      } else {
-        const salt = await genSalt();
-        const password = await hash(serviceProvider.password, salt);
-        serviceProvider.roleId = "SERVICEPROVIDER";
-        serviceProvider.isServiceProviderVerified = "N";
-        const savedUser = await this.appUsersRepository.create(
-          _.omit(serviceProvider, 'password'),
-        );
-        if (savedUser) {
-			
-      		await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
-          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
-          result.code = 0;
-          result.msg = "User registered successfully.";
-          result.user = savedUser;
-        }
+			if(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(serviceProvider.email)) {
+	      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
+	
+	      if (user?.id) {
+	        result = {code: 5, msg: "User already exists", user: {}};
+	      } else {
+	        const salt = await genSalt();
+	        const password = await hash(serviceProvider.password, salt);
+	        serviceProvider.roleId = "SERVICEPROVIDER";
+	        serviceProvider.isServiceProviderVerified = "N";
+	        const savedUser = await this.appUsersRepository.create(
+	          _.omit(serviceProvider, 'password'),
+	        );
+	        if (savedUser) {
+				
+	      		await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
+	          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
+	          result.code = 0;
+	          result.msg = "User registered successfully.";
+	          result.user = savedUser;
+	        }
+	      }
       }
     } catch (e) {
       result.code = 5;
