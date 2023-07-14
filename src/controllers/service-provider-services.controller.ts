@@ -68,6 +68,7 @@ export class ServiceProviderServicesController {
 						serviceProviderServiceObject.userId = serviceProviderServices.userId;
 						serviceProviderServiceObject.serviceName = finalService.serviceName;
 						serviceProviderServiceObject.serviceType = finalService.serviceType;
+						serviceProviderServiceObject.vehicleType = finalService.vehicleType;
 						serviceProviderServicesList.push(await this.serviceProviderServicesRepository.create(serviceProviderServiceObject));
 					}
 				}
