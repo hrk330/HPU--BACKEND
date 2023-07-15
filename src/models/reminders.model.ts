@@ -1,9 +1,14 @@
-import {Entity, model, property, hasMany} from '@loopback/repository';
-import {Reminders} from './reminders.model';
+import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Vehicle extends Entity {
-
+export class Reminders extends Entity {
+  @property({
+    type: 'string',
+    id: true,
+    generated: true,
+  })
+  reminderId?: string;
+  
   @property({
     type: 'string',
     id: true,
@@ -15,26 +20,27 @@ export class Vehicle extends Entity {
     type: 'string',
   })
   plateNumber?: string;
-
-  @property({
-    type: 'string',
-  })
-  registerationDate?: string;
-
-  @property({
-    type: 'string',
-  })
-  annualInspectionDate?: string;
-
-  @property({
-    type: 'string',
-  })
-  annualInsuranceDate?: string;
-
+  
   @property({
     type: 'string',
   })
   userId?: string;
+  
+  @property({
+    type: 'string',
+  })
+  status?: string;
+  
+  @property({
+    type: 'string',
+  })
+  comments?: string;
+  
+  @property({
+    type: 'boolean',
+    default: true,
+  })
+  isActive?: boolean;
 
   @property({
     type: 'date',
@@ -47,16 +53,14 @@ export class Vehicle extends Entity {
   })
   updatedAt?: Date;
 
-  @hasMany(() => Reminders)
-  reminders: Reminders[];
 
-  constructor(data?: Partial<Vehicle>) {
+  constructor(data?: Partial<Reminders>) {
     super(data);
   }
 }
 
-export interface VehicleRelations {
+export interface RemindersRelations {
   // describe navigational properties here
 }
 
-export type VehicleWithRelations = Vehicle & VehicleRelations;
+export type RemindersWithRelations = Reminders & RemindersRelations;

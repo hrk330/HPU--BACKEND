@@ -29,3 +29,5 @@ export * from './app-users-payment.controller';
 export * from './service-orders-services.controller';
 export * from './account-withdrawal-request.controller';
 export * from './service-provider-services.controller';
+export * from './reminders.controller';
+export * from './vehicle-reminders.controller';
