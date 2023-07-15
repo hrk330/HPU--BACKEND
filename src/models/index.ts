@@ -23,3 +23,4 @@ export * from './payment.model';
 export * from './order-request.model';
 export * from './service-provider-services.model';
 export * from './service-provider-services-request.model';
+export * from './reminders.model';

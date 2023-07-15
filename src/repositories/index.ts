@@ -17,3 +17,4 @@ export * from './account.repository';
 export * from './payment.repository';
 export * from './withdrawal-request.repository';
 export * from './service-provider-services.repository';
+export * from './reminders.repository';
