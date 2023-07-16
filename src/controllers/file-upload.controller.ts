@@ -14,7 +14,9 @@ import {
   RestBindings,
 } from '@loopback/rest';
 import _ from 'lodash';
+import { unlink } from 'node:fs/promises';
 import {FILE_UPLOAD_SERVICE} from '../keys';
+import { UserDocs } from '../models';
 import {AppUsersRepository} from '../repositories';
 import {FileUploadHandler} from '../types';
 
@@ -89,7 +91,24 @@ export class FileUploadController {
   private async insertFilesDate(request: Request, file: Express.Multer.File) {
     const result = {code: 5, msg: "Some error occured while updating doc.", userDoc: {}};
     try {
-      const userDoc = await this.appUsersRepository.userDocs(request.body.userId).create({docType: request.body.docType, docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination});
+			if(file?.destination) {
+				file.destination = '/assets/media/';
+			}
+			let userDoc: UserDocs = new UserDocs;
+			if(request.body.docUpdate) {
+				const userDocsArray: UserDocs[] = await this.appUsersRepository.userDocs(request.body.userId).find({where: {docType: request.body.docType, id: request.body.id}});
+				if(userDocsArray?.length > 0) {
+					try{
+						await unlink(__dirname + '/../../public/assets/media/' + userDocsArray[0].docName);
+					} catch(e) {
+						console.log(e.message);
+					}
+					await this.appUsersRepository.userDocs(request.body.userId).patch({docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination, comments: request.body.comments, updatedAt: new Date()}, {docType: request.body.docType, id: request.body.id});	
+				}
+			} else {
+				userDoc = await this.appUsersRepository.userDocs(request.body.userId).create({docType: request.body.docType, docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination, comments: request.body.comments});	
+			}
+      
       if(request.body.docType === 'PP') {
       	await this.appUsersRepository.updateById(request.body.userId, {profilePic: '/assets/media/' + file.filename});
       }

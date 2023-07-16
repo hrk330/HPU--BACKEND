@@ -50,6 +50,11 @@ export class UserDocs extends Entity {
     type: 'string',
   })
   comments?: string;
+  
+  @property({
+    type: 'boolean',
+  })
+  docUpdate?: boolean;
 
   @property({
     type: 'date',
