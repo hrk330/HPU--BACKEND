@@ -96,14 +96,18 @@ export class FileUploadController {
 			}
 			let userDoc: UserDocs = new UserDocs;
 			if(request.body.docUpdate) {
-				const userDocsArray: UserDocs[] = await this.appUsersRepository.userDocs(request.body.userId).find({where: {docType: request.body.docType, id: request.body.id}});
+				let userDocsArray: UserDocs[] = await this.appUsersRepository.userDocs(request.body.userId).find({where: {docType: request.body.docType, id: request.body.id}});
 				if(userDocsArray?.length > 0) {
 					try{
 						await unlink(__dirname + '/../../public/assets/media/' + userDocsArray[0].docName);
 					} catch(e) {
 						console.log(e.message);
 					}
-					await this.appUsersRepository.userDocs(request.body.userId).patch({docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination, docStatus: "P", comments: request.body.comments, updatedAt: new Date()}, {docType: request.body.docType, id: request.body.id});	
+					await this.appUsersRepository.userDocs(request.body.userId).patch({docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination, docStatus: "P", comments: request.body.comments, updatedAt: new Date()}, {docType: request.body.docType, id: request.body.id});
+					userDocsArray = await this.appUsersRepository.userDocs(request.body.userId).find({where: {docType: request.body.docType, id: request.body.id}});
+					if(userDocsArray?.length > 0) {
+						userDoc = userDocsArray[0];
+					}	
 				}
 			} else {
 				userDoc = await this.appUsersRepository.userDocs(request.body.userId).create({docType: request.body.docType, docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination, comments: request.body.comments});	
