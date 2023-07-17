@@ -132,13 +132,13 @@ export class ServicesProviderController {
 							const serviceProviderServicesList: ServiceProviderServices[] = [];
 							for (const finalService of finalServicesArray){
 								const serviceProviderServices: ServiceProviderServices | undefined = serviceProviderServiceMap.get(finalService.serviceId+'');
-								if(serviceProviderServices && (serviceProviderServices?.serviceId && serviceProviderServices?.userId)) {
-									const serviceProviderServiceArray: Array<ServiceProviderServices> = await this.checkServiceProviderServiceExist(serviceProviderServices?.serviceId, serviceProviderServices?.userId);
+								if(serviceProviderServices && (serviceProviderServices?.serviceId && savedUser.id)) {
+									const serviceProviderServiceArray: Array<ServiceProviderServices> = await this.checkServiceProviderServiceExist(serviceProviderServices?.serviceId, savedUser.id);
 									if(!serviceProviderServiceArray || serviceProviderServiceArray?.length === 0){
 										const serviceProviderServiceObject: ServiceProviderServices = new ServiceProviderServices();
 										serviceProviderServiceObject.serviceId = serviceProviderServices.serviceId;
 										serviceProviderServiceObject.isActive = serviceProviderServices.isActive;
-										serviceProviderServiceObject.userId = serviceProviderServices.userId;
+										serviceProviderServiceObject.userId = savedUser.id;
 										serviceProviderServiceObject.serviceName = finalService.serviceName;
 										serviceProviderServiceObject.serviceType = finalService.serviceType;
 										serviceProviderServiceObject.vehicleType = finalService.vehicleType;
