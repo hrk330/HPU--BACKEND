@@ -103,7 +103,7 @@ export class FileUploadController {
 					} catch(e) {
 						console.log(e.message);
 					}
-					await this.appUsersRepository.userDocs(request.body.userId).patch({docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination, comments: request.body.comments, updatedAt: new Date()}, {docType: request.body.docType, id: request.body.id});	
+					await this.appUsersRepository.userDocs(request.body.userId).patch({docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination, docStatus: "P", comments: request.body.comments, updatedAt: new Date()}, {docType: request.body.docType, id: request.body.id});	
 				}
 			} else {
 				userDoc = await this.appUsersRepository.userDocs(request.body.userId).create({docType: request.body.docType, docName: file.filename, docSize: file.size, mimetype: file.mimetype, docPath: file.destination, comments: request.body.comments});	
