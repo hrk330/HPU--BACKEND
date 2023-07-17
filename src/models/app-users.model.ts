@@ -6,6 +6,7 @@ import {UserDocs} from './user-docs.model';
 import {Account} from './account.model';
 import {WithdrawalRequest} from './withdrawal-request.model';
 import {Payment} from './payment.model';
+import { ServiceProviderServices } from './service-provider-services.model';
 
 @model()
 export class AppUsers extends Entity {
@@ -203,6 +204,12 @@ export class AppUsers extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
+  
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  serviceProviderServicesList: ServiceProviderServices[];
 
   userCredentials: UserCredentials;
 
