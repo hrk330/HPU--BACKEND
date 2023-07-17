@@ -82,6 +82,43 @@ export class ServiceProviderServicesController {
     return JSON.stringify(result);
   }
   
+  @post('/serviceProviderServices/updateServices')
+  @response(200, {
+    description: 'ServiceProviderServices model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceProviderServices)}},
+  })
+  async updateServiceProviderServices(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceProviderServicesRequest, {
+            title: 'NewServiceProviderServices',
+          }),
+        },
+      },
+    })
+    serviceProviderServicesRequest: ServiceProviderServicesRequest,
+  ): Promise<string> {
+	  const result = {code: 5, msg: "Some error occured while updating service provider services.", serviceProviderServicesList: {}};
+	  const serviceProviderServiceArray : Array<string> = [];
+	  
+	  if(Array.isArray(serviceProviderServicesRequest?.serviceProviderServicesList) && serviceProviderServicesRequest?.serviceProviderServicesList?.length > 0) {
+		  const serviceProviderServicesList : ServiceProviderServices[] = serviceProviderServicesRequest?.serviceProviderServicesList;
+		  for(const serviceProviderService of serviceProviderServicesList) {
+				if(serviceProviderService?.id) {
+					serviceProviderServiceArray.push(serviceProviderService.id);
+					serviceProviderService.updatedAt = new Date();
+					await this.serviceProviderServicesRepository.updateById(serviceProviderService.id, serviceProviderService);
+				}
+		  }
+			result.code = 0;
+			result.msg = "Service provider services updated successfully.";
+			result.serviceProviderServicesList = await this.serviceProviderServicesRepository.find({where: {id: {inq: serviceProviderServiceArray}}});
+	  }
+	  
+    return JSON.stringify(result);
+  }
+  
   async checkServicesExist(servicesArray :Array<string>): Promise<Array<Services>> {
 	  const finalServicesArray: Array<Services> = await this.servicesRepository.find({where: {serviceId: {inq: servicesArray}}, fields: ['serviceId', 'serviceName', 'serviceType', 'vehicleType']});
 	  return finalServicesArray;
@@ -91,6 +128,8 @@ export class ServiceProviderServicesController {
 	  const serviceProviderServiceArray: Array<ServiceProviderServices> = await this.serviceProviderServicesRepository.find({where: {serviceId: serviceId, userId: userId}, fields: ['serviceId']});
 	  return serviceProviderServiceArray;
   }
+  
+  
 
   @get('/serviceProviderServices/count')
   @response(200, {
