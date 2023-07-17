@@ -5,8 +5,8 @@ import {Count, CountSchema, Filter, FilterExcludingWhere, Where, repository} fro
 import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response, } from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AppUsers, CredentialsRequest, CredentialsRequestBody, UserCreds} from '../models';
-import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
+import {AppUsers, CredentialsRequest, CredentialsRequestBody, ServiceProviderServices, Services, UserCreds} from '../models';
+import {AppUsersRepository, ServiceProviderServicesRepository, ServicesRepository, VerificationCodesRepository} from '../repositories';
 
 export class ServicesProviderController {
   constructor(
@@ -18,6 +18,10 @@ export class ServicesProviderController {
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
+    @repository(ServiceProviderServicesRepository)
+    public serviceProviderServicesRepository : ServiceProviderServicesRepository,
+    @repository(ServicesRepository)
+    public servicesRepository: ServicesRepository,
   ) { }
 
   @post('/serviceProvider/signup')
@@ -114,6 +118,37 @@ export class ServicesProviderController {
 				
 	      		await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
 	          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
+	          
+	          const servicesArray : Array<string> = [];
+	          const serviceProviderServiceMap = new Map <string, ServiceProviderServices>();
+					  if(Array.isArray(serviceProvider?.serviceProviderServicesList) && serviceProvider?.serviceProviderServicesList?.length > 0) {
+						  serviceProvider?.serviceProviderServicesList.forEach((serviceProviderService: ServiceProviderServices) =>{
+								if(serviceProviderService?.serviceId) {
+									servicesArray.push(serviceProviderService?.serviceId);
+									serviceProviderServiceMap.set(serviceProviderService?.serviceId, serviceProviderService);
+								}
+						  });
+							const finalServicesArray: Services[] =  await this.checkServicesExist(servicesArray);
+							const serviceProviderServicesList: ServiceProviderServices[] = [];
+							for (const finalService of finalServicesArray){
+								const serviceProviderServices: ServiceProviderServices | undefined = serviceProviderServiceMap.get(finalService.serviceId+'');
+								if(serviceProviderServices && (serviceProviderServices?.serviceId && serviceProviderServices?.userId)) {
+									const serviceProviderServiceArray: Array<ServiceProviderServices> = await this.checkServiceProviderServiceExist(serviceProviderServices?.serviceId, serviceProviderServices?.userId);
+									if(!serviceProviderServiceArray || serviceProviderServiceArray?.length === 0){
+										const serviceProviderServiceObject: ServiceProviderServices = new ServiceProviderServices();
+										serviceProviderServiceObject.serviceId = serviceProviderServices.serviceId;
+										serviceProviderServiceObject.isActive = serviceProviderServices.isActive;
+										serviceProviderServiceObject.userId = serviceProviderServices.userId;
+										serviceProviderServiceObject.serviceName = finalService.serviceName;
+										serviceProviderServiceObject.serviceType = finalService.serviceType;
+										serviceProviderServiceObject.vehicleType = finalService.vehicleType;
+										serviceProviderServicesList.push(await this.serviceProviderServicesRepository.create(serviceProviderServiceObject));
+									}
+								}
+							};
+							savedUser.serviceProviderServicesList = serviceProviderServicesList;
+					  }
+	          
 	          result.code = 0;
 	          result.msg = "User registered successfully.";
 	          result.user = savedUser;
@@ -125,6 +160,16 @@ export class ServicesProviderController {
       result.msg = e.message;
     }
     return JSON.stringify(result);
+  }
+  
+  async checkServicesExist(servicesArray :Array<string>): Promise<Array<Services>> {
+	  const finalServicesArray: Array<Services> = await this.servicesRepository.find({where: {serviceId: {inq: servicesArray}}, fields: ['serviceId', 'serviceName', 'serviceType', 'vehicleType']});
+	  return finalServicesArray;
+  }
+  
+  async checkServiceProviderServiceExist(serviceId :string, userId: string): Promise<Array<ServiceProviderServices>> {
+	  const serviceProviderServiceArray: Array<ServiceProviderServices> = await this.serviceProviderServicesRepository.find({where: {serviceId: serviceId, userId: userId}, fields: ['serviceId']});
+	  return serviceProviderServiceArray;
   }
 
   @post('/serviceProvider/login', {
