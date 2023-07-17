@@ -142,6 +142,7 @@ export class ServicesProviderController {
 										serviceProviderServiceObject.serviceName = finalService.serviceName;
 										serviceProviderServiceObject.serviceType = finalService.serviceType;
 										serviceProviderServiceObject.vehicleType = finalService.vehicleType;
+										serviceProviderServiceObject.accidental = finalService.accidental;
 										serviceProviderServicesList.push(await this.serviceProviderServicesRepository.create(serviceProviderServiceObject));
 									}
 								}

@@ -41,6 +41,11 @@ export class ServiceProviderServices extends Entity {
     default: true
   })
   isActive?: boolean;
+  
+  @property({
+    type: 'boolean',
+  })
+  accidental?: boolean;
 
   @property({
     type: 'date',
