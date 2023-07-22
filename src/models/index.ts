@@ -24,3 +24,5 @@ export * from './order-request.model';
 export * from './service-provider-services.model';
 export * from './service-provider-services-request.model';
 export * from './reminders.model';
+export * from './document-types.model';
+export * from './crash-reports.model';
