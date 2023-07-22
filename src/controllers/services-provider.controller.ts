@@ -128,6 +128,7 @@ export class ServicesProviderController {
 									serviceProviderServiceMap.set(serviceProviderService?.serviceId, serviceProviderService);
 								}
 						  });
+						  serviceProvider.serviceProviderServicesList = [];
 							const finalServicesArray: Services[] =  await this.checkServicesExist(servicesArray);
 							const serviceProviderServicesList: ServiceProviderServices[] = [];
 							for (const finalService of finalServicesArray){
@@ -151,12 +152,79 @@ export class ServicesProviderController {
 					  }
 	          
 	          result.code = 0;
-	          result.msg = "User registered successfully.";
+	          result.msg = "Service provider created successfully.";
 	          result.user = savedUser;
 	        }
 	      }
       }
     } catch (e) {
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+  
+  @authenticate('jwt')
+  @post('/serviceProvider/admin/updateServiceProvider')
+  @response(200, {
+    description: 'AppUsers model instance',
+    content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
+  })
+  async updateServiceProviderByAdmin(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    serviceProvider: AppUsers,
+  ): Promise<String> {
+    let result = {code: 5, msg: "Some error occured while updating service provider.", user: {}};
+    try {
+      await this.appUsersRepository.updateById(serviceProvider.id, serviceProvider);
+      const user = await this.appUsersRepository.findById(serviceProvider.id, {});
+      if (user) {
+		  const servicesArray : Array<string> = [];
+	          const serviceProviderServiceMap = new Map <string, ServiceProviderServices>();
+					  if(Array.isArray(serviceProvider?.serviceProviderServicesList) && serviceProvider?.serviceProviderServicesList?.length > 0) {
+						  serviceProvider.serviceProviderServicesList.forEach((serviceProviderService: ServiceProviderServices) =>{
+								if(serviceProviderService?.serviceId) {
+									servicesArray.push(serviceProviderService?.serviceId);
+									serviceProviderServiceMap.set(serviceProviderService?.serviceId, serviceProviderService);
+								}
+						  });
+						  serviceProvider.serviceProviderServicesList = [];
+							const finalServicesArray: Services[] =  await this.checkServicesExist(servicesArray);
+							const serviceProviderServicesList: ServiceProviderServices[] = [];
+							for (const finalService of finalServicesArray){
+								const serviceProviderServices: ServiceProviderServices | undefined = serviceProviderServiceMap.get(finalService.serviceId+'');
+								if(serviceProviderServices && (serviceProviderServices?.serviceId && user.id)) {
+									const serviceProviderServiceArray: Array<ServiceProviderServices> = await this.checkServiceProviderServiceExist(serviceProviderServices?.serviceId, user.id);
+									if(!serviceProviderServiceArray || serviceProviderServiceArray?.length === 0){
+										const serviceProviderServiceObject: ServiceProviderServices = new ServiceProviderServices();
+										serviceProviderServiceObject.serviceId = serviceProviderServices.serviceId;
+										serviceProviderServiceObject.isActive = serviceProviderServices.isActive;
+										serviceProviderServiceObject.userId = user.id;
+										serviceProviderServiceObject.serviceName = finalService.serviceName;
+										serviceProviderServiceObject.serviceType = finalService.serviceType;
+										serviceProviderServiceObject.vehicleType = finalService.vehicleType;
+										serviceProviderServiceObject.accidental = finalService.accidental;
+										serviceProviderServicesList.push(await this.serviceProviderServicesRepository.create(serviceProviderServiceObject));
+									} else if(serviceProviderServiceArray?.length > 0) {
+										await this.serviceProviderServicesRepository.updateById(serviceProviderServices.id, serviceProviderServices);
+										serviceProviderServicesList.push(await this.serviceProviderServicesRepository.findById(serviceProviderServices.id));
+									}
+								}
+							};
+							user.serviceProviderServicesList = serviceProviderServicesList;
+					  }
+        result = {code: 0, msg: "Service provider updated successfully.", user: user};
+      }
+    } catch (e) {
+      console.log(e);
       result.code = 5;
       result.msg = e.message;
     }
