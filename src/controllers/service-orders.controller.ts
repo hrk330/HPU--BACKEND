@@ -545,6 +545,50 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
   
+  @post('/serviceOrders/adminUser/cancelOrder')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceOrders)}},
+  })
+  async adminUserCancelOrder(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceOrders, {partial: true}),
+        },
+      },
+    })
+    serviceOrders: ServiceOrders,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
+    if(serviceOrders?.serviceOrderId){
+	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+	    if((dbOrder?.status && "LO,AC,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status ==="AOC")) {
+		    try {
+					await this.populateStatusDates(serviceOrders);
+			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
+		 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
+		 			if(dbOrder?.serviceProviderId){
+	    			const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+		  			if(serviceProvider?.endpoint?.length > 20){
+				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
+			  		}
+			  		const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
+		  			if(appUser?.endpoint?.length > 20){
+				    	await this.sendOrderNotification(appUser, "Order Alert", "Order has been canceled.", dbOrder);
+			  		}
+	  			}
+		      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
+		    } catch (e) {
+		      console.log(e);
+		      result.code = 5;
+		      result.msg = e.message;
+		    }
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
   @post('/serviceOrders/appUser/applyPromoCode')
   @response(200, {
     description: 'ServiceOrders model instance',
