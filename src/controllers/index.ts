@@ -31,3 +31,4 @@ export * from './account-withdrawal-request.controller';
 export * from './service-provider-services.controller';
 export * from './reminders.controller';
 export * from './vehicle-reminders.controller';
+export * from './crash-reports.controller';

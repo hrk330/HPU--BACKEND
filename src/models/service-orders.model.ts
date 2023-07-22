@@ -1,6 +1,7 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
 import { AppUsers } from './app-users.model';
 import {Services} from './services.model';
+import {UserDocs} from './user-docs.model';
 
 @model()
 export class ServiceOrders extends Entity {
@@ -199,6 +200,9 @@ export class ServiceOrders extends Entity {
 
   @belongsTo(() => Services)
   serviceId: string;
+
+  @hasMany(() => UserDocs)
+  userDocs: UserDocs[];
 
   constructor(data?: Partial<ServiceOrders>) {
     super(data);

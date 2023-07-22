@@ -15,6 +15,11 @@ export class Vehicle extends Entity {
     type: 'string',
   })
   plateNumber?: string;
+  
+  @property({
+    type: 'string',
+  })
+  vehicleType?: string;
 
   @property({
     type: 'string',

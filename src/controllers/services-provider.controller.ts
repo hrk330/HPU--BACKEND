@@ -72,7 +72,9 @@ export class ServicesProviderController {
 	          result.msg = "User registered successfully.";
 	        }
 	      }
-      }
+      } else {
+		  	result.msg = "Enter valid email.";
+  		}
     } catch (e) {
       result.code = 5;
       result.msg = e.message;
@@ -156,7 +158,9 @@ export class ServicesProviderController {
 	          result.user = savedUser;
 	        }
 	      }
-      }
+      } else {
+		  	result.msg = "Enter valid email.";
+  		}
     } catch (e) {
       result.code = 5;
       result.msg = e.message;
@@ -214,6 +218,7 @@ export class ServicesProviderController {
 										serviceProviderServiceObject.accidental = finalService.accidental;
 										serviceProviderServicesList.push(await this.serviceProviderServicesRepository.create(serviceProviderServiceObject));
 									} else if(serviceProviderServiceArray?.length > 0) {
+										serviceProviderServices.updatedAt = new Date();
 										await this.serviceProviderServicesRepository.updateById(serviceProviderServices.id, serviceProviderServices);
 										serviceProviderServicesList.push(await this.serviceProviderServicesRepository.findById(serviceProviderServices.id));
 									}

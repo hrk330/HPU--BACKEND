@@ -56,7 +56,7 @@ export class ServiceOrdersController {
     
     const result = {code: 5, msg: "Some error occured while creating order.", order: {}};
     try {
-			serviceOrders.status = "AC";
+			serviceOrders.status = "OA";
 	    const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
 	    serviceOrders.taxPercentage = service.salesTax;
 	    if(serviceOrders?.distance) {
@@ -208,7 +208,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while updating order.", order: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    if((dbOrder?.status && "UC,SC".indexOf(dbOrder?.status) < 0) && (serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,AC,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
+    if((dbOrder?.status && "UC,SC,AC".indexOf(dbOrder?.status) < 0) && (serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,OA,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
 	    try {
 			
 				await this.populateStatusDates(serviceOrders);
@@ -374,7 +374,7 @@ export class ServiceOrdersController {
 	  let title = "", body = "";
     if(serviceOrders?.status) {
 			const appUser: AppUsers = await this.appUsersRepository.findById(serviceOrders.userId, {fields: ['endpoint']});
-			if(serviceOrders?.status === "AC") {				
+			if(serviceOrders?.status === "OA") {				
 				title = "Order Accepted"; 
 				body = "Your Order has been accepted.";
 			} else if(serviceOrders?.status === "AR") {
@@ -398,7 +398,7 @@ export class ServiceOrdersController {
   async populateStatusDates(serviceOrders: ServiceOrders): Promise<void> {
 	  const date = new Date();
 	  if(serviceOrders?.status) {	
-			if(serviceOrders?.status === "AC") {
+			if(serviceOrders?.status === "OA") {
 				serviceOrders.acceptedAt = date;								
 			} else if(serviceOrders?.status === "AR") {
 				serviceOrders.arrivedAt = date;
@@ -479,7 +479,7 @@ export class ServiceOrdersController {
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
 	    
-	    if((dbOrder?.status && "AC,AR,ST".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId+'' === serviceOrders.serviceProviderId+'') {
+	    if((dbOrder?.status && "OA,AR,ST".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId+'' === serviceOrders.serviceProviderId+'') {
 		    try {
 					await this.populateStatusDates(serviceOrders);
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
@@ -521,7 +521,7 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-	    if((dbOrder?.status && "LO,AC,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
+	    if((dbOrder?.status && "LO,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
 		    try {
 				
 					await this.populateStatusDates(serviceOrders);
@@ -563,7 +563,7 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-	    if((dbOrder?.status && "LO,AC,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status ==="AOC")) {
+	    if((dbOrder?.status && "LO,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status ==="AC")) {
 		    try {
 					await this.populateStatusDates(serviceOrders);
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
@@ -571,11 +571,11 @@ export class ServiceOrdersController {
 		 			if(dbOrder?.serviceProviderId){
 	    			const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
 		  			if(serviceProvider?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
+				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled by admin.", dbOrder);
 			  		}
 			  		const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
 		  			if(appUser?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(appUser, "Order Alert", "Order has been canceled.", dbOrder);
+				    	await this.sendOrderNotification(appUser, "Order Alert", "Order has been canceled by admin.", dbOrder);
 			  		}
 	  			}
 		      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
@@ -961,9 +961,9 @@ export class ServiceOrdersController {
 	  const result = {code: 0, msg: "Order fetched successfully.", order: {}};
 	  let dbServiceOrders: ServiceOrders[] = [];
 	  if(userType === "U") {
-			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId, status: {inq: ['LO','AC','AR','ST','CO','PI']}}});  
+			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId}});  
 	  } else if(userType === "S") {
-		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId, status: {inq: ['LO','AC','AR','ST','CO','PI']}}});
+		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId}});
 	  }
     
     if(dbServiceOrders?.length > 0) {
