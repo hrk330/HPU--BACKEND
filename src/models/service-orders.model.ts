@@ -1,7 +1,7 @@
-import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
+import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
 import { AppUsers } from './app-users.model';
 import {Services} from './services.model';
-import {UserDocs} from './user-docs.model';
+import {CrashReports} from './crash-reports.model';
 
 @model()
 export class ServiceOrders extends Entity {
@@ -161,17 +161,11 @@ export class ServiceOrders extends Entity {
     type: 'number',
   })
   rating: number;
-
+  
   @property({
-    type: 'date',
-    default: "$now"
+    type: 'boolean',
   })
-  createdAt?: Date;
-
-  @property({
-    type: 'date',
-  })
-  updatedAt?: Date;
+  accidental?: boolean;
 
   @property({
     type: 'date',
@@ -197,12 +191,23 @@ export class ServiceOrders extends Entity {
     type: 'any',
   })
   serviceProvider: AppUsers;
+  
+  @property({
+    type: 'date',
+    default: "$now"
+  })
+  createdAt?: Date;
+
+  @property({
+    type: 'date',
+  })
+  updatedAt?: Date;
 
   @belongsTo(() => Services)
   serviceId: string;
 
-  @hasMany(() => UserDocs)
-  userDocs: UserDocs[];
+  @hasOne(() => CrashReports, {keyTo: 'serviceOrderId'})
+  crashReport: CrashReports;
 
   constructor(data?: Partial<ServiceOrders>) {
     super(data);

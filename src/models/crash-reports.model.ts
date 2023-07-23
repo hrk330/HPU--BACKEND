@@ -1,4 +1,6 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, hasMany} from '@loopback/repository';
+import { UserDocs } from './user-docs.model';
+import {Witness} from './witness.model';
 
 @model()
 export class CrashReports extends Entity {
@@ -14,21 +16,21 @@ export class CrashReports extends Entity {
     required: true,
   })
   ownerName: string;
-  
+
   @property({
     type: 'string',
     id: true,
     generated: true,
   })
   vehicleId?: string;
-  
+
   @property({
     type: 'string',
     required: true,
   })
   vehicleType: string;
 
-	@property({
+  @property({
     type: 'string',
   })
   plateNumber?: string;
@@ -38,6 +40,16 @@ export class CrashReports extends Entity {
     required: true,
   })
   userId: string;
+  
+  @property({
+    type: 'string',
+  })
+  serviceProviderId: string;
+  
+  @property({
+    type: 'string',
+  })
+  adminUserId: string;
 
   @property({
     type: 'string',
@@ -59,52 +71,57 @@ export class CrashReports extends Entity {
   })
   ownerStatement?: string;
 
-	@property({
+  @property({
     type: 'string',
   })
   otherDriverName?: string;
-  
+
   @property({
     type: 'string',
   })
   otherVehiclePlateNumber?: string;
-  
+
   @property({
     type: 'string',
   })
   otherVehicleMake?: string;
-  
+
   @property({
     type: 'string',
   })
   otherVehicleInsuranceCompany?: string;
-  
+
   @property({
     type: 'string',
   })
   otherDamageDescription?: string;
-  
+
   @property({
     type: 'string',
   })
   otherStatement?: string;
 
-	@property({
+  @property({
     type: 'string',
   })
   witnessName?: string;
-  
+
   @property({
     type: 'string',
   })
   witnessStatement?: string;
-  
+
   @property({
     type: 'string',
   })
   assessorName?: string;
+  
+  @property({
+    type: 'string',
+  })
+  serviceOrderId?: string;
 
-	@property({
+  @property({
     type: 'date',
     default: "$now"
   })
@@ -114,6 +131,39 @@ export class CrashReports extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
+  
+  @property({
+    type: 'array',
+    itemType: 'string',
+  })
+  crashReportDocIds: string[];
+  
+  @property({
+    type: 'array',
+    itemType: 'string',
+  })
+  otherPartyDocIds: string[];
+  
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  crashReportDocs: UserDocs[];
+  
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  witnessList: Witness[];
+  
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  otherPartyDocs: UserDocs[];
+
+  @hasMany(() => Witness, {keyTo: 'crashReportId'})
+  witnesses: Witness[];
 
   constructor(data?: Partial<CrashReports>) {
     super(data);

@@ -32,3 +32,5 @@ export * from './service-provider-services.controller';
 export * from './reminders.controller';
 export * from './vehicle-reminders.controller';
 export * from './crash-reports.controller';
+export * from './service-orders-crash-reports.controller';
+export * from './crash-reports-witness.controller';

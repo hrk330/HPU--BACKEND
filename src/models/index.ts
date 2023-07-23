@@ -26,3 +26,4 @@ export * from './service-provider-services-request.model';
 export * from './reminders.model';
 export * from './document-types.model';
 export * from './crash-reports.model';
+export * from './witness.model';
