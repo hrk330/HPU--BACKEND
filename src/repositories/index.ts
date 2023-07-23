@@ -20,3 +20,4 @@ export * from './service-provider-services.repository';
 export * from './reminders.repository';
 export * from './document-types.repository';
 export * from './crash-reports.repository';
+export * from './witness.repository';
