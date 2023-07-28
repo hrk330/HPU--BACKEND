@@ -185,7 +185,7 @@ export class ServiceOrdersController {
       await sendMessage({
 		  notification: { title: title, body: body}, 
 	      data: { orderId: order.serviceOrderId+'', serviceName: order.serviceName+'', creationTime: order.createdAt+'', serviceType: order.serviceType+'', 
-	      	orderStatus: order.status+'', price: order.netAmount+''
+	      	orderStatus: order.status+'', price: order.netAmount+'', vehicleType: order.vehicleType+'', accidental: order.accidental+''
 	      },
 	      token: appUser?.endpoint
       });
