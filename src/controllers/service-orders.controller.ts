@@ -961,9 +961,9 @@ export class ServiceOrdersController {
 	  const result = {code: 0, msg: "Order fetched successfully.", order: {}};
 	  let dbServiceOrders: ServiceOrders[] = [];
 	  if(userType === "U") {
-			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId}});  
+			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId, status: {inq: ['LO', 'OA', 'AR', 'ST', 'CO', 'PI']}}});  
 	  } else if(userType === "S") {
-		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId}});
+		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId, status: {inq: ['OA', 'AR', 'ST', 'CO', 'PI']}}});
 	  }
     
     if(dbServiceOrders?.length > 0) {

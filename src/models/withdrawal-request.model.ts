@@ -29,6 +29,11 @@ export class WithdrawalRequest extends Entity {
     default: "L"
   })
   status?: string;
+  
+  @property({
+    type: 'string',
+  })
+  comments?: string;
 
   @property({
     type: 'string',

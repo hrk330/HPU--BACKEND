@@ -12,8 +12,6 @@ import {
   get,
   getModelSchemaRef,
   patch,
-  put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -51,7 +49,7 @@ export class WithdrawalRequestsController {
 	  if(!withdrawalRequest?.withdrawalAmount || withdrawalRequest?.withdrawalAmount < 1200) {
 	  	result.msg = "Withdrawal amount should be greater than 1200.";
 	  } else if(!userAccount?.balanceAmount || userAccount?.balanceAmount < 1200) {
-	  	result.msg = "Wallet balance should be greater than 1200.";
+	  	result.msg = "Insufficient balance.";
 	  } else {
 		  const dbwithdrawalRequest: WithdrawalRequest = await this.withdrawalRequestRepository.create(withdrawalRequest);
 		  result.code = 0;
@@ -61,19 +59,8 @@ export class WithdrawalRequestsController {
 	  
     return JSON.stringify(result);
   }
-
-  @get('/withdrawalRequests/count')
-  @response(200, {
-    description: 'WithdrawalRequest model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(WithdrawalRequest) where?: Where<WithdrawalRequest>,
-  ): Promise<Count> {
-    return this.withdrawalRequestRepository.count(where);
-  }
-
-  @get('/withdrawalRequests')
+ 
+  @get('/withdrawalRequests/serviceProvider/{serviceProviderId}/getAllRequests')
   @response(200, {
     description: 'Array of WithdrawalRequest model instances',
     content: {
@@ -85,7 +72,37 @@ export class WithdrawalRequestsController {
       },
     },
   })
-  async find(
+  async serviceProviderGetAllRequests(
+	  @param.path.string('serviceProviderId') serviceProviderId: string,
+    @param.filter(WithdrawalRequest) filter?: Filter<WithdrawalRequest>,
+    
+  ): Promise<string> {
+	  const result = {code: 5, msg: "Some error occured while getting order.", withdrawalRequest: {}};
+	  if(filter){
+	  	filter.where = {...filter?.where, serviceProviderId: serviceProviderId};
+	  }
+	  if(serviceProviderId) {
+			result.withdrawalRequest = await this.withdrawalRequestRepository.find(filter);
+			result.code = 0;
+			result.msg = "Withdrawal requests fetched successfully"  
+	  }
+   return JSON.stringify(result);
+    
+  }
+  
+  @get('/withdrawalRequests/Admin/getAllRequests')
+  @response(200, {
+    description: 'Array of WithdrawalRequest model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(WithdrawalRequest, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async adminGetAllRequests(
     @param.filter(WithdrawalRequest) filter?: Filter<WithdrawalRequest>,
   ): Promise<WithdrawalRequest[]> {
     return this.withdrawalRequestRepository.find(filter);
@@ -126,8 +143,8 @@ export class WithdrawalRequestsController {
     return this.withdrawalRequestRepository.findById(id, filter);
   }
 
-  @patch('/withdrawalRequests/{id}')
-  @response(204, {
+  @post('/withdrawalRequests/updateWithdrawalRequest/{id}')
+  @response(200, {
     description: 'WithdrawalRequest PATCH success',
   })
   async updateById(
@@ -144,19 +161,8 @@ export class WithdrawalRequestsController {
     await this.withdrawalRequestRepository.updateById(id, withdrawalRequest);
   }
 
-  @put('/withdrawalRequests/{id}')
-  @response(204, {
-    description: 'WithdrawalRequest PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() withdrawalRequest: WithdrawalRequest,
-  ): Promise<void> {
-    await this.withdrawalRequestRepository.replaceById(id, withdrawalRequest);
-  }
-
-  @del('/withdrawalRequests/{id}')
-  @response(204, {
+  @post('/withdrawalRequests/deleteWithdrawalRequest/{id}')
+  @response(200, {
     description: 'WithdrawalRequest DELETE success',
   })
   async deleteById(@param.path.string('id') id: string): Promise<void> {
