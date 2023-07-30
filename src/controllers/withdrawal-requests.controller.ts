@@ -1,17 +1,13 @@
 import {
-  Count,
-  CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   post,
   param,
   get,
   getModelSchemaRef,
-  patch,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -44,18 +40,22 @@ export class WithdrawalRequestsController {
     })
     withdrawalRequest: Omit<WithdrawalRequest, 'withdrawlRequestId'>,
   ): Promise<string> {
-	  const result = {code: 5, msg: "Some error occured while getting order.", withdrawalRequest: {}};
-	  const userAccount: Account = await this.appUsersRepository.account(withdrawalRequest.serviceProviderId).get({})
-	  if(!withdrawalRequest?.withdrawalAmount || withdrawalRequest?.withdrawalAmount < 1200) {
-	  	result.msg = "Withdrawal amount should be greater than 1200.";
-	  } else if(!userAccount?.balanceAmount || userAccount?.balanceAmount < 1200) {
-	  	result.msg = "Insufficient balance.";
-	  } else {
-		  const dbwithdrawalRequest: WithdrawalRequest = await this.withdrawalRequestRepository.create(withdrawalRequest);
-		  result.code = 0;
-		  result.msg = "Withdrawal request created successfully.";
-		  result.withdrawalRequest = dbwithdrawalRequest;
-	  }
+	  const result = {code: 5, msg: "Some error occured while creating withdrawal request.", withdrawalRequest: {}};
+	  try{
+		  const userAccount: Account = await this.appUsersRepository.account(withdrawalRequest.serviceProviderId).get({})
+		  if(!withdrawalRequest?.withdrawalAmount || withdrawalRequest?.withdrawalAmount < 1200) {
+		  	result.msg = "Withdrawal amount should be greater than 1200.";
+		  } else if(!userAccount?.balanceAmount || userAccount?.balanceAmount < 1200) {
+		  	result.msg = "Insufficient balance.";
+		  } else {
+			  const dbwithdrawalRequest: WithdrawalRequest = await this.withdrawalRequestRepository.create(withdrawalRequest);
+			  result.code = 0;
+			  result.msg = "Withdrawal request created successfully.";
+			  result.withdrawalRequest = dbwithdrawalRequest;
+		  }
+		} catch (e){
+			result.msg = e.message;
+		}
 	  
     return JSON.stringify(result);
   }
@@ -75,19 +75,21 @@ export class WithdrawalRequestsController {
   async serviceProviderGetAllRequests(
 	  @param.path.string('serviceProviderId') serviceProviderId: string,
     @param.filter(WithdrawalRequest) filter?: Filter<WithdrawalRequest>,
-    
   ): Promise<string> {
-	  const result = {code: 5, msg: "Some error occured while getting order.", withdrawalRequest: {}};
-	  if(filter){
-	  	filter.where = {...filter?.where, serviceProviderId: serviceProviderId};
-	  }
-	  if(serviceProviderId) {
-			result.withdrawalRequest = await this.withdrawalRequestRepository.find(filter);
-			result.code = 0;
-			result.msg = "Withdrawal requests fetched successfully"  
-	  }
-   return JSON.stringify(result);
-    
+	  const result = {code: 5, msg: "Some error occured while getting withdrawal requests.", withdrawalRequest: {}};
+	  try{
+		  if(filter){
+		  	filter.where = {...filter?.where, serviceProviderId: serviceProviderId};
+		  }
+		  if(serviceProviderId) {
+				result.withdrawalRequest = await this.withdrawalRequestRepository.find(filter);
+				result.code = 0;
+				result.msg = "Withdrawal requests fetched successfully."  
+			}
+		} catch (e){
+			result.msg = e.message;
+		}
+  	return JSON.stringify(result);
   }
   
   @get('/withdrawalRequests/Admin/getAllRequests')
@@ -104,30 +106,19 @@ export class WithdrawalRequestsController {
   })
   async adminGetAllRequests(
     @param.filter(WithdrawalRequest) filter?: Filter<WithdrawalRequest>,
-  ): Promise<WithdrawalRequest[]> {
-    return this.withdrawalRequestRepository.find(filter);
+  ): Promise<string> {
+	  const result = {code: 5, msg: "Some error occured while getting withdrawal requests.", withdrawalRequest: {}};
+    try{
+	    result.withdrawalRequest = await this.withdrawalRequestRepository.find(filter);
+			result.code = 0;
+			result.msg = "Withdrawal requests fetched successfully.";
+		} catch (e){
+			result.msg = e.message;
+		} 
+  	return JSON.stringify(result);
   }
 
-  @patch('/withdrawalRequests')
-  @response(200, {
-    description: 'WithdrawalRequest PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(WithdrawalRequest, {partial: true}),
-        },
-      },
-    })
-    withdrawalRequest: WithdrawalRequest,
-    @param.where(WithdrawalRequest) where?: Where<WithdrawalRequest>,
-  ): Promise<Count> {
-    return this.withdrawalRequestRepository.updateAll(withdrawalRequest, where);
-  }
-
-  @get('/withdrawalRequests/{id}')
+  @get('/withdrawalRequests/fetchWithdrawalRequest/{id}')
   @response(200, {
     description: 'WithdrawalRequest model instance',
     content: {
@@ -139,15 +130,23 @@ export class WithdrawalRequestsController {
   async findById(
     @param.path.string('id') id: string,
     @param.filter(WithdrawalRequest, {exclude: 'where'}) filter?: FilterExcludingWhere<WithdrawalRequest>
-  ): Promise<WithdrawalRequest> {
-    return this.withdrawalRequestRepository.findById(id, filter);
+  ): Promise<string> {
+	  const result = {code: 5, msg: "Some error occured while getting withdrawal request.", withdrawalRequest: {}};
+    try{
+	    result.withdrawalRequest = await this.withdrawalRequestRepository.findById(id, filter);
+			result.code = 0;
+			result.msg = "Withdrawal request fetched successfully.";
+		} catch (e){
+			result.msg = e.message;
+		}
+  	return JSON.stringify(result);
   }
 
   @post('/withdrawalRequests/updateWithdrawalRequest/{id}')
   @response(200, {
     description: 'WithdrawalRequest PATCH success',
   })
-  async updateById(
+  async updateWithdrawalRequest(
     @param.path.string('id') id: string,
     @requestBody({
       content: {
@@ -157,8 +156,17 @@ export class WithdrawalRequestsController {
       },
     })
     withdrawalRequest: WithdrawalRequest,
-  ): Promise<void> {
-    await this.withdrawalRequestRepository.updateById(id, withdrawalRequest);
+  ): Promise<string> {
+	  const result = {code: 5, msg: "Some error occured while getting withdrawal requests.", withdrawalRequest: {}};
+    try{
+			await this.withdrawalRequestRepository.updateById(id, withdrawalRequest);
+	    result.withdrawalRequest = await this.withdrawalRequestRepository.findById(id, {});
+			result.code = 0;
+			result.msg = "Withdrawal requests fetched successfully.";
+		} catch (e){
+			result.msg = e.message;
+		}
+  	return JSON.stringify(result);
   }
 
   @post('/withdrawalRequests/deleteWithdrawalRequest/{id}')
