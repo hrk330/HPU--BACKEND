@@ -55,6 +55,11 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
+  vehicleId?: string;
+  
+  @property({
+    type: 'string',
+  })
   orderType?: string;
 
   @property({
