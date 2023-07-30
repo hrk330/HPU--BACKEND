@@ -61,6 +61,12 @@ export class WithdrawalRequest extends Entity {
   })
   withdrawalAmount?: number;
 
+	@property({
+    type: 'string',
+    default: "S"
+  })
+  createdBy?: string;
+  
   @property({
     type: 'date',
     default: "$now"
