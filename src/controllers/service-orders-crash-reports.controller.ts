@@ -87,30 +87,24 @@ export class ServiceOrdersCrashReportsController {
   ): Promise<string> {
 	  const result = {code: 5, msg: "Some error occured while creating crash report.", crashReport: {}};
 	  try{
-		  const crashReport: CrashReports = await this.serviceOrdersRepository.crashReport(id).get();
-	    if(crashReport){
-				result.code = 5;
-	    	result.msg = "Crash report already exists.";
-			} else {
-			  const witnessList: Witness[] = crashReports.witnessList;
-			  crashReports.witnessList = [];
-		    const dbCrashReport: CrashReports = await this.serviceOrdersRepository.crashReport(id).create(crashReports);
-		    if(dbCrashReport){
-					if(witnessList?.length > 0) {
-						for (const witness of witnessList){
-							dbCrashReport.witnessList.push(await this.crashReportsRepository.witnesses(dbCrashReport.crashReportId).create(witness));
-						}
+		  const witnessList: Witness[] = crashReports.witnessList;
+		  crashReports.witnessList = [];
+	    const dbCrashReport: CrashReports = await this.serviceOrdersRepository.crashReport(id).create(crashReports);
+	    if(dbCrashReport){
+				if(witnessList?.length > 0) {
+					for (const witness of witnessList){
+						dbCrashReport.witnessList.push(await this.crashReportsRepository.witnesses(dbCrashReport.crashReportId).create(witness));
 					}
-					if(dbCrashReport.crashReportDocIds) {
-			    	dbCrashReport.crashReportDocs = await this.userDocsRepository.find({where: {id: {inq: dbCrashReport.crashReportDocIds}}});
-		    	}	    	
-		    	if(dbCrashReport.otherPartyDocIds) {
-			    	dbCrashReport.otherPartyDocs = await this.userDocsRepository.find({where: {id: {inq: dbCrashReport.otherPartyDocIds}}});
-		    	}
-					result.crashReport = dbCrashReport;
-			    result.code = 0;
-		    	result.msg = "Crash report created successfully.";
 				}
+				if(dbCrashReport.crashReportDocIds) {
+		    	dbCrashReport.crashReportDocs = await this.userDocsRepository.find({where: {id: {inq: dbCrashReport.crashReportDocIds}}});
+	    	}	    	
+	    	if(dbCrashReport.otherPartyDocIds) {
+		    	dbCrashReport.otherPartyDocs = await this.userDocsRepository.find({where: {id: {inq: dbCrashReport.otherPartyDocIds}}});
+	    	}
+				result.crashReport = dbCrashReport;
+		    result.code = 0;
+	    	result.msg = "Crash report created successfully.";
 			}
     } catch(e) {
 			console.log(e);
