@@ -120,6 +120,11 @@ export class CrashReports extends Entity {
     type: 'string',
   })
   serviceOrderId?: string;
+  
+  @property({
+    type: 'string',
+  })
+  status: string;
 
   @property({
     type: 'date',
