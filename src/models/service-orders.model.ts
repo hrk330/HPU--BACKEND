@@ -1,8 +1,8 @@
 import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
-import { AppUsers } from './app-users.model';
 import {Services} from './services.model';
 import {CrashReports} from './crash-reports.model';
 import { UserDocs } from './user-docs.model';
+import { ServiceProvider } from './service-provider.model';
 
 @model()
 export class ServiceOrders extends Entity {
@@ -226,7 +226,7 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'any',
   })
-  serviceProvider: AppUsers;
+  serviceProvider: ServiceProvider;
   
   @property({
     type: 'array',

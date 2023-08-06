@@ -54,7 +54,7 @@ export class ServiceProviderUserCredsController {
     },
   })
   async create(
-    @param.path.string('id') id: typeof ServiceProvider.prototype.serviceProviderId,
+    @param.path.string('id') id: typeof ServiceProvider.prototype.id,
     @requestBody({
       content: {
         'application/json': {

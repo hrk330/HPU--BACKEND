@@ -40,3 +40,4 @@ export * from './service-provider-withdrawal-request.controller';
 export * from './company-user-creds.controller';
 export * from './company-account.controller';
 export * from './company-bank-account.controller';
+export * from './service-provider-account.controller';

@@ -17,39 +17,39 @@ import {
 } from '@loopback/rest';
 import {
   ServiceProvider,
-  UserDocs,
+  Account,
 } from '../models';
 import {ServiceProviderRepository} from '../repositories';
 
-export class ServiceProviderUserDocsController {
+export class ServiceProviderAccountController {
   constructor(
     @repository(ServiceProviderRepository) protected serviceProviderRepository: ServiceProviderRepository,
   ) { }
 
-  @get('/service-providers/{id}/user-docs', {
+  @get('/service-providers/{id}/account', {
     responses: {
       '200': {
-        description: 'Array of ServiceProvider has many UserDocs',
+        description: 'ServiceProvider has one Account',
         content: {
           'application/json': {
-            schema: {type: 'array', items: getModelSchemaRef(UserDocs)},
+            schema: getModelSchemaRef(Account),
           },
         },
       },
     },
   })
-  async find(
+  async get(
     @param.path.string('id') id: string,
-    @param.query.object('filter') filter?: Filter<UserDocs>,
-  ): Promise<UserDocs[]> {
-    return this.serviceProviderRepository.userDocs(id).find(filter);
+    @param.query.object('filter') filter?: Filter<Account>,
+  ): Promise<Account> {
+    return this.serviceProviderRepository.account(id).get(filter);
   }
 
-  @post('/service-providers/{id}/user-docs', {
+  @post('/service-providers/{id}/account', {
     responses: {
       '200': {
         description: 'ServiceProvider model instance',
-        content: {'application/json': {schema: getModelSchemaRef(UserDocs)}},
+        content: {'application/json': {schema: getModelSchemaRef(Account)}},
       },
     },
   })
@@ -58,22 +58,22 @@ export class ServiceProviderUserDocsController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(UserDocs, {
-            title: 'NewUserDocsInServiceProvider',
-            exclude: ['id'],
+          schema: getModelSchemaRef(Account, {
+            title: 'NewAccountInServiceProvider',
+            exclude: ['accountId'],
             optional: ['userId']
           }),
         },
       },
-    }) userDocs: Omit<UserDocs, 'id'>,
-  ): Promise<UserDocs> {
-    return this.serviceProviderRepository.userDocs(id).create(userDocs);
+    }) account: Omit<Account, 'accountId'>,
+  ): Promise<Account> {
+    return this.serviceProviderRepository.account(id).create(account);
   }
 
-  @patch('/service-providers/{id}/user-docs', {
+  @patch('/service-providers/{id}/account', {
     responses: {
       '200': {
-        description: 'ServiceProvider.UserDocs PATCH success count',
+        description: 'ServiceProvider.Account PATCH success count',
         content: {'application/json': {schema: CountSchema}},
       },
     },
@@ -83,28 +83,28 @@ export class ServiceProviderUserDocsController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(UserDocs, {partial: true}),
+          schema: getModelSchemaRef(Account, {partial: true}),
         },
       },
     })
-    userDocs: Partial<UserDocs>,
-    @param.query.object('where', getWhereSchemaFor(UserDocs)) where?: Where<UserDocs>,
+    account: Partial<Account>,
+    @param.query.object('where', getWhereSchemaFor(Account)) where?: Where<Account>,
   ): Promise<Count> {
-    return this.serviceProviderRepository.userDocs(id).patch(userDocs, where);
+    return this.serviceProviderRepository.account(id).patch(account, where);
   }
 
-  @del('/service-providers/{id}/user-docs', {
+  @del('/service-providers/{id}/account', {
     responses: {
       '200': {
-        description: 'ServiceProvider.UserDocs DELETE success count',
+        description: 'ServiceProvider.Account DELETE success count',
         content: {'application/json': {schema: CountSchema}},
       },
     },
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(UserDocs)) where?: Where<UserDocs>,
+    @param.query.object('where', getWhereSchemaFor(Account)) where?: Where<Account>,
   ): Promise<Count> {
-    return this.serviceProviderRepository.userDocs(id).delete(where);
+    return this.serviceProviderRepository.account(id).delete(where);
   }
 }

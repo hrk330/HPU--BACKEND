@@ -5,15 +5,11 @@ import {Count, CountSchema, Filter, FilterExcludingWhere, Where, repository} fro
 import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response, } from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AppUsers, CredentialsRequest, CredentialsRequestBody, ServiceProviderServices, Services, UserCreds} from '../models';
-import {AppUsersRepository, ServiceProviderServicesRepository, ServicesRepository, VerificationCodesRepository} from '../repositories';
+import {CredentialsRequest, CredentialsRequestBody, ServiceProvider, ServiceProviderServices, Services, UserCreds} from '../models';
+import {ServiceProviderRepository, ServiceProviderServicesRepository, ServicesRepository} from '../repositories';
 
 export class ServicesProviderController {
   constructor(
-    @repository(AppUsersRepository)
-    public appUsersRepository: AppUsersRepository,
-    @repository(AppUsersRepository)
-    public verificationCodesRepository: VerificationCodesRepository,
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
@@ -22,32 +18,34 @@ export class ServicesProviderController {
     public serviceProviderServicesRepository : ServiceProviderServicesRepository,
     @repository(ServicesRepository)
     public servicesRepository: ServicesRepository,
+    @repository(ServiceProviderRepository)
+    public serviceProviderRepository: ServiceProviderRepository,
   ) { }
 
   @post('/serviceProvider/signup')
   @response(200, {
     description: 'AppUsers model instance',
-    content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
+    content: {'application/json': {schema: getModelSchemaRef(ServiceProvider)}},
   })
   async signUp(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
+          schema: getModelSchemaRef(ServiceProvider, {
             title: 'serviceProvider',
             exclude: ['id'],
           }),
         },
       },
     })
-    serviceProvider: Omit<AppUsers, 'id'>,
+    serviceProvider: Omit<ServiceProvider, 'id'>,
   ): Promise<String> {
 
     let result = {code: 5, msg: "User registeration failed.", token: '', userId: ''};
     try {
 		
 			if(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(serviceProvider.email)) {
-	      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
+	      const user = await this.serviceProviderRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
 	
 	      if (user?.id) {
 	        result = {code: 5, msg: "User already exists", token: '', userId: ''};
@@ -56,13 +54,13 @@ export class ServicesProviderController {
 	        const password = await hash(serviceProvider.password, salt);
 	        serviceProvider.roleId = "SERVICEPROVIDER";
 	        serviceProvider.isServiceProviderVerified = "N";
-	        const savedUser = await this.appUsersRepository.create(
+	        const savedUser = await this.serviceProviderRepository.create(
 	          _.omit(serviceProvider, 'password'),
 	        );
 	        if (savedUser) {
 				
-	      		await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
-	          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
+	      		await this.serviceProviderRepository.account(savedUser.id).create({balanceAmount: 0});
+	          await this.serviceProviderRepository.userCreds(savedUser.id).create({password, salt});
 	          const userProfile = this.userService.convertToUserProfile(savedUser);
 	
 	          result.userId = savedUser.id;
@@ -84,27 +82,27 @@ export class ServicesProviderController {
   
   @post('/serviceProvider/admin/createServiceProvider')
   @response(200, {
-    description: 'AppUsers model instance',
-    content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
+    description: 'ServiceProvider model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceProvider)}},
   })
   async createServiceProviderByAdmin(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
+          schema: getModelSchemaRef(ServiceProvider, {
             title: 'serviceProvider',
             exclude: ['id'],
           }),
         },
       },
     })
-    serviceProvider: Omit<AppUsers, 'id'>,
+    serviceProvider: Omit<ServiceProvider, 'id'>,
   ): Promise<String> {
 
     let result = {code: 5, msg: "User registeration failed.", user: {}};
     try {
 			if(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(serviceProvider.email)) {
-	      const user = await this.appUsersRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
+	      const user = await this.serviceProviderRepository.findOne({where: {email: serviceProvider.email, roleId: "SERVICEPROVIDER"}});
 	
 	      if (user?.id) {
 	        result = {code: 5, msg: "User already exists", user: {}};
@@ -113,13 +111,13 @@ export class ServicesProviderController {
 	        const password = await hash(serviceProvider.password, salt);
 	        serviceProvider.roleId = "SERVICEPROVIDER";
 	        serviceProvider.isServiceProviderVerified = "N";
-	        const savedUser = await this.appUsersRepository.create(
+	        const savedUser = await this.serviceProviderRepository.create(
 	          _.omit(serviceProvider, 'password'),
 	        );
 	        if (savedUser) {
 				
-	      		await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
-	          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
+	      		await this.serviceProviderRepository.account(savedUser.id).create({balanceAmount: 0});
+	          await this.serviceProviderRepository.userCreds(savedUser.id).create({password, salt});
 	          
 	          const servicesArray : Array<string> = [];
 	          const serviceProviderServiceMap = new Map <string, ServiceProviderServices>();
@@ -171,25 +169,25 @@ export class ServicesProviderController {
   @authenticate('jwt')
   @post('/serviceProvider/admin/updateServiceProvider')
   @response(200, {
-    description: 'AppUsers model instance',
-    content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
+    description: 'ServiceProvider model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceProvider)}},
   })
   async updateServiceProviderByAdmin(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
+          schema: getModelSchemaRef(ServiceProvider, {
             title: 'NewUser',
           }),
         },
       },
     })
-    serviceProvider: AppUsers,
+    serviceProvider: ServiceProvider,
   ): Promise<String> {
     let result = {code: 5, msg: "Some error occured while updating service provider.", user: {}};
     try {
-      await this.appUsersRepository.updateById(serviceProvider.id, serviceProvider);
-      const user = await this.appUsersRepository.findById(serviceProvider.id, {});
+      await this.serviceProviderRepository.updateById(serviceProvider.id, serviceProvider);
+      const user = await this.serviceProviderRepository.findById(serviceProvider.id, {});
       if (user) {
 		  const servicesArray : Array<string> = [];
 	          const serviceProviderServiceMap = new Map <string, ServiceProviderServices>();
@@ -271,16 +269,13 @@ export class ServicesProviderController {
     // ensure the user exists, and the password is correct
     const result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
     try {      
-      const user = await this.appUsersRepository.findOne({where: {email: credentials.email, roleId: "SERVICEPROVIDER"}, include: [{'relation': 'userCreds'}]});
+      const user = await this.serviceProviderRepository.findOne({where: {email: credentials.email, roleId: "SERVICEPROVIDER"}, include: [{'relation': 'userCreds'}]});
 
       //const user = await this.userService.verifyCredentials(credentials);
       if (user?.userCreds) {
         const salt = user.userCreds.salt;
         const password = await hash(credentials.password, salt);
         if (password === user.userCreds.password) {
-
-          //this.appUsersRepository.updateById(id, appUsers)
-          // convert a User object into a UserProfile object (reduced set of properties)
 
           // create a JSON Web Token based on the user profile
           result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
@@ -315,22 +310,22 @@ export class ServicesProviderController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
+          schema: getModelSchemaRef(ServiceProvider, {
             title: 'NewUser', partial: true
           }),
         },
       },
     })
-    newUserRequest: AppUsers
+    newUserRequest: ServiceProvider
   ): Promise<String> {
     const result = {code: 5, msg: "Reset password failed."};
 
-    const user = await this.appUsersRepository.findOne({where: {email: newUserRequest.email, roleId : "SERVICEPROVIDER"}});
+    const user = await this.serviceProviderRepository.findOne({where: {email: newUserRequest.email, roleId : "SERVICEPROVIDER"}});
     if (user) {
       const salt = await genSalt();
       const password = await hash(newUserRequest.password, salt);
       const updatedAt = new Date();
-      await this.appUsersRepository.userCreds(user.id).patch({password, salt, updatedAt});
+      await this.serviceProviderRepository.userCreds(user.id).patch({password, salt, updatedAt});
       result.code = 0;
       result.msg = "Password has been reset successfully.";
     }
@@ -341,25 +336,25 @@ export class ServicesProviderController {
   @authenticate('jwt')
   @post('/serviceProvider/updateProfile')
   @response(200, {
-    description: 'AppUsers model instance',
-    content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
+    description: 'ServiceProvider model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceProvider)}},
   })
   async updateProfile(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
+          schema: getModelSchemaRef(ServiceProvider, {
             title: 'NewUser',
           }),
         },
       },
     })
-    serviceProvider: AppUsers,
+    serviceProvider: ServiceProvider,
   ): Promise<String> {
     let result = {code: 5, msg: "Some error occured while updating profile.", user: {}};
     try {
-      await this.appUsersRepository.updateById(serviceProvider.id, _.omit(serviceProvider, 'email', 'phoneNo'));
-      const user = await this.appUsersRepository.findById(serviceProvider.id, {});
+      await this.serviceProviderRepository.updateById(serviceProvider.id, _.omit(serviceProvider, 'email', 'phoneNo'));
+      const user = await this.serviceProviderRepository.findById(serviceProvider.id, {});
       if (user) {
         result = {code: 0, msg: "User profile updated successfully.", user: user};
       }
@@ -390,16 +385,16 @@ export class ServicesProviderController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
+          schema: getModelSchemaRef(ServiceProvider, {
             title: 'NewUser',
           }),
         },
       },
     })
-    newUserRequest: AppUsers,
+    newUserRequest: ServiceProvider,
   ): Promise<String> {
-    await this.appUsersRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'endpoint'));
-    const user = await this.appUsersRepository.findById(newUserRequest.id, {});
+    await this.serviceProviderRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'endpoint'));
+    const user = await this.serviceProviderRepository.findById(newUserRequest.id, {});
     const result = {code: 0, msg: "Endpoint updated successfully.", user: user};
     return JSON.stringify(result);
   }
@@ -423,47 +418,47 @@ export class ServicesProviderController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
+          schema: getModelSchemaRef(ServiceProvider, {
             title: 'NewUser',
           }),
         },
       },
     })
-    newUserRequest: AppUsers,
+    newUserRequest: ServiceProvider,
   ): Promise<String> {
-    await this.appUsersRepository.updateById(newUserRequest.id, {'userStatus': 'A'});
-    await this.appUsersRepository.userDocs(newUserRequest.id).patch({docStatus: 'A'}, {docType: {inq: ['DL','VR','VFC','CPR','RL1','RL2']}});
-    const user = await this.appUsersRepository.findById(newUserRequest.id, {});
+    await this.serviceProviderRepository.updateById(newUserRequest.id, {'userStatus': 'A'});
+    await this.serviceProviderRepository.userDocs(newUserRequest.id).patch({docStatus: 'A'}, {docType: {inq: ['DL','VR','VFC','CPR','RL1','RL2']}});
+    const user = await this.serviceProviderRepository.findById(newUserRequest.id, {});
     const result = {code: 0, msg: "User approved successfully.", user: user};
     return JSON.stringify(result);
   }
   
   @get('/serviceProvider/adminUser/fetchAllPendingServiceProviders')
   @response(200, {
-    description: 'Array of AppUsers model instances',
+    description: 'Array of ServiceProvider model instances',
     content: {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(AppUsers, {includeRelations: true}),
+          items: getModelSchemaRef(ServiceProvider, {includeRelations: true}),
         },
       },
     },
   })
   async fetchAllPendingServiceProviders(
-    @param.filter(AppUsers) filter?: Filter<AppUsers>,
-  ): Promise<AppUsers[]> {
-    return this.appUsersRepository.find({where: {roleId: "SERVICEPROVIDER", userStatus: "P"}});
+    @param.filter(ServiceProvider) filter?: Filter<ServiceProvider>,
+  ): Promise<ServiceProvider[]> {
+    return this.serviceProviderRepository.find({where: {roleId: "SERVICEPROVIDER", userStatus: "P"}});
   }
   
   @get('/serviceProvider/getSearchedUsers/{email}')
   @response(200, {
-    description: 'Array of AppUsers model instances',
+    description: 'Array of ServiceProvider model instances',
     content: {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(AppUsers, {includeRelations: true}),
+          items: getModelSchemaRef(ServiceProvider, {includeRelations: true}),
         },
       },
     },
@@ -471,7 +466,7 @@ export class ServicesProviderController {
   async findByEmail(
     @param.path.string('email') email: string,
   ): Promise<User[]> {
-    return this.appUsersRepository.find({where: {roleId: "SERVICEPROVIDER", email: {like: email}}, limit: 10, fields: ["id", "email"]});
+    return this.serviceProviderRepository.find({where: {roleId: "SERVICEPROVIDER", email: {like: email}}, limit: 10, fields: ["id", "email"]});
   }
   
   @authenticate('jwt')
@@ -493,138 +488,138 @@ export class ServicesProviderController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
+          schema: getModelSchemaRef(ServiceProvider, {
             title: 'NewUser',
           }),
         },
       },
     })
-    newUserRequest: AppUsers,
+    newUserRequest: ServiceProvider,
   ): Promise<String> {
-    await this.appUsersRepository.updateById(newUserRequest.id, {'endpoint': ''});
+    await this.serviceProviderRepository.updateById(newUserRequest.id, {'endpoint': ''});
     const result = {code: 0, msg: "User logged out successfully."};
     return JSON.stringify(result);
   }
 
   @post('/serviceProvider')
   @response(200, {
-    description: 'AppUsers model instance',
-    content: {'application/json': {schema: getModelSchemaRef(AppUsers)}},
+    description: 'ServiceProvider model instance',
+    content: {'application/json': {schema: getModelSchemaRef(ServiceProvider)}},
   })
   async create(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {
-            title: 'NewAppUsers',
+          schema: getModelSchemaRef(ServiceProvider, {
+            title: 'NewServiceProvider',
             exclude: ['id'],
           }),
         },
       },
     })
-    appUsers: Omit<AppUsers, 'id'>,
-  ): Promise<AppUsers> {
-    return this.appUsersRepository.create(appUsers);
+    serviceProvider: Omit<ServiceProvider, 'id'>,
+  ): Promise<ServiceProvider> {
+    return this.serviceProviderRepository.create(serviceProvider);
   }
 
   @get('/serviceProvider/count')
   @response(200, {
-    description: 'AppUsers model count',
+    description: 'ServiceProvider model count',
     content: {'application/json': {schema: CountSchema}},
   })
   async count(
-    @param.where(AppUsers) where?: Where<AppUsers>,
+    @param.where(ServiceProvider) where?: Where<ServiceProvider>,
   ): Promise<Count> {
-    return this.appUsersRepository.count(where);
+    return this.serviceProviderRepository.count(where);
   }
 
   @get('/serviceProvider')
   @response(200, {
-    description: 'Array of AppUsers model instances',
+    description: 'Array of ServiceProvider model instances',
     content: {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(AppUsers, {includeRelations: true}),
+          items: getModelSchemaRef(ServiceProvider, {includeRelations: true}),
         },
       },
     },
   })
   async find(
-    @param.filter(AppUsers) filter?: Filter<AppUsers>,
-  ): Promise<AppUsers[]> {
-    return this.appUsersRepository.find(filter);
+    @param.filter(ServiceProvider) filter?: Filter<ServiceProvider>,
+  ): Promise<ServiceProvider[]> {
+    return this.serviceProviderRepository.find(filter);
   }
 
   @patch('/serviceProvider')
   @response(200, {
-    description: 'AppUsers PATCH success count',
+    description: 'ServiceProvider PATCH success count',
     content: {'application/json': {schema: CountSchema}},
   })
   async updateAll(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {partial: true}),
+          schema: getModelSchemaRef(ServiceProvider, {partial: true}),
         },
       },
     })
-    appUsers: AppUsers,
-    @param.where(AppUsers) where?: Where<AppUsers>,
+    appUsers: ServiceProvider,
+    @param.where(ServiceProvider) where?: Where<ServiceProvider>,
   ): Promise<Count> {
-    return this.appUsersRepository.updateAll(appUsers, where);
+    return this.serviceProviderRepository.updateAll(appUsers, where);
   }
 
   @get('/serviceProvider/{id}')
   @response(200, {
-    description: 'AppUsers model instance',
+    description: 'ServiceProvider model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(AppUsers, {includeRelations: true}),
+        schema: getModelSchemaRef(ServiceProvider, {includeRelations: true}),
       },
     },
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(AppUsers, {exclude: 'where'}) filter?: FilterExcludingWhere<AppUsers>
-  ): Promise<AppUsers> {
-    return this.appUsersRepository.findById(id, filter);
+    @param.filter(ServiceProvider, {exclude: 'where'}) filter?: FilterExcludingWhere<ServiceProvider>
+  ): Promise<ServiceProvider> {
+    return this.serviceProviderRepository.findById(id, filter);
   }
 
   @patch('/serviceProvider/{id}')
   @response(204, {
-    description: 'AppUsers PATCH success',
+    description: 'ServiceProvider PATCH success',
   })
   async updateById(
     @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(AppUsers, {partial: true}),
+          schema: getModelSchemaRef(ServiceProvider, {partial: true}),
         },
       },
     })
-    appUsers: AppUsers,
+    appUsers: ServiceProvider,
   ): Promise<void> {
-    await this.appUsersRepository.updateById(id, appUsers);
+    await this.serviceProviderRepository.updateById(id, appUsers);
   }
 
   @put('/serviceProvider/{id}')
   @response(204, {
-    description: 'AppUsers PUT success',
+    description: 'ServiceProvider PUT success',
   })
   async replaceById(
     @param.path.string('id') id: string,
-    @requestBody() appUsers: AppUsers,
+    @requestBody() appUsers: ServiceProvider,
   ): Promise<void> {
-    await this.appUsersRepository.replaceById(id, appUsers);
+    await this.serviceProviderRepository.replaceById(id, appUsers);
   }
 
   @del('/serviceProvider/{id}')
   @response(204, {
-    description: 'AppUsers DELETE success',
+    description: 'ServiceProvider DELETE success',
   })
   async deleteById(@param.path.string('id') id: string): Promise<void> {
-    await this.appUsersRepository.deleteById(id);
+    await this.serviceProviderRepository.deleteById(id);
   }
 }

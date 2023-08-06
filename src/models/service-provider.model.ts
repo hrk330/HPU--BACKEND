@@ -4,6 +4,7 @@ import { ServiceProviderServices } from './service-provider-services.model';
 import {UserCreds} from './user-creds.model';
 import {UserDocs} from './user-docs.model';
 import {WithdrawalRequest} from './withdrawal-request.model';
+import {Account} from './account.model';
 
 @model()
 export class ServiceProvider extends Entity {
@@ -12,7 +13,7 @@ export class ServiceProvider extends Entity {
     id: true,
     generated: true,
   })
-  serviceProviderId?: string;
+  id: string;
   
   @property({
     type: 'string',
@@ -225,8 +226,11 @@ export class ServiceProvider extends Entity {
   @hasMany(() => UserDocs, {keyTo: 'userId'})
   userDocs: UserDocs[];
 
-  @hasMany(() => WithdrawalRequest)
+  @hasMany(() => WithdrawalRequest, {keyTo: 'serviceProviderId'})
   withdrawalRequests: WithdrawalRequest[];
+
+  @hasOne(() => Account, {keyTo: 'userId'})
+  account: Account;
 
   constructor(data?: Partial<ServiceProvider>) {
     super(data);
