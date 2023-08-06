@@ -18,16 +18,16 @@ import {
   response,
 } from '@loopback/rest';
 import {Account, ServiceOrders, WithdrawalRequest} from '../models';
-import {AccountRepository, AppUsersRepository, ServiceOrdersRepository} from '../repositories';
+import {AccountRepository, ServiceOrdersRepository, ServiceProviderRepository} from '../repositories';
 
 export class AccountsController {
   constructor(
     @repository(AccountRepository)
     public accountRepository : AccountRepository,
-    @repository(AppUsersRepository)
-    public appUsersRepository: AppUsersRepository,
     @repository(ServiceOrdersRepository)
     public serviceOrdersRepository: ServiceOrdersRepository,
+    @repository(ServiceProviderRepository)
+    public serviceProviderRepository: ServiceProviderRepository,
   ) {}
 
   @post('/accounts')
@@ -96,7 +96,7 @@ export class AccountsController {
 	  @param.path.string('serviceProviderId') serviceProviderId: string,
   ): Promise<string> {
 	  const result = {code: 5, msg: "No record found.", account: {}, withdrawalRequests: {}, totalWithdrawanAmount: 0, totalEarnedAmmount: 0};
-	  const account: Account = await this.appUsersRepository.account(serviceProviderId).get({});
+	  const account: Account = await this.serviceProviderRepository.account(serviceProviderId).get({});
 	  if(account?.accountId) {
 			const last5WithdrawalRequests: WithdrawalRequest[] = await this.accountRepository.withdrawalRequests(account.accountId).find({limit: 5, order: ['createdAt desc']});
 			const allWithdrawalRequests4Sum: WithdrawalRequest[] = await this.accountRepository.withdrawalRequests(account.accountId).find({where: {status: "C"}, fields: ['withdrawalAmount']});

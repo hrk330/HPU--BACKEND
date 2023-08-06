@@ -16,8 +16,8 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Account, AppUsers, OrderRequest, Payment, PromoCodes, ServiceOrders, Services} from '../models';
-import {AppUsersRepository, PaymentRepository, PromoCodesRepository, ServiceOrdersRepository, ServicesRepository} from '../repositories';
+import {Account, AppUsers, OrderRequest, Payment, PromoCodes, ServiceOrders, ServiceProvider, Services} from '../models';
+import {AppUsersRepository, PaymentRepository, PromoCodesRepository, ServiceOrdersRepository, ServiceProviderRepository, ServicesRepository} from '../repositories';
 import {sendMessage} from '../services/firebase-notification.service';
 //import _ from 'lodash';
 
@@ -33,6 +33,8 @@ export class ServiceOrdersController {
     public paymentRepository : PaymentRepository,
     @repository(PromoCodesRepository)
     public promoCodesRepository: PromoCodesRepository,
+    @repository(ServiceProviderRepository)
+    public serviceProviderRepository: ServiceProviderRepository,
   ) { }
   
   @post('/serviceOrders/adminUser/createOrder')
@@ -56,72 +58,91 @@ export class ServiceOrdersController {
     
     const result = {code: 5, msg: "Some error occured while creating order.", order: {}};
     try {
-			serviceOrders.status = "OA";
-	    const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
-	    serviceOrders.taxPercentage = service.salesTax;
-	    if(serviceOrders?.distance) {
-				serviceOrders.distanceAmount = service.pricePerKm*serviceOrders.distance;
-		  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
-			} else {
-				serviceOrders.grossAmount = service.price; 
-			}
-			if(serviceOrders.taxPercentage) {
-				serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage/100);
-			} else {
-				serviceOrders.taxAmount = 0;
-			}
-	    serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
-	    if(serviceOrders?.promoCode) {
-				const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
-				if(promoCodeObj?.promoId) {
-					const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: serviceOrders.userId, promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
-					if(promoCodeObj.totalUsed < promoCodeObj.totalLimit && (userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit)){
-						
-						let promoDiscount = 0;
-						if(promoCodeObj.discountType === 'R'){
-							if(promoCodeObj.discountValue < service.price){
-								promoDiscount = promoCodeObj.discountValue;	
-							} else {
-								promoDiscount = serviceOrders.grossAmount;
+			const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
+			if(service) {
+				if(serviceOrders?.serviceProviderId) {
+					serviceOrders.status = "OA";
+				} else {
+					serviceOrders.status = "LO";	
+				}
+		    
+		    serviceOrders.taxPercentage = service.salesTax;
+		    serviceOrders.serviceName = service.serviceName;
+				serviceOrders.serviceType = service.serviceType;
+				serviceOrders.serviceFee = 0;
+				if(service.serviceFee) {
+					serviceOrders.serviceFee = service.serviceFee;	
+				}
+				
+		    if(serviceOrders?.distance) {
+					serviceOrders.distanceAmount = service.pricePerKm*serviceOrders.distance;
+			  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
+				} else {
+					serviceOrders.grossAmount = service.price; 
+				}
+				if(serviceOrders.taxPercentage) {
+					serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage/100);
+				} else {
+					serviceOrders.taxAmount = 0;
+				}
+				serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+				if(!serviceOrders.serviceFeePaid) {
+		    	serviceOrders.netAmount += serviceOrders.serviceFee;
+				}
+		    if(serviceOrders?.promoCode) {
+					const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
+					if(promoCodeObj?.promoId) {
+						const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: serviceOrders.userId, promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
+						if(promoCodeObj.totalUsed < promoCodeObj.totalLimit && (userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit)){
+							
+							let promoDiscount = 0;
+							if(promoCodeObj.discountType === 'R'){
+								if(promoCodeObj.discountValue < service.price){
+									promoDiscount = promoCodeObj.discountValue;	
+								} else {
+									promoDiscount = serviceOrders.grossAmount;
+								}
+							}	else if(promoCodeObj.discountType === 'P'){
+								promoDiscount = serviceOrders.grossAmount*(promoCodeObj.discountValue/100);
 							}
-						}	else if(promoCodeObj.discountType === 'P'){
-							promoDiscount = serviceOrders.grossAmount*(promoCodeObj.discountValue/100);
+							serviceOrders.discountAmount = promoDiscount;
+							serviceOrders.promoCode = promoCodeObj.promoCode;
+							serviceOrders.promoId = promoCodeObj.promoId;
+							serviceOrders.discountType = promoCodeObj.discountType;
+							serviceOrders.discountValue = promoCodeObj.discountValue;
+							if(serviceOrders.taxPercentage) {
+								serviceOrders.taxAmount = (serviceOrders.grossAmount-promoDiscount)*(serviceOrders.taxPercentage/100);
+							} else {
+								serviceOrders.taxAmount = 0;
+							}
+							serviceOrders.netAmount = (serviceOrders.grossAmount-promoDiscount) + serviceOrders.taxAmount;
+							if(!serviceOrders.serviceFeePaid) {
+		    				serviceOrders.netAmount += serviceOrders.serviceFee;
+							}
+							promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
+							promoCodeObj.updatedAt = new Date();
+							await this.promoCodesRepository.updateById(promoCodeObj?.promoId, promoCodeObj);			
 						}
-						serviceOrders.discountAmount = promoDiscount;
-						serviceOrders.promoCode = promoCodeObj.promoCode;
-						serviceOrders.promoId = promoCodeObj.promoId;
-						serviceOrders.discountType = promoCodeObj.discountType;
-						serviceOrders.discountValue = promoCodeObj.discountValue;
-						if(serviceOrders.taxPercentage) {
-							serviceOrders.taxAmount = (serviceOrders.grossAmount-promoDiscount)*(serviceOrders.taxPercentage/100);
-						} else {
-							serviceOrders.taxAmount = 0;
-						}
-	    			serviceOrders.netAmount = (serviceOrders.grossAmount-promoDiscount) + serviceOrders.taxAmount;
-	   	
-						promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
-						promoCodeObj.updatedAt = new Date();
-						await this.promoCodesRepository.updateById(promoCodeObj?.promoId, promoCodeObj);			
 					}
 				}
-			}
-			
-	    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
-	    const serviceProvider: AppUsers = await this.appUsersRepository.findById(createdOrder.serviceProviderId, {fields: ['endpoint']});
-    
-		  if(serviceProvider?.endpoint?.length > 20){
-	    	await this.sendOrderNotification(serviceProvider, "Order Alert", "New order has been assigned.", createdOrder);
+				
+		    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
+		    const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(createdOrder.serviceProviderId, {fields: ['endpoint']});
+	    
+			  if(serviceProvider?.endpoint?.length > 20){
+		    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "New order has been assigned.", createdOrder);
+	  		}
+	  		
+	  		const appUser: AppUsers = await this.appUsersRepository.findById(createdOrder.userId, {fields: ['endpoint']});
+	  		
+	  		if(appUser?.endpoint?.length > 20){
+		    	await this.sendOrderNotification(appUser.endpoint, "Order Alert", "New order has been created.", createdOrder);
+	  		}
+	  		
+	  		result.code = 0;
+	  		result.msg = "Order created successfully";
+	  		result.order = createdOrder;
   		}
-  		
-  		const appUser: AppUsers = await this.appUsersRepository.findById(createdOrder.userId, {fields: ['endpoint']});
-  		
-  		if(appUser?.endpoint?.length > 20){
-	    	await this.sendOrderNotification(appUser, "Order Alert", "New order has been created.", createdOrder);
-  		}
-  		
-  		result.code = 0;
-  		result.msg = "Order created successfully";
-  		result.order = createdOrder;
     } catch(e) {
 			console.log(e);
       result.code = 5;
@@ -153,6 +174,12 @@ export class ServiceOrdersController {
     const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
     if(service) {
 			serviceOrders.taxPercentage = service.salesTax;
+			serviceOrders.serviceName = service.serviceName;
+			serviceOrders.serviceType = service.serviceType;
+			serviceOrders.serviceFee = 0;
+				if(service.serviceFee) {
+					serviceOrders.serviceFee = service.serviceFee;	
+				}
 			if(serviceOrders?.distance) {
 				serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
 		  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;	
@@ -165,14 +192,16 @@ export class ServiceOrdersController {
 			} else {
 				serviceOrders.taxAmount = 0;
 			}
-		  
-		  serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+			serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+		  if(!serviceOrders.serviceFeePaid) {
+				serviceOrders.netAmount += serviceOrders.serviceFee;
+			}
 		  createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
-		  const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
+		  const serviceProviders: ServiceProvider[] = await this.serviceProviderRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
 		  if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
 		    for(const serviceProvider of serviceProviders) {
 				  if(serviceProvider?.endpoint?.length > 20){
-			    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A new order is available.", createdOrder);
+			    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "A new order is available.", createdOrder);
 		    	}
 		    }
 		  }
@@ -180,14 +209,14 @@ export class ServiceOrdersController {
     return createdOrder;
   }
 
-  async sendOrderNotification(appUser: AppUsers, title: string, body: string, order: ServiceOrders): Promise<void> {
+  async sendOrderNotification(endpoint: string, title: string, body: string, order: ServiceOrders): Promise<void> {
     
       await sendMessage({
 		  notification: { title: title, body: body}, 
 	      data: { orderId: order.serviceOrderId+'', serviceName: order.serviceName+'', creationTime: order.createdAt+'', serviceType: order.serviceType+'', 
 	      	orderStatus: order.status+'', price: order.netAmount+'', vehicleType: order.vehicleType+'', accidental: order.accidental+''
 	      },
-	      token: appUser?.endpoint
+	      token: endpoint
       });
   }
   
@@ -287,14 +316,14 @@ export class ServiceOrdersController {
 					orderRequest.payment.paymentStatus = "L";
 					await this.paymentRepository.create(orderRequest.payment);
 					await this.populateStatusDates(orderRequest.serviceOrder);
-					const serviceProviderAccount: Account = await this.appUsersRepository.account(dbOrder.serviceProviderId).get({});
+					const serviceProviderAccount: Account = await this.serviceProviderRepository.account(dbOrder.serviceProviderId).get({});
 					let balanceAmount = 0;
 					if(orderRequest?.serviceOrder?.paymentMethod === 'CARD') {
 						balanceAmount = serviceProviderAccount.balanceAmount + (dbOrder.netAmount*0.9);
 					}else if(orderRequest?.serviceOrder?.paymentMethod === 'CASH') {
 						balanceAmount = serviceProviderAccount.balanceAmount - (dbOrder.netAmount*0.1);
 					}
-					await this.appUsersRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: balanceAmount}, {});
+					await this.serviceProviderRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: balanceAmount}, {});
 			    await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
 			    if(dbOrder?.promoId && dbOrder.orderType === 'U') {
 			    	const promoCodeObj: PromoCodes = await this.promoCodesRepository.findById(dbOrder.promoId, {});
@@ -306,10 +335,10 @@ export class ServiceOrdersController {
 					}
 			    
 			    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
-			    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+			    const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
   
 				  if(serviceProvider?.endpoint?.length > 20){
-			    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Payment has been initiated.", dbOrder);
+			    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Payment has been initiated.", dbOrder);
 		  		}
 			    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder}; 
 		           
@@ -351,10 +380,10 @@ export class ServiceOrdersController {
 						await this.paymentRepository.updateById(paymentObj.paymentId, paymentObj);
 					  await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
 				    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
-				    const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
+				    const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(dbOrder.userId, {fields: ['endpoint']});
   
 				  if(serviceProvider?.endpoint?.length > 20){
-			    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Payment has been completed.", dbOrder);
+			    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Payment has been completed.", dbOrder);
 		  		}
 				    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder};
 			    } 
@@ -391,7 +420,7 @@ export class ServiceOrdersController {
 				body = "Your payment has been completed.";
 			}
 		
-			await this.sendOrderNotification(appUser, title, body, serviceOrders);
+			await this.sendOrderNotification(appUser.endpoint, title, body, serviceOrders);
 		}
   }
   
@@ -447,7 +476,7 @@ export class ServiceOrdersController {
 					serviceProviderRating = totalRating/serviceProviderOrders.length;	
 				}
 				
-				await this.appUsersRepository.updateById(dbOrder.serviceProviderId, {rating: serviceProviderRating});
+				await this.serviceProviderRepository.updateById(dbOrder.serviceProviderId, {rating: serviceProviderRating});
 				
 		    //await this.sendOrderUpdateNotification(dbOrder);
 	      result = {code: 0, msg: "Order rated successfully.", order: dbOrder};      
@@ -488,7 +517,7 @@ export class ServiceOrdersController {
 	    		if(dbOrder?.userId){
 						const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
 					  if(appUser?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(appUser, "Order Alert", "Order has been canceled.", dbOrder);
+				    	await this.sendOrderNotification(appUser.endpoint, "Order Alert", "Order has been canceled.", dbOrder);
 			  		}
 		  		}
 			 		
@@ -528,9 +557,9 @@ export class ServiceOrdersController {
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
 		 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
 		 			if(dbOrder?.serviceProviderId){
-	    			const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+	    			const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
 		  			if(serviceProvider?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled.", dbOrder);
+				    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Order has been canceled.", dbOrder);
 			  		}
 	  			}
 			 	
@@ -569,13 +598,13 @@ export class ServiceOrdersController {
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
 		 			dbOrder = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
 		 			if(dbOrder?.serviceProviderId){
-	    			const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+	    			const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
 		  			if(serviceProvider?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "Order has been canceled by admin.", dbOrder);
+				    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Order has been canceled by admin.", dbOrder);
 			  		}
 			  		const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
 		  			if(appUser?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(appUser, "Order Alert", "Order has been canceled by admin.", dbOrder);
+				    	await this.sendOrderNotification(appUser.endpoint, "Order Alert", "Order has been canceled by admin.", dbOrder);
 			  		}
 	  			}
 		      result = {code: 0, msg: "Order canceled.", order: dbOrder};      
@@ -633,17 +662,18 @@ export class ServiceOrdersController {
 					} else {
 						dbOrder.taxAmount = 0;
 					}
-					
-    			dbOrder.netAmount = (dbOrder.grossAmount-promoDiscount)+(dbOrder.taxAmount);
-					
+					dbOrder.netAmount = (dbOrder.grossAmount-promoDiscount)+(dbOrder.taxAmount);
+					if(!dbOrder.serviceFeePaid) {
+    				dbOrder.netAmount += dbOrder.serviceFee;
+					}
 					dbOrder.updatedAt = new Date();
 			    await this.serviceOrdersRepository.updateById(dbOrder.serviceOrderId, dbOrder);
 		 			dbOrder = await this.serviceOrdersRepository.findById(dbOrder.serviceOrderId);
 		 			
 		 			if(dbOrder?.serviceProviderId){
-	    			const serviceProvider: AppUsers = await this.appUsersRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+	    			const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
 		  			if(serviceProvider?.endpoint?.length > 20){
-				    	await this.sendOrderNotification(serviceProvider, "Order Alert", "A promo code has been applyed by the user.", dbOrder);
+				    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "A promo code has been applyed by the user.", dbOrder);
 			  		}
 	  			}
 	     		
@@ -770,7 +800,7 @@ export class ServiceOrdersController {
         if(orders?.length > 0) {
 					for(const order of orders) {
 						if(order.serviceProviderId) {
-							const serviceProvider = await this.appUsersRepository.findById(order.serviceProviderId);
+							const serviceProvider = await this.serviceProviderRepository.findById(order.serviceProviderId);
 							order.serviceProvider = serviceProvider;
 						}
 					}
@@ -901,7 +931,7 @@ export class ServiceOrdersController {
         if(dbServiceOrders?.length > 0) {
 					let serviceProvider = {};
 					if(dbServiceOrders[0]?.serviceProviderId) {
-						serviceProvider = await this.appUsersRepository.findById(dbServiceOrders[0].serviceProviderId);	
+						serviceProvider = await this.serviceProviderRepository.findById(dbServiceOrders[0].serviceProviderId);	
 					}
           result = {code: 0, msg: "Orders fetched successfully.", orders: dbServiceOrders[0], serviceProvider: serviceProvider};
         }

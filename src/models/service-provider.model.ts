@@ -1,22 +1,20 @@
-import {UserCredentials} from '@loopback/authentication-jwt';
-import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
-import {UserCreds} from './user-creds.model';
-import {Vehicle} from './vehicle.model';
-import {UserDocs} from './user-docs.model';
-import {Account} from './account.model';
-import {WithdrawalRequest} from './withdrawal-request.model';
+import { UserCredentials } from '@loopback/authentication-jwt';
+import {Entity, model, property, hasOne, hasMany} from '@loopback/repository';
 import { ServiceProviderServices } from './service-provider-services.model';
+import {UserCreds} from './user-creds.model';
+import {UserDocs} from './user-docs.model';
+import {WithdrawalRequest} from './withdrawal-request.model';
+import {Account} from './account.model';
 
 @model()
-export class AppUsers extends Entity {
-
+export class ServiceProvider extends Entity {
   @property({
     type: 'string',
     id: true,
     generated: true,
   })
   id: string;
-
+  
   @property({
     type: 'string',
   })
@@ -36,6 +34,16 @@ export class AppUsers extends Entity {
     type: 'string',
   })
   password: string;
+  
+  @property({
+    type: 'string',
+  })
+  companyId?: string;
+  
+  @property({
+    type: 'string',
+  })
+  companyName?: string;
 
   @property({
     type: 'string',
@@ -212,28 +220,25 @@ export class AppUsers extends Entity {
 
   userCredentials: UserCredentials;
 
-  @hasMany(() => Vehicle, {keyTo: 'userId'})
-  vehicles: Vehicle[];
-
   @hasOne(() => UserCreds, {keyTo: 'userId'})
   userCreds: UserCreds;
 
   @hasMany(() => UserDocs, {keyTo: 'userId'})
   userDocs: UserDocs[];
 
-  @hasOne(() => Account, {keyTo: 'userId'})
-  account: Account;
-
   @hasMany(() => WithdrawalRequest, {keyTo: 'serviceProviderId'})
   withdrawalRequests: WithdrawalRequest[];
 
-  constructor(data?: Partial<AppUsers>) {
+  @hasOne(() => Account, {keyTo: 'userId'})
+  account: Account;
+
+  constructor(data?: Partial<ServiceProvider>) {
     super(data);
   }
 }
 
-export interface AppUsersRelations {
+export interface ServiceProviderRelations {
   // describe navigational properties here
 }
 
-export type AppUsersWithRelations = AppUsers & AppUsersRelations;
+export type ServiceProviderWithRelations = ServiceProvider & ServiceProviderRelations;

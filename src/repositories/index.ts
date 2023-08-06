@@ -21,3 +21,6 @@ export * from './reminders.repository';
 export * from './document-types.repository';
 export * from './crash-reports.repository';
 export * from './witness.repository';
+export * from './company.repository';
+export * from './service-provider.repository';
+export * from './bank-account.repository';

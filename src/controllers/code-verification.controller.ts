@@ -2,8 +2,8 @@
 
 import {repository} from '@loopback/repository';
 import {getModelSchemaRef, post, requestBody} from '@loopback/rest';
-import {AppUsers, VerificationRequestObject} from '../models';
-import {AppUsersRepository, VerificationCodesRepository} from '../repositories';
+import {AppUsers, ServiceProvider, VerificationRequestObject} from '../models';
+import {AppUsersRepository, ServiceProviderRepository, VerificationCodesRepository} from '../repositories';
 import {authenticate} from '@loopback/authentication';
 import _ from 'lodash';
 
@@ -16,6 +16,8 @@ export class CodeVerificationController {
     protected verificationCodesRepository: VerificationCodesRepository,
     @repository(AppUsersRepository)
     public appUsersRepository: AppUsersRepository,
+    @repository(ServiceProviderRepository)
+    public serviceProviderRepository: ServiceProviderRepository,
   ) { }
 
   @post('/codeVerification/appUser/verifyCode', {
@@ -44,10 +46,8 @@ export class CodeVerificationController {
   ): Promise<String> {
     const result = {code: 5, msg: "Verification code was not verified."};
     
-    let filter = {};
-    
-    if(verificationRequestObject.type === "E") { verificationRequestObject.type = "EA"; filter = {where: {email: verificationRequestObject.email, roleId : "APPUSER"}}; }
-    else if(verificationRequestObject.type === "U") { verificationRequestObject.type = "UA"; filter = {where: {id: verificationRequestObject.userId, roleId : "APPUSER"}};}
+    if(verificationRequestObject.type === "E") { verificationRequestObject.type = "EA"; }
+    else if(verificationRequestObject.type === "U") { verificationRequestObject.type = "UA"; }
     
     if(await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
@@ -81,10 +81,9 @@ export class CodeVerificationController {
     verificationRequestObject: VerificationRequestObject
   ): Promise<String> {
 	  const result = {code: 5, msg: "Verification code was not verified."};
-    let filter = {};
     
-    if(verificationRequestObject.type === "E") { verificationRequestObject.type = "ES"; filter = {where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}}; }
-    else if(verificationRequestObject.type === "U") { verificationRequestObject.type = "US"; filter = {where: {id: verificationRequestObject.userId, roleId : "SERVICEPROVIDER"}};}
+    if(verificationRequestObject.type === "E") { verificationRequestObject.type = "ES"; }
+    else if(verificationRequestObject.type === "U") { verificationRequestObject.type = "US"; }
     
     if(await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
@@ -180,13 +179,12 @@ export class CodeVerificationController {
     newUserRequest: AppUsers,
   ): Promise<String> {
     let result = {code: 5, msg: "Code verification Failed.", user: {}};
-    const codeVerificationController: CodeVerificationController = new CodeVerificationController(this.verificationCodesRepository, this.appUsersRepository);
     const verificationRequestObject: VerificationRequestObject = new VerificationRequestObject;
     verificationRequestObject.userId = newUserRequest.id;
     verificationRequestObject.type = "U";
     verificationRequestObject.verificationCode = newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await codeVerificationController.verifyVerificationCode(verificationRequestObject);
+    const codeVerificationResponse: boolean = await this.verifyVerificationCode(verificationRequestObject);
     if (codeVerificationResponse) {
       result = {code: 0, msg: "Phone Number verified successfully.", user: {}};
     }
@@ -221,13 +219,12 @@ export class CodeVerificationController {
     newUserRequest: AppUsers,
   ): Promise<String> {
     let result = {code: 5, msg: "Code verification Failed.", user: {}};
-    const codeVerificationController: CodeVerificationController = new CodeVerificationController(this.verificationCodesRepository, this.appUsersRepository);
     const verificationRequestObject: VerificationRequestObject = new VerificationRequestObject;
     verificationRequestObject.email = newUserRequest.email;
     verificationRequestObject.type = "E";
     verificationRequestObject.verificationCode = newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await codeVerificationController.verifyVerificationCode(verificationRequestObject);
+    const codeVerificationResponse: boolean = await this.verifyVerificationCode(verificationRequestObject);
     if (codeVerificationResponse) {
       result = {code: 0, msg: "Email verified successfully.", user: {}};
     }
@@ -262,13 +259,12 @@ export class CodeVerificationController {
     newUserRequest: AppUsers,
   ): Promise<String> {
     let result = {code: 5, msg: "Code verification Failed.", user: {}};
-    const codeVerificationController: CodeVerificationController = new CodeVerificationController(this.verificationCodesRepository, this.appUsersRepository);
     const verificationRequestObject: VerificationRequestObject = new VerificationRequestObject;
     verificationRequestObject.userId = newUserRequest.id;
     verificationRequestObject.type = "E";
     verificationRequestObject.verificationCode = newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await codeVerificationController.verifyVerificationCode(verificationRequestObject);
+    const codeVerificationResponse: boolean = await this.verifyVerificationCode(verificationRequestObject);
     if (codeVerificationResponse) {
       await this.appUsersRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'email'));
       const user = await this.appUsersRepository.findById(newUserRequest.id, {});
@@ -330,12 +326,12 @@ export class CodeVerificationController {
     }) verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
   
-    const user = await this.appUsersRepository.findOne({where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}});
+    const user = await this.serviceProviderRepository.findOne({where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}});
     return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject, "ES"));
     	
   }
   
-  async insertVerificationCode(user: AppUsers| null, verificationRequestObject: VerificationRequestObject, codeType: string): Promise<object>{
+  async insertVerificationCode(user: AppUsers| ServiceProvider | null, verificationRequestObject: VerificationRequestObject, codeType: string): Promise<object>{
 	  
 	  const result = {code: 5, msg: "Verification code not sent."};
 	  const successMessage = "Verification code sent successfully.";

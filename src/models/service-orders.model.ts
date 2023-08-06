@@ -1,7 +1,8 @@
 import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
-import { AppUsers } from './app-users.model';
 import {Services} from './services.model';
 import {CrashReports} from './crash-reports.model';
+import { UserDocs } from './user-docs.model';
+import { ServiceProvider } from './service-provider.model';
 
 @model()
 export class ServiceOrders extends Entity {
@@ -65,7 +66,12 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
-  company?: string;
+  companyId?: string;
+  
+  @property({
+    type: 'string',
+  })
+  companyName?: string;
 
   @property({
     type: 'string',
@@ -155,6 +161,16 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'number',
   })
+  serviceFee: number;
+  
+  @property({
+    type: 'boolean',
+  })
+  serviceFeePaid: boolean;
+  
+  @property({
+    type: 'number',
+  })
   distanceAmount: number;
 
   @property({
@@ -171,7 +187,22 @@ export class ServiceOrders extends Entity {
     type: 'boolean',
   })
   accidental?: boolean;
+  
+  @property({
+    type: 'date',
+  })
+  confirmedAt?: Date;
 
+	@property({
+    type: 'date',
+  })
+  scheduledAt?: Date;
+  
+  @property({
+    type: 'date',
+  })
+  expectedAt?: Date;
+  
   @property({
     type: 'date',
   })
@@ -195,7 +226,24 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'any',
   })
-  serviceProvider: AppUsers;
+  serviceProvider: ServiceProvider;
+  
+  @property({
+    type: 'array',
+    itemType: 'string',
+  })
+  proofOfWorkDocIds: string[];
+  
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  proofOfWorkDocs: UserDocs[];
+  
+  @property({
+    type: 'string',
+  })
+  additionalNote?: string;
   
   @property({
     type: 'date',

@@ -12,14 +12,14 @@ import {
   response,
 } from '@loopback/rest';
 import {Account, WithdrawalRequest} from '../models';
-import {AppUsersRepository, WithdrawalRequestRepository} from '../repositories';
+import {ServiceProviderRepository, WithdrawalRequestRepository} from '../repositories';
 
 export class WithdrawalRequestsController {
   constructor(
     @repository(WithdrawalRequestRepository)
     public withdrawalRequestRepository : WithdrawalRequestRepository,
-    @repository(AppUsersRepository)
-    public appUsersRepository: AppUsersRepository,
+    @repository(ServiceProviderRepository)
+    public serviceProviderRepository: ServiceProviderRepository,
   ) {}
 
   @post('/withdrawalRequests/createWithdrawalRequest')
@@ -42,7 +42,7 @@ export class WithdrawalRequestsController {
   ): Promise<string> {
 	  const result = {code: 5, msg: "Some error occured while creating withdrawal request.", withdrawalRequest: {}};
 	  try{
-		  const userAccount: Account = await this.appUsersRepository.account(withdrawalRequest.serviceProviderId).get({})
+		  const userAccount: Account = await this.serviceProviderRepository.account(withdrawalRequest.serviceProviderId).get({})
 		  if(!withdrawalRequest?.withdrawalAmount || withdrawalRequest?.withdrawalAmount < 1200) {
 		  	result.msg = "Withdrawal amount should be greater than 1200.";
 		  } else if(!userAccount?.balanceAmount || userAccount?.balanceAmount < 1200) {

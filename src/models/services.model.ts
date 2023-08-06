@@ -28,6 +28,11 @@ export class Services extends Entity {
     type: 'number',
   })
   price: number;
+  
+  @property({
+    type: 'number',
+  })
+  serviceFee: number;
 
   @property({
     type: 'number',
