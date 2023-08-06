@@ -56,72 +56,91 @@ export class ServiceOrdersController {
     
     const result = {code: 5, msg: "Some error occured while creating order.", order: {}};
     try {
-			serviceOrders.status = "OA";
-	    const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
-	    serviceOrders.taxPercentage = service.salesTax;
-	    if(serviceOrders?.distance) {
-				serviceOrders.distanceAmount = service.pricePerKm*serviceOrders.distance;
-		  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
-			} else {
-				serviceOrders.grossAmount = service.price; 
-			}
-			if(serviceOrders.taxPercentage) {
-				serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage/100);
-			} else {
-				serviceOrders.taxAmount = 0;
-			}
-	    serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
-	    if(serviceOrders?.promoCode) {
-				const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
-				if(promoCodeObj?.promoId) {
-					const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: serviceOrders.userId, promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
-					if(promoCodeObj.totalUsed < promoCodeObj.totalLimit && (userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit)){
-						
-						let promoDiscount = 0;
-						if(promoCodeObj.discountType === 'R'){
-							if(promoCodeObj.discountValue < service.price){
-								promoDiscount = promoCodeObj.discountValue;	
-							} else {
-								promoDiscount = serviceOrders.grossAmount;
+			const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
+			if(service) {
+				if(serviceOrders?.serviceProviderId) {
+					serviceOrders.status = "OA";
+				} else {
+					serviceOrders.status = "LO";	
+				}
+		    
+		    serviceOrders.taxPercentage = service.salesTax;
+		    serviceOrders.serviceName = service.serviceName;
+				serviceOrders.serviceType = service.serviceType;
+				serviceOrders.serviceFee = 0;
+				if(service.serviceFee) {
+					serviceOrders.serviceFee = service.serviceFee;	
+				}
+				
+		    if(serviceOrders?.distance) {
+					serviceOrders.distanceAmount = service.pricePerKm*serviceOrders.distance;
+			  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;
+				} else {
+					serviceOrders.grossAmount = service.price; 
+				}
+				if(serviceOrders.taxPercentage) {
+					serviceOrders.taxAmount = serviceOrders.grossAmount * (serviceOrders.taxPercentage/100);
+				} else {
+					serviceOrders.taxAmount = 0;
+				}
+				serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+				if(!serviceOrders.serviceFeePaid) {
+		    	serviceOrders.netAmount += serviceOrders.serviceFee;
+				}
+		    if(serviceOrders?.promoCode) {
+					const promoCodeObj: PromoCodes| null = await this.promoCodesRepository.findOne({where: {promoCode: serviceOrders.promoCode}});
+					if(promoCodeObj?.promoId) {
+						const userOrdersWithPromoCode: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: serviceOrders.userId, promoCode: serviceOrders.promoCode}, fields: ['serviceOrderId']});
+						if(promoCodeObj.totalUsed < promoCodeObj.totalLimit && (userOrdersWithPromoCode &&  userOrdersWithPromoCode.length < promoCodeObj.userLimit)){
+							
+							let promoDiscount = 0;
+							if(promoCodeObj.discountType === 'R'){
+								if(promoCodeObj.discountValue < service.price){
+									promoDiscount = promoCodeObj.discountValue;	
+								} else {
+									promoDiscount = serviceOrders.grossAmount;
+								}
+							}	else if(promoCodeObj.discountType === 'P'){
+								promoDiscount = serviceOrders.grossAmount*(promoCodeObj.discountValue/100);
 							}
-						}	else if(promoCodeObj.discountType === 'P'){
-							promoDiscount = serviceOrders.grossAmount*(promoCodeObj.discountValue/100);
+							serviceOrders.discountAmount = promoDiscount;
+							serviceOrders.promoCode = promoCodeObj.promoCode;
+							serviceOrders.promoId = promoCodeObj.promoId;
+							serviceOrders.discountType = promoCodeObj.discountType;
+							serviceOrders.discountValue = promoCodeObj.discountValue;
+							if(serviceOrders.taxPercentage) {
+								serviceOrders.taxAmount = (serviceOrders.grossAmount-promoDiscount)*(serviceOrders.taxPercentage/100);
+							} else {
+								serviceOrders.taxAmount = 0;
+							}
+							serviceOrders.netAmount = (serviceOrders.grossAmount-promoDiscount) + serviceOrders.taxAmount;
+							if(!serviceOrders.serviceFeePaid) {
+		    				serviceOrders.netAmount += serviceOrders.serviceFee;
+							}
+							promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
+							promoCodeObj.updatedAt = new Date();
+							await this.promoCodesRepository.updateById(promoCodeObj?.promoId, promoCodeObj);			
 						}
-						serviceOrders.discountAmount = promoDiscount;
-						serviceOrders.promoCode = promoCodeObj.promoCode;
-						serviceOrders.promoId = promoCodeObj.promoId;
-						serviceOrders.discountType = promoCodeObj.discountType;
-						serviceOrders.discountValue = promoCodeObj.discountValue;
-						if(serviceOrders.taxPercentage) {
-							serviceOrders.taxAmount = (serviceOrders.grossAmount-promoDiscount)*(serviceOrders.taxPercentage/100);
-						} else {
-							serviceOrders.taxAmount = 0;
-						}
-	    			serviceOrders.netAmount = (serviceOrders.grossAmount-promoDiscount) + serviceOrders.taxAmount;
-	   	
-						promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
-						promoCodeObj.updatedAt = new Date();
-						await this.promoCodesRepository.updateById(promoCodeObj?.promoId, promoCodeObj);			
 					}
 				}
-			}
-			
-	    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
-	    const serviceProvider: AppUsers = await this.appUsersRepository.findById(createdOrder.serviceProviderId, {fields: ['endpoint']});
-    
-		  if(serviceProvider?.endpoint?.length > 20){
-	    	await this.sendOrderNotification(serviceProvider, "Order Alert", "New order has been assigned.", createdOrder);
+				
+		    const createdOrder: ServiceOrders = await this.serviceOrdersRepository.create(serviceOrders);
+		    const serviceProvider: AppUsers = await this.appUsersRepository.findById(createdOrder.serviceProviderId, {fields: ['endpoint']});
+	    
+			  if(serviceProvider?.endpoint?.length > 20){
+		    	await this.sendOrderNotification(serviceProvider, "Order Alert", "New order has been assigned.", createdOrder);
+	  		}
+	  		
+	  		const appUser: AppUsers = await this.appUsersRepository.findById(createdOrder.userId, {fields: ['endpoint']});
+	  		
+	  		if(appUser?.endpoint?.length > 20){
+		    	await this.sendOrderNotification(appUser, "Order Alert", "New order has been created.", createdOrder);
+	  		}
+	  		
+	  		result.code = 0;
+	  		result.msg = "Order created successfully";
+	  		result.order = createdOrder;
   		}
-  		
-  		const appUser: AppUsers = await this.appUsersRepository.findById(createdOrder.userId, {fields: ['endpoint']});
-  		
-  		if(appUser?.endpoint?.length > 20){
-	    	await this.sendOrderNotification(appUser, "Order Alert", "New order has been created.", createdOrder);
-  		}
-  		
-  		result.code = 0;
-  		result.msg = "Order created successfully";
-  		result.order = createdOrder;
     } catch(e) {
 			console.log(e);
       result.code = 5;
@@ -153,6 +172,12 @@ export class ServiceOrdersController {
     const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
     if(service) {
 			serviceOrders.taxPercentage = service.salesTax;
+			serviceOrders.serviceName = service.serviceName;
+			serviceOrders.serviceType = service.serviceType;
+			serviceOrders.serviceFee = 0;
+				if(service.serviceFee) {
+					serviceOrders.serviceFee = service.serviceFee;	
+				}
 			if(serviceOrders?.distance) {
 				serviceOrders.distanceAmount = service.pricePerKm * serviceOrders.distance;
 		  	serviceOrders.grossAmount = service.price + serviceOrders.distanceAmount;	
@@ -165,8 +190,10 @@ export class ServiceOrdersController {
 			} else {
 				serviceOrders.taxAmount = 0;
 			}
-		  
-		  serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+			serviceOrders.netAmount = serviceOrders.grossAmount + serviceOrders.taxAmount;
+		  if(!serviceOrders.serviceFeePaid) {
+				serviceOrders.netAmount += serviceOrders.serviceFee;
+			}
 		  createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
 		  const serviceProviders: AppUsers[] = await this.appUsersRepository.find({where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'}, fields: ['endpoint']});
 		  if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
@@ -633,9 +660,10 @@ export class ServiceOrdersController {
 					} else {
 						dbOrder.taxAmount = 0;
 					}
-					
-    			dbOrder.netAmount = (dbOrder.grossAmount-promoDiscount)+(dbOrder.taxAmount);
-					
+					dbOrder.netAmount = (dbOrder.grossAmount-promoDiscount)+(dbOrder.taxAmount);
+					if(!dbOrder.serviceFeePaid) {
+    				dbOrder.netAmount += dbOrder.serviceFee;
+					}
 					dbOrder.updatedAt = new Date();
 			    await this.serviceOrdersRepository.updateById(dbOrder.serviceOrderId, dbOrder);
 		 			dbOrder = await this.serviceOrdersRepository.findById(dbOrder.serviceOrderId);

@@ -27,3 +27,6 @@ export * from './reminders.model';
 export * from './document-types.model';
 export * from './crash-reports.model';
 export * from './witness.model';
+export * from './company.model';
+export * from './service-provider.model';
+export * from './bank-account.model';
