@@ -7,7 +7,6 @@ import {
   param,
   get,
   getModelSchemaRef,
-  patch,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -145,7 +144,14 @@ export class CompanyController {
   ): Promise<string> {
     const result = {code: 5, msg: "Some error occurred.", companies: {}};
     try {
-      result.companies = await this.companyRepository.find(filter);
+      const comapnaies: Company[] = await this.companyRepository.find(filter);
+      if(comapnaies?.length > 0 ) {
+		  	comapnaies.forEach((company: Company) => {
+				  company.totalRiders = company?.serviceProviders?.length;
+				  
+			  });
+	  	}
+	  	result.companies = comapnaies; 
       result.code = 0;
       result.msg = "Companies fetched successfully.";
     } catch (e) {
@@ -187,8 +193,8 @@ export class CompanyController {
     return JSON.stringify(result);
   }
 
-  @patch('/companies/updateCompany/{id}')
-  @response(204, {
+  @post('/companies/updateCompany/{id}')
+  @response(200, {
     description: 'Company PATCH success',
   })
   async updateById(

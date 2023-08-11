@@ -1,10 +1,11 @@
 import {inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, HasOneRepositoryFactory} from '@loopback/repository';
+import {DefaultCrudRepository, repository, HasOneRepositoryFactory, HasManyRepositoryFactory} from '@loopback/repository';
 import {MongoDbDataSource} from '../datasources';
-import {Company, CompanyRelations, UserCreds, Account, BankAccount} from '../models';
+import {Company, CompanyRelations, UserCreds, Account, BankAccount, ServiceProvider} from '../models';
 import {UserCredsRepository} from './user-creds.repository';
 import {AccountRepository} from './account.repository';
 import {BankAccountRepository} from './bank-account.repository';
+import {ServiceProviderRepository} from './service-provider.repository';
 
 export class CompanyRepository extends DefaultCrudRepository<
   Company,
@@ -18,10 +19,14 @@ export class CompanyRepository extends DefaultCrudRepository<
 
   public readonly bankAccount: HasOneRepositoryFactory<BankAccount, typeof Company.prototype.id>;
 
+  public readonly serviceProviders: HasManyRepositoryFactory<ServiceProvider, typeof Company.prototype.id>;
+
   constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource, @repository.getter('UserCredsRepository') protected userCredsRepositoryGetter: Getter<UserCredsRepository>, @repository.getter('AccountRepository') protected accountRepositoryGetter: Getter<AccountRepository>, @repository.getter('BankAccountRepository') protected bankAccountRepositoryGetter: Getter<BankAccountRepository>,
+    @inject('datasources.MongoDb') dataSource: MongoDbDataSource, @repository.getter('UserCredsRepository') protected userCredsRepositoryGetter: Getter<UserCredsRepository>, @repository.getter('AccountRepository') protected accountRepositoryGetter: Getter<AccountRepository>, @repository.getter('BankAccountRepository') protected bankAccountRepositoryGetter: Getter<BankAccountRepository>, @repository.getter('ServiceProviderRepository') protected serviceProviderRepositoryGetter: Getter<ServiceProviderRepository>,
   ) {
     super(Company, dataSource);
+    this.serviceProviders = this.createHasManyRepositoryFactoryFor('serviceProviders', serviceProviderRepositoryGetter,);
+    this.registerInclusionResolver('serviceProviders', this.serviceProviders.inclusionResolver);
     this.bankAccount = this.createHasOneRepositoryFactoryFor('bankAccount', bankAccountRepositoryGetter);
     this.registerInclusionResolver('bankAccount', this.bankAccount.inclusionResolver);
     this.account = this.createHasOneRepositoryFactoryFor('account', accountRepositoryGetter);
