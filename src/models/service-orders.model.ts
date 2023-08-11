@@ -236,6 +236,12 @@ export class ServiceOrders extends Entity {
   
   @property({
     type: 'array',
+    itemType: 'string',
+  })
+  requirements: string[];
+  
+  @property({
+    type: 'array',
     itemType: 'object',
   })
   proofOfWorkDocs: UserDocs[];

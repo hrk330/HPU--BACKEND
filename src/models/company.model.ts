@@ -1,8 +1,9 @@
 import { UserCredentials } from '@loopback/authentication-jwt';
-import {Entity, model, property, hasOne} from '@loopback/repository';
+import {Entity, model, property, hasOne, hasMany} from '@loopback/repository';
 import {UserCreds} from './user-creds.model';
 import {Account} from './account.model';
 import {BankAccount} from './bank-account.model';
+import {ServiceProvider} from './service-provider.model';
 
 @model()
 export class Company extends Entity {
@@ -149,6 +150,9 @@ export class Company extends Entity {
 
   @hasOne(() => BankAccount, {keyTo: 'userId'})
   bankAccount: BankAccount;
+
+  @hasMany(() => ServiceProvider)
+  serviceProviders: ServiceProvider[];
 
   constructor(data?: Partial<Company>) {
     super(data);
