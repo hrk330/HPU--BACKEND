@@ -169,6 +169,11 @@ export class ServiceOrders extends Entity {
   serviceFeePaid: boolean;
   
   @property({
+    type: 'string',
+  })
+  paymentType?: string;
+  
+  @property({
     type: 'number',
   })
   distanceAmount: number;
@@ -218,6 +223,11 @@ export class ServiceOrders extends Entity {
   })
   startedAt?: Date;
 
+	@property({
+    type: 'date',
+  })
+  payedAt?: Date;
+	
   @property({
     type: 'date',
   })
