@@ -16,7 +16,7 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Account, AppUsers, OrderRequest, Payment, PromoCodes, ServiceOrders, ServiceProvider, Services} from '../models';
+import {Account, AppUsers, OrderRequest, Payment, PromoCodes, ServiceOrders, ServiceProvider, Services, TransactionResponse} from '../models';
 import {AppUsersRepository, PaymentRepository, PromoCodesRepository, ServiceOrdersRepository, ServiceProviderRepository, ServicesRepository} from '../repositories';
 import {sendMessage} from '../services/firebase-notification.service';
 //import _ from 'lodash';
@@ -340,8 +340,83 @@ export class ServiceOrdersController {
 				  if(serviceProvider?.endpoint?.length > 20){
 			    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Payment has been initiated.", dbOrder);
 		  		}
-			    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder}; 
+			    result = {code: 0, msg: "Payment initiated successfully.", order: dbOrder}; 
 		           
+		    } catch (e) {
+		      console.log(e);
+		      result.code = 5;
+		      result.msg = e.message;
+		    }
+	    }
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceOrders/appUser/processCardPayment/{serviceOrderId}')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
+  })
+  async processCardPayment(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(TransactionResponse, {partial: true}),
+        },
+      },
+    })
+    transactionResponse: TransactionResponse,
+    @param.path.string('serviceOrderId') serviceOrderId: string,
+  ): Promise<string> {
+    let result = {code: 5, msg: "Some error occured while completing payment.", order: {}};
+    if(serviceOrderId) {
+	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrderId);
+	    if((dbOrder?.status === 'CO' && transactionResponse?.status === "APPROVED")) {
+		    try {	
+					
+					const paymentObj: Payment = new Payment();
+					paymentObj.payerId = dbOrder.userId;
+					paymentObj.paymentOrderId = dbOrder.serviceOrderId;
+					paymentObj.receiverId = dbOrder.serviceProviderId;
+					paymentObj.paymentType = "CARD";
+					paymentObj.paymentAmount = dbOrder.netAmount;
+					paymentObj.paymentStatus = "C";
+					await this.paymentRepository.create(paymentObj);
+					dbOrder.paymentType = paymentObj.paymentType;
+					dbOrder.status = "PC";
+					await this.populateStatusDates(dbOrder);
+				  await this.serviceOrdersRepository.updateById(serviceOrderId, dbOrder);
+			    dbOrder = await this.serviceOrdersRepository.findById(serviceOrderId);
+					
+					const serviceProviderAccount: Account = await this.serviceProviderRepository.account(dbOrder.serviceProviderId).get({});
+					const balanceAmount = serviceProviderAccount.balanceAmount + (dbOrder.netAmount*0.9);
+					
+					await this.serviceProviderRepository.account(dbOrder.serviceProviderId).patch({balanceAmount: balanceAmount}, {});
+			    if(dbOrder.promoId && dbOrder.orderType === 'U') {
+			    	const promoCodeObj: PromoCodes = await this.promoCodesRepository.findById(dbOrder.promoId, {});
+			    	if(promoCodeObj) {
+							promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
+							promoCodeObj.updatedAt = new Date();
+							await this.promoCodesRepository.updateById(dbOrder.promoId, promoCodeObj);
+						}
+					}
+			    
+			    dbOrder = await this.serviceOrdersRepository.findById(serviceOrderId);
+			    const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
+  
+				  if(serviceProvider?.endpoint?.length > 20){
+			    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Payment has been initiated.", dbOrder);
+		  		}
+		  		
+		  		const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
+		  		
+		  		if(appUser?.endpoint?.length > 20){
+			    	await this.sendOrderNotification(appUser.endpoint, "Order Alert", "Payment has been completed.", dbOrder);
+		  		}
+  
+				  result = {code: 0, msg: "Payment completed successfully.", order: dbOrder};
+			     
+	 			     
 		    } catch (e) {
 		      console.log(e);
 		      result.code = 5;
@@ -380,11 +455,11 @@ export class ServiceOrdersController {
 						await this.paymentRepository.updateById(paymentObj.paymentId, paymentObj);
 					  await this.serviceOrdersRepository.updateById(orderRequest.serviceOrder.serviceOrderId, orderRequest.serviceOrder);
 				    dbOrder = await this.serviceOrdersRepository.findById(orderRequest?.serviceOrder?.serviceOrderId);
-				    const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(dbOrder.userId, {fields: ['endpoint']});
+				    const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
   
-				  if(serviceProvider?.endpoint?.length > 20){
-			    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Payment has been completed.", dbOrder);
-		  		}
+					  if(appUser?.endpoint?.length > 20){
+				    	await this.sendOrderNotification(appUser.endpoint, "Order Alert", "Payment has been completed.", dbOrder);
+			  		}
 				    result = {code: 0, msg: "Payment completed successfully.", order: dbOrder};
 			    } 
 	 			     
@@ -425,19 +500,21 @@ export class ServiceOrdersController {
   }
   
   async populateStatusDates(serviceOrders: ServiceOrders): Promise<void> {
-	  const date = new Date();
-	  if(serviceOrders?.status) {	
-			if(serviceOrders?.status === "OA") {
-				serviceOrders.acceptedAt = date;								
-			} else if(serviceOrders?.status === "AR") {
-				serviceOrders.arrivedAt = date;
-			} else if(serviceOrders?.status === "ST") {
-				serviceOrders.startedAt = date;				
+	  const currentDateTime = new Date();
+	  if(serviceOrders) {	
+			if(serviceOrders.status === "OA") {
+				serviceOrders.acceptedAt = currentDateTime;								
+			} else if(serviceOrders.status === "AR") {
+				serviceOrders.arrivedAt = currentDateTime;
+			} else if(serviceOrders.status === "ST") {
+				serviceOrders.startedAt = currentDateTime;				
+			} else if(serviceOrders.status === "PC") {
+				serviceOrders.payedAt = currentDateTime;
 			} else if(serviceOrders?.status === "CO") {
-				serviceOrders.completedAt = date;
+				serviceOrders.completedAt = currentDateTime;
 			}
 		}
-		serviceOrders.updatedAt = date;
+		serviceOrders.updatedAt = currentDateTime;
   }
   
   @post('/serviceOrders/serviceProvider/rateOrder')

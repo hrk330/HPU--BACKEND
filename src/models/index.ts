@@ -30,3 +30,5 @@ export * from './witness.model';
 export * from './company.model';
 export * from './service-provider.model';
 export * from './bank-account.model';
+export * from './transaction-response.model';
+export * from './transaction.model';
