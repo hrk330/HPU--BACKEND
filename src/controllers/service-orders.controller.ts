@@ -237,7 +237,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while updating order.", order: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    if((dbOrder?.status && "UC,SC,AC".indexOf(dbOrder?.status) < 0) && (serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,OA,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
+    if((dbOrder?.status && "UC,SC,AC".indexOf(dbOrder?.status) < 0) && (serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,CC,OA,AR,ST".indexOf(serviceOrders.status) >= 0)) {
 	    try {
 			
 				await this.populateStatusDates(serviceOrders);
@@ -272,7 +272,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while completing order.", order: {}, user: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest.serviceOrder.serviceOrderId);
-    if((dbOrder?.status && "UC,SC".indexOf(dbOrder?.status) < 0) && (orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
+    if((dbOrder?.status && "UC,SC,AC".indexOf(dbOrder?.status) < 0) && (orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
 	    try {
 				await this.populateStatusDates(orderRequest.serviceOrder);
 				
@@ -484,6 +484,9 @@ export class ServiceOrdersController {
 			} else if(serviceOrders?.status === "AR") {
 				title = "Service Provider Arrived"; 
 				body = "Service Provider has arrived at your location.";
+			} else if(serviceOrders?.status === "CC") {
+				title = "Time has been confirmed."; 
+				body = "Rider has confimed the time.";
 			} else if(serviceOrders?.status === "ST") {
 				title = "Order Started"; 
 				body = "Your order has started.";
@@ -506,6 +509,8 @@ export class ServiceOrdersController {
 				serviceOrders.acceptedAt = currentDateTime;								
 			} else if(serviceOrders.status === "AR") {
 				serviceOrders.arrivedAt = currentDateTime;
+			} else if(serviceOrders.status === "CC") {
+				serviceOrders.confirmedAt = currentDateTime;
 			} else if(serviceOrders.status === "ST") {
 				serviceOrders.startedAt = currentDateTime;				
 			} else if(serviceOrders.status === "PC") {
@@ -585,7 +590,7 @@ export class ServiceOrdersController {
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
 	    
-	    if((dbOrder?.status && "OA,AR,ST".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId+'' === serviceOrders.serviceProviderId+'') {
+	    if((dbOrder?.status && "OA,CC,AR,ST".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId+'' === serviceOrders.serviceProviderId+'') {
 		    try {
 					await this.populateStatusDates(serviceOrders);
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
@@ -627,7 +632,7 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-	    if((dbOrder?.status && "LO,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
+	    if((dbOrder?.status && "LO,CC,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
 		    try {
 				
 					await this.populateStatusDates(serviceOrders);
@@ -669,7 +674,7 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-	    if((dbOrder?.status && "LO,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status ==="AC")) {
+	    if((dbOrder?.status && "LO,CC,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status ==="AC")) {
 		    try {
 					await this.populateStatusDates(serviceOrders);
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
@@ -1068,9 +1073,9 @@ export class ServiceOrdersController {
 	  const result = {code: 0, msg: "Order fetched successfully.", order: {}};
 	  let dbServiceOrders: ServiceOrders[] = [];
 	  if(userType === "U") {
-			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId, status: {inq: ['LO', 'OA', 'AR', 'ST', 'CO', 'PI']}}});  
+			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId, status: {inq: ['LO', 'CC', 'OA', 'AR', 'ST', 'CO', 'PI']}}});  
 	  } else if(userType === "S") {
-		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId, status: {inq: ['OA', 'AR', 'ST', 'CO', 'PI']}}});
+		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId, status: {inq: ['OA', 'CC', 'AR', 'ST', 'CO', 'PI']}}});
 	  }
     
     if(dbServiceOrders?.length > 0) {
