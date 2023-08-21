@@ -24,3 +24,4 @@ export * from './witness.repository';
 export * from './company.repository';
 export * from './service-provider.repository';
 export * from './bank-account.repository';
+export * from './transaction.repository';
