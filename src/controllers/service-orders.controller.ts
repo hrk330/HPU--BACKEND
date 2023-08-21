@@ -16,8 +16,8 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Account, AppUsers, OrderRequest, Payment, PromoCodes, ServiceOrders, ServiceProvider, Services, TransactionResponse} from '../models';
-import {AppUsersRepository, PaymentRepository, PromoCodesRepository, ServiceOrdersRepository, ServiceProviderRepository, ServicesRepository} from '../repositories';
+import {Account, AppUsers, OrderRequest, Payment, PromoCodes, ServiceOrders, ServiceProvider, Services, Transaction, TransactionResponse} from '../models';
+import {AppUsersRepository, PaymentRepository, PromoCodesRepository, ServiceOrdersRepository, ServiceProviderRepository, ServicesRepository, TransactionRepository} from '../repositories';
 import {sendMessage} from '../services/firebase-notification.service';
 //import _ from 'lodash';
 
@@ -35,6 +35,8 @@ export class ServiceOrdersController {
     public promoCodesRepository: PromoCodesRepository,
     @repository(ServiceProviderRepository)
     public serviceProviderRepository: ServiceProviderRepository,
+    @repository(TransactionRepository)
+    public transactionRepository : TransactionRepository,
   ) { }
   
   @post('/serviceOrders/adminUser/createOrder')
@@ -237,7 +239,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while updating order.", order: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-    if((dbOrder?.status && "UC,SC,AC".indexOf(dbOrder?.status) < 0) && (serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,OA,AR,ST,CO".indexOf(serviceOrders.status) >= 0)) {
+    if((dbOrder?.status && "UC,SC,AC".indexOf(dbOrder?.status) < 0) && (serviceOrders && !serviceOrders.status) || (serviceOrders?.status && "LO,CC,OA,AR,ST".indexOf(serviceOrders.status) >= 0)) {
 	    try {
 			
 				await this.populateStatusDates(serviceOrders);
@@ -272,7 +274,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {code: 5, msg: "Some error occured while completing order.", order: {}, user: {}};
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(orderRequest.serviceOrder.serviceOrderId);
-    if((dbOrder?.status && "UC,SC".indexOf(dbOrder?.status) < 0) && (orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
+    if((dbOrder?.status && "UC,SC,AC".indexOf(dbOrder?.status) < 0) && (orderRequest?.serviceOrder?.status === "CO" && orderRequest?.serviceOrder?.serviceOrderId)) {	
 	    try {
 				await this.populateStatusDates(orderRequest.serviceOrder);
 				
@@ -352,12 +354,73 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
   
-  @post('/serviceOrders/appUser/processCardPayment/{serviceOrderId}')
+  async processTransactionResponse(transactionResponse: TransactionResponse, serviceOrderId: string): Promise<void> {
+	  const transaction: Transaction = new Transaction();
+	  transaction.serviceOrderId = serviceOrderId;
+  	transaction.transactionProcessedDateTime = transactionResponse.txndate_processed;
+		transaction.cardBin = transactionResponse.ccbin;
+		transaction.timezone = transactionResponse.timezone;
+		transaction.processorNetworkInformation = transactionResponse.processor_network_information;
+		transaction.oid = transactionResponse.oid;
+		transaction.country = transactionResponse.cccountry;
+		transaction.expiryMonth = transactionResponse.expmonth;
+		transaction.hashAlgorithm = transactionResponse.hash_algorithm;
+		transaction.endpointTransactionId = transactionResponse.endpointTransactionId;
+		transaction.currency = transactionResponse.currency;
+		transaction.processorResponseCode = transactionResponse.processor_response_code;
+		transaction.chargeTotal = transactionResponse.chargetotal;
+		transaction.terminalId = transactionResponse.terminal_id;
+		transaction.associationResponseCode = transactionResponse.associationResponseCode;
+		transaction.approvalCode = transactionResponse.approval_code;
+		transaction.expiryYear = transactionResponse.expyear;
+		transaction.responseHash = transactionResponse.response_hash;
+		transaction.transactionDateInSeconds = transactionResponse.tdate;
+		transaction.installmentsInterest = transactionResponse.installments_interest;
+		transaction.bankName = transactionResponse.bname;
+		transaction.CardBrand = transactionResponse.ccbrand;
+		transaction.referenceNumber = transactionResponse.refnumber;
+		transaction. transactionType = transactionResponse.txntype;
+		transaction.paymentMethod = transactionResponse.paymentMethod;
+		transaction.transactionDateTime = transactionResponse.txndatetime;
+		transaction.cardNumber = transactionResponse.cardnumber;
+		transaction.ipgTransactionId = transactionResponse.ipgTransactionId;
+		transaction.status = transactionResponse.status;
+		
+		this.transactionRepository.create(transaction);
+	  
+  }
+  
+  @post('/serviceOrders/appUser/processCardPayment/failure/{serviceOrderId}')
   @response(200, {
     description: 'ServiceOrders model instance',
     content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
   })
-  async processCardPayment(
+  async processCardPaymentFailure(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(TransactionResponse, {partial: true}),
+        },
+      },
+    })
+    transactionResponse: TransactionResponse,
+    @param.path.string('serviceOrderId') serviceOrderId: string,
+  ): Promise<string> {
+    const result = {code: 5, msg: "Payment failed.", order: {}};
+    if(serviceOrderId) {
+	    const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrderId);
+	    await this.processTransactionResponse(transactionResponse, dbOrder.serviceOrderId);
+	    result.order = dbOrder;
+    }
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceOrders/appUser/processCardPayment/success/{serviceOrderId}')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
+  })
+  async processCardPaymentSuccess(
     @requestBody({
       content: {
         'application/json': {
@@ -371,6 +434,7 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while completing payment.", order: {}};
     if(serviceOrderId) {
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrderId);
+	    await this.processTransactionResponse(transactionResponse, dbOrder.serviceOrderId);
 	    if((dbOrder?.status === 'CO' && transactionResponse?.status === "APPROVED")) {
 		    try {	
 					
@@ -405,7 +469,7 @@ export class ServiceOrdersController {
 			    const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(dbOrder.serviceProviderId, {fields: ['endpoint']});
   
 				  if(serviceProvider?.endpoint?.length > 20){
-			    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Payment has been initiated.", dbOrder);
+			    	await this.sendOrderNotification(serviceProvider.endpoint, "Order Alert", "Payment has been completed.", dbOrder);
 		  		}
 		  		
 		  		const appUser: AppUsers = await this.appUsersRepository.findById(dbOrder.userId, {fields: ['endpoint']});
@@ -415,7 +479,6 @@ export class ServiceOrdersController {
 		  		}
   
 				  result = {code: 0, msg: "Payment completed successfully.", order: dbOrder};
-			     
 	 			     
 		    } catch (e) {
 		      console.log(e);
@@ -484,6 +547,9 @@ export class ServiceOrdersController {
 			} else if(serviceOrders?.status === "AR") {
 				title = "Service Provider Arrived"; 
 				body = "Service Provider has arrived at your location.";
+			} else if(serviceOrders?.status === "CC") {
+				title = "Time has been confirmed."; 
+				body = "Rider has confimed the time.";
 			} else if(serviceOrders?.status === "ST") {
 				title = "Order Started"; 
 				body = "Your order has started.";
@@ -506,6 +572,8 @@ export class ServiceOrdersController {
 				serviceOrders.acceptedAt = currentDateTime;								
 			} else if(serviceOrders.status === "AR") {
 				serviceOrders.arrivedAt = currentDateTime;
+			} else if(serviceOrders.status === "CC") {
+				serviceOrders.confirmedAt = currentDateTime;
 			} else if(serviceOrders.status === "ST") {
 				serviceOrders.startedAt = currentDateTime;				
 			} else if(serviceOrders.status === "PC") {
@@ -585,7 +653,7 @@ export class ServiceOrdersController {
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
 	    
-	    if((dbOrder?.status && "OA,AR,ST".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId+'' === serviceOrders.serviceProviderId+'') {
+	    if((dbOrder?.status && "OA,CC,AR,ST".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "SC".indexOf(serviceOrders.status) >= 0) && dbOrder.serviceProviderId+'' === serviceOrders.serviceProviderId+'') {
 		    try {
 					await this.populateStatusDates(serviceOrders);
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
@@ -627,7 +695,7 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-	    if((dbOrder?.status && "LO,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
+	    if((dbOrder?.status && "LO,CC,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status && "UC".indexOf(serviceOrders.status) >= 0)) {
 		    try {
 				
 					await this.populateStatusDates(serviceOrders);
@@ -669,7 +737,7 @@ export class ServiceOrdersController {
     let result = {code: 5, msg: "Some error occured while canceling order.", order: {}};
     if(serviceOrders?.serviceOrderId){
 	    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(serviceOrders.serviceOrderId);
-	    if((dbOrder?.status && "LO,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status ==="AC")) {
+	    if((dbOrder?.status && "LO,CC,OA,AR".indexOf(dbOrder?.status) >= 0) && (serviceOrders?.status ==="AC")) {
 		    try {
 					await this.populateStatusDates(serviceOrders);
 			    await this.serviceOrdersRepository.updateById(serviceOrders.serviceOrderId, serviceOrders);
@@ -1049,7 +1117,7 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
-	@get('/serviceOrders/getCurrentOrder/{userType}/{userId}')
+	@get('/serviceOrders/getCurrentOrder/{userType}/{userId}/{orderType}')
   @response(200, {
     description: 'Array of AppUsers model instances',
     content: {
@@ -1064,13 +1132,24 @@ export class ServiceOrdersController {
   async getCurrentOrder(
     @param.path.string('userType') userType: string,
     @param.path.string('userId') userId: string,
+    @param.path.string('orderType') orderType: string,
   ): Promise<string> {
 	  const result = {code: 0, msg: "Order fetched successfully.", order: {}};
 	  let dbServiceOrders: ServiceOrders[] = [];
+	  const requiredServiceIdArray: string[] = [];
+	  if(orderType === "dfy") {
+		  requiredServiceIdArray.push("Done For You");
+	  } else {
+		  requiredServiceIdArray.push("General Assistance");
+		  requiredServiceIdArray.push("Car Tow");
+	  }
+	  const serviceArray: Services[] = await this.servicesRepository.find({where: {serviceType: {inq: requiredServiceIdArray}}, fields: ["serviceId"]});
+	  const serviceIdArray = serviceArray.map(service => service.serviceId)
+	  console.log(serviceArray);
 	  if(userType === "U") {
-			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId, status: {inq: ['LO', 'OA', 'AR', 'ST', 'CO', 'PI']}}});  
+			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId, serviceId: {inq: serviceIdArray}, status: {inq: ['LO', 'CC', 'OA', 'AR', 'ST', 'CO', 'PI']}}});  
 	  } else if(userType === "S") {
-		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId, status: {inq: ['OA', 'AR', 'ST', 'CO', 'PI']}}});
+		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId,  serviceId: {inq: serviceIdArray}, status: {inq: ['OA', 'CC', 'AR', 'ST', 'CO', 'PI']}}});
 	  }
     
     if(dbServiceOrders?.length > 0) {

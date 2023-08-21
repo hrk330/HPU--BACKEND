@@ -42,3 +42,4 @@ export * from './company-account.controller';
 export * from './company-bank-account.controller';
 export * from './service-provider-account.controller';
 export * from './company-service-provider.controller';
+export * from './transactions.controller';
