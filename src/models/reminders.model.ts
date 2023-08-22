@@ -11,8 +11,6 @@ export class Reminders extends Entity {
   
   @property({
     type: 'string',
-    id: true,
-    generated: true,
   })
   vehicleId?: string;
 
@@ -42,6 +40,11 @@ export class Reminders extends Entity {
   })
   isActive?: boolean;
 
+	@property({
+    type: 'date',
+  })
+  reminderDate?: Date;
+  
   @property({
     type: 'date',
     default: "$now"
