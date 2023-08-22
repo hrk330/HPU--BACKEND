@@ -62,7 +62,7 @@ export class ServiceOrdersController {
     try {
 			const service: Services = await this.servicesRepository.findById(serviceOrders.serviceId);
 			if(service) {
-				if(serviceOrders?.serviceProviderId) {
+				if(serviceOrders?.serviceProviderId && !(service.serviceType === "Done For You")) {
 					serviceOrders.status = "OA";
 				} else {
 					serviceOrders.status = "LO";	
@@ -1145,7 +1145,7 @@ export class ServiceOrdersController {
 	  }
 	  const serviceArray: Services[] = await this.servicesRepository.find({where: {serviceType: {inq: requiredServiceIdArray}}, fields: ["serviceId"]});
 	  const serviceIdArray = serviceArray.map(service => service.serviceId)
-	  console.log(serviceArray);
+	  
 	  if(userType === "U") {
 			dbServiceOrders = await this.serviceOrdersRepository.find({where: {userId: userId, serviceId: {inq: serviceIdArray}, status: {inq: ['LO', 'CC', 'OA', 'AR', 'ST', 'CO', 'PI']}}});  
 	  } else if(userType === "S") {
