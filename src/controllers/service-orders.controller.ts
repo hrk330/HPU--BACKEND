@@ -1151,10 +1151,9 @@ export class ServiceOrdersController {
 	  } else if(userType === "S") {
 		  dbServiceOrders = await this.serviceOrdersRepository.find({where: {serviceProviderId: userId,  serviceId: {inq: serviceIdArray}, status: {inq: ['OA', 'CC', 'AR', 'ST', 'CO', 'PI']}}});
 	  }
+      
+    result.order = dbServiceOrders;
     
-    if(dbServiceOrders?.length > 0) {
-      result.order = dbServiceOrders[0];
-    }
     return JSON.stringify(result);
   }
 
