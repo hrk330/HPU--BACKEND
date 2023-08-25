@@ -110,12 +110,9 @@ export class CompanyController {
         if (savedCompany) {
           await this.companyRepository.userCreds(savedCompany.id).create({password, salt});
           await this.companyRepository.account(savedCompany.id).create({balanceAmount: 0});
-          await this.companyRepository.bankAccount(savedCompany.id).create(company.bankAccountInfo);
-          const userProfile = this.userService.convertToUserProfile(savedCompany);
-
+          savedCompany.bankAccount = await this.companyRepository.bankAccount(savedCompany.id).create(company.bankAccountInfo);
+         
           result.company = savedCompany;
-          // create a JSON Web Token based on the user profile
-          result.token = await this.jwtService.generateToken(userProfile);
           result.code = 0;
           result.msg = "Company registered successfully.";
         }
@@ -210,7 +207,7 @@ export class CompanyController {
   ): Promise<string> {
 	  const result = {code: 5, msg: "Some error occurred.", company: {}, token: ''};
     try {
-   		const dbCompany = await this.companyRepository.findOne({where: {email: company.email}, include: [{'relation': 'userCreds'}]});
+   		let dbCompany = await this.companyRepository.findOne({where: {id: id}, include: [{'relation': 'userCreds'}]});
 
       if (dbCompany?.id) {
       	if (company.password && dbCompany?.userCreds) {
@@ -218,10 +215,13 @@ export class CompanyController {
 	        await this.companyRepository.userCreds(company.id).patch({password});
         }
         await this.companyRepository.bankAccount(company.id).patch(company.bankAccountInfo);
-				await this.companyRepository.updateById(id, _.omit(company, 'password', 'bankAccountInfo'));
-          result.company = await this.companyRepository.findById(company.id, {});
+				await this.companyRepository.updateById(id, _.omit(company, 'password', 'email', 'bankAccountInfo'));
+				dbCompany = await this.companyRepository.findOne({where: {id: id, email: company.email}, include: [{'relation': 'bankAccount'}]});
+        if(dbCompany){
+          result.company = dbCompany;
           result.code = 0;
           result.msg = "Company updated successfully.";
+        }
       } else {
         result.code = 5;
         result.msg = "Company does not exists.";
