@@ -944,9 +944,13 @@ export class ServiceOrdersController {
         const orders: ServiceOrders[] = await this.serviceOrdersRepository.find(filter);
         if(orders?.length > 0) {
 					for(const order of orders) {
-						if(order.serviceProviderId) {
-							const serviceProvider = await this.serviceProviderRepository.findById(order.serviceProviderId);
-							order.serviceProvider = serviceProvider;
+						try{
+							if(order.serviceProviderId) {
+								const serviceProvider = await this.serviceProviderRepository.findById(order.serviceProviderId);
+								order.serviceProvider = serviceProvider;
+							}
+						} catch(e) {
+							console.log(e);
 						}
 					}
 				}
