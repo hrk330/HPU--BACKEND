@@ -29,6 +29,12 @@ export class Company extends Entity {
     type: 'string',
     required: true,
   })
+  companyType: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
   email: string;
 
   @property({
