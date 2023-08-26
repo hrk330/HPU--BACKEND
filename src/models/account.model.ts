@@ -27,7 +27,7 @@ export class Account extends Entity {
     default: 0,
   })
   lastPaymentAmount?: number;
-  
+
   @property({
     type: 'string',
   })
@@ -37,10 +37,10 @@ export class Account extends Entity {
     type: 'date',
   })
   lastPaymentDate?: Date;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
