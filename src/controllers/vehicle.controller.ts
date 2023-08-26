@@ -35,7 +35,13 @@ export class VehicleController {
     vehicle: Omit<Vehicle, 'vehicleId'>,
   ): Promise<string> {
     const result = {code: 0, msg: 'Vehicle created successfully', vehicle: {}};
-    result.vehicle = await this.vehicleRepository.create(vehicle);
+    try {	
+    	result.vehicle = await this.vehicleRepository.create(vehicle);
+    } catch(e) {
+			console.log(e);
+			result.code = 5;
+			result.msg = "Some error occurred.";
+		}
     return JSON.stringify(result);
   }
 
@@ -57,7 +63,7 @@ export class VehicleController {
     return this.vehicleRepository.find(filter);
   }
 
-  @get('/getUserVehicles/{userId}')
+  @get('/vehicles/getUserVehicles/{userId}')
   @response(200, {
     description: 'Array of Vehicle model instances',
     content: {
@@ -73,9 +79,18 @@ export class VehicleController {
     @param.path.string('userId') userId: string,
     @param.filter(Vehicle) filter?: Filter<Vehicle>,
   ): Promise<string> {
-    filter = {...filter, where: {userId: userId}};
+	  
     const result = {code: 0, msg: 'Vehicle fetched successfully', vehicle: {}};
-    result.vehicle = await this.vehicleRepository.find(filter);
+    try{
+			if(filter){
+			  filter.where = {...filter?.where, userId: userId};
+			}
+    	result.vehicle = await this.vehicleRepository.find(filter);
+    } catch(e) {
+			console.log(e);
+			result.code = 5;
+			result.msg = "Some error occurred.";
+		}
     return JSON.stringify(result);
   }
 
@@ -94,7 +109,13 @@ export class VehicleController {
     filter?: FilterExcludingWhere<Vehicle>,
   ): Promise<string> {
     const result = {code: 0, msg: 'Vehicle fetched successfully', vehicle: {}};
-    result.vehicle = await this.vehicleRepository.findById(id, filter);
+    try {
+    	result.vehicle = await this.vehicleRepository.findById(id, filter);
+    } catch(e) {
+			console.log(e);
+			result.code = 5;
+			result.msg = "Some error occurred.";
+		}
     return JSON.stringify(result);
   }
 
@@ -114,8 +135,14 @@ export class VehicleController {
     vehicle: Vehicle,
   ): Promise<string> {
     const result = {code: 0, msg: 'Vehicle updated successfully.', vehicle: {}};
-    await this.vehicleRepository.updateById(id, vehicle);
-    result.vehicle = await this.vehicleRepository.findById(id, {});
+    try {
+	    await this.vehicleRepository.updateById(id, vehicle);
+	    result.vehicle = await this.vehicleRepository.findById(id, {});
+    } catch(e) {
+			console.log(e);
+			result.code = 5;
+			result.msg = "Some error occurred.";
+		}
     return JSON.stringify(result);
   }
 
@@ -125,7 +152,13 @@ export class VehicleController {
   })
   async deleteById(@param.path.string('id') id: string): Promise<string> {
     const result = {code: 0, msg: 'Vehicle deleted.'};
-    await this.vehicleRepository.deleteById(id);
+   	try {
+    	await this.vehicleRepository.deleteById(id);
+    } catch(e) {
+			console.log(e);
+			result.code = 5;
+			result.msg = "Some error occurred.";
+		}
     return JSON.stringify(result);
   }
 }

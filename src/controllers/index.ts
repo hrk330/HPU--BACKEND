@@ -25,7 +25,6 @@ export * from './app-users-account.controller';
 export * from './app-users-withdrawal-request.controller';
 export * from './service-orders-services.controller';
 export * from './service-provider-services.controller';
-export * from './reminders.controller';
 export * from './vehicle-reminders.controller';
 export * from './crash-reports.controller';
 export * from './service-orders-crash-reports.controller';
