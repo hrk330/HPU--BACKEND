@@ -185,19 +185,22 @@ export class ServiceOrdersController {
 
         const createdOrder: ServiceOrders =
           await this.serviceOrdersRepository.create(serviceOrders);
-        const serviceProvider: ServiceProvider =
-          await this.serviceProviderRepository.findById(
-            createdOrder.serviceProviderId,
-            {fields: ['endpoint']},
-          );
 
-        if (serviceProvider?.endpoint?.length > 20) {
-          await this.sendOrderNotification(
-            serviceProvider.endpoint,
-            'Order Alert',
-            'New order has been assigned.',
-            createdOrder,
-          );
+        if (createdOrder.serviceProviderId) {
+          const serviceProvider: ServiceProvider =
+            await this.serviceProviderRepository.findById(
+              createdOrder.serviceProviderId,
+              {fields: ['endpoint']},
+            );
+
+          if (serviceProvider?.endpoint?.length > 20) {
+            await this.sendOrderNotification(
+              serviceProvider.endpoint,
+              'Order Alert',
+              'New order has been assigned.',
+              createdOrder,
+            );
+          }
         }
 
         const appUser: AppUsers = await this.appUsersRepository.findById(
