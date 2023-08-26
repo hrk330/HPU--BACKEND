@@ -23,7 +23,7 @@ const readdir = promisify(fs.readdir);
  * A controller to handle file downloads using multipart/form-data media type
  */
 export class FileDownloadController {
-  constructor(@inject(STORAGE_DIRECTORY) private storageDirectory: string) { }
+  constructor(@inject(STORAGE_DIRECTORY) private storageDirectory: string) {}
   @get('/files', {
     responses: {
       200: {

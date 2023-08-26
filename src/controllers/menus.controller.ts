@@ -17,7 +17,11 @@ import {
   response,
 } from '@loopback/rest';
 import {AdminUsers, Menus, RoleTasks} from '../models';
-import {AdminUsersRepository, MenusRepository, RolesRepository} from '../repositories';
+import {
+  AdminUsersRepository,
+  MenusRepository,
+  RolesRepository,
+} from '../repositories';
 
 export class MenusController {
   constructor(
@@ -27,7 +31,7 @@ export class MenusController {
     public adminUsersRepository: AdminUsersRepository,
     @repository(RolesRepository)
     public rolesRepository: RolesRepository,
-  ) { }
+  ) {}
 
   @post('/menus')
   @response(200, {
@@ -55,9 +59,7 @@ export class MenusController {
     description: 'Menus model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(Menus) where?: Where<Menus>,
-  ): Promise<Count> {
+  async count(@param.where(Menus) where?: Where<Menus>): Promise<Count> {
     return this.menusRepository.count(where);
   }
 
@@ -74,12 +76,17 @@ export class MenusController {
     },
   })
   async find(): Promise<Menus[]> {
-    const dbMenusList: Menus[] = await this.menusRepository.find({where: {isActive: true}});
+    const dbMenusList: Menus[] = await this.menusRepository.find({
+      where: {isActive: true},
+    });
     const parentChildMenuStructure: Menus[] = [];
-    await this.getParentChildMenuStructure(dbMenusList, parentChildMenuStructure);
+    await this.getParentChildMenuStructure(
+      dbMenusList,
+      parentChildMenuStructure,
+    );
     return parentChildMenuStructure;
   }
-  
+
   @get('/menus/getSidebarMenus/{userId}')
   @response(200, {
     description: 'Array of Menus model instances',
@@ -93,44 +100,66 @@ export class MenusController {
     },
   })
   async getSidebarMenus(
-    @param.path.string('userId') userId: string,    
+    @param.path.string('userId') userId: string,
   ): Promise<Menus[]> {
-    const dbMenusList: Menus[] = await this.menusRepository.find({where: {isActive: true}});
-    const adminUser: AdminUsers = await this.adminUsersRepository.findById(userId, {fields: ['roleId']});
-    const dbRoletasks: RoleTasks[] = await this.rolesRepository.roleTasks(adminUser.roleId).find({where: {isActive: true}});
+    const dbMenusList: Menus[] = await this.menusRepository.find({
+      where: {isActive: true},
+    });
+    const adminUser: AdminUsers = await this.adminUsersRepository.findById(
+      userId,
+      {fields: ['roleId']},
+    );
+    const dbRoletasks: RoleTasks[] = await this.rolesRepository
+      .roleTasks(adminUser.roleId)
+      .find({where: {isActive: true}});
     await this.filterMenuForUserRole(dbMenusList, dbRoletasks);
     const parentChildMenuStructure: Menus[] = [];
-    await this.getParentChildMenuStructure(dbMenusList, parentChildMenuStructure);
+    await this.getParentChildMenuStructure(
+      dbMenusList,
+      parentChildMenuStructure,
+    );
     return parentChildMenuStructure;
   }
-  
-  async filterMenuForUserRole(dbMenusList: Menus[], dbRoletasks: RoleTasks[]): Promise<void> {
-	  const roleTaskMap = new Map<string, RoleTasks>();  
+
+  async filterMenuForUserRole(
+    dbMenusList: Menus[],
+    dbRoletasks: RoleTasks[],
+  ): Promise<void> {
+    const roleTaskMap = new Map<string, RoleTasks>();
     for (const dbRoleTask of dbRoletasks) {
       roleTaskMap.set(dbRoleTask.taskId, dbRoleTask);
     }
-	  
-	  for (let index = 0; index < dbMenusList.length;) {
-		  if(roleTaskMap?.has(dbMenusList[index]?.taskId) && roleTaskMap?.get(dbMenusList[index]?.taskId)?.isViewAllowed){
-			  
-			  const roleTask: RoleTasks| undefined = roleTaskMap.get(dbMenusList[index]?.taskId); 
-			  dbMenusList[index].isViewAllowed = roleTask?.isViewAllowed;
-	      dbMenusList[index].isCreateAllowed = roleTask?.isCreateAllowed;
-	      dbMenusList[index].isUpdateAllowed = roleTask?.isUpdateAllowed;
-	      dbMenusList[index].isDeleteAllowed = roleTask?.isDeleteAllowed;
-		  
-			  index++;
-		  }else {
+
+    for (let index = 0; index < dbMenusList.length; ) {
+      if (
+        roleTaskMap?.has(dbMenusList[index]?.taskId) &&
+        roleTaskMap?.get(dbMenusList[index]?.taskId)?.isViewAllowed
+      ) {
+        const roleTask: RoleTasks | undefined = roleTaskMap.get(
+          dbMenusList[index]?.taskId,
+        );
+        dbMenusList[index].isViewAllowed = roleTask?.isViewAllowed;
+        dbMenusList[index].isCreateAllowed = roleTask?.isCreateAllowed;
+        dbMenusList[index].isUpdateAllowed = roleTask?.isUpdateAllowed;
+        dbMenusList[index].isDeleteAllowed = roleTask?.isDeleteAllowed;
+
+        index++;
+      } else {
         dbMenusList.splice(index, 1);
       }
     }
   }
-  
-  async getParentChildMenuStructure(dbMenusList: Menus[], parentChildMenuStructure: Menus[]): Promise<void>{
-	  
-    dbMenusList.forEach((parentMenu) => {
-      dbMenusList.forEach((childMenu) => {
-        if (childMenu.parentMenuId && childMenu.parentMenuId.toString() === parentMenu.menuId.toString()) {
+
+  async getParentChildMenuStructure(
+    dbMenusList: Menus[],
+    parentChildMenuStructure: Menus[],
+  ): Promise<void> {
+    dbMenusList.forEach(parentMenu => {
+      dbMenusList.forEach(childMenu => {
+        if (
+          childMenu.parentMenuId &&
+          childMenu.parentMenuId.toString() === parentMenu.menuId.toString()
+        ) {
           if (parentMenu.children === undefined) {
             parentMenu.children = [];
           }
@@ -143,16 +172,16 @@ export class MenusController {
           }
         }
       });
-      
+
       parentChildMenuStructure.push(parentMenu);
     });
-    for (let index = 0; index < parentChildMenuStructure.length;) {
+    for (let index = 0; index < parentChildMenuStructure.length; ) {
       if (parentChildMenuStructure[index].parentMenuId !== '') {
         parentChildMenuStructure.splice(index, 1);
-      } else {		  	
+      } else {
         index++;
       }
-    }    
+    }
   }
 
   @patch('/menus')
@@ -185,7 +214,8 @@ export class MenusController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Menus, {exclude: 'where'}) filter?: FilterExcludingWhere<Menus>
+    @param.filter(Menus, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Menus>,
   ): Promise<Menus> {
     return this.menusRepository.findById(id, filter);
   }

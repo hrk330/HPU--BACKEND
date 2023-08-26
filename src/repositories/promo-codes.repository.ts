@@ -8,9 +8,7 @@ export class PromoCodesRepository extends DefaultCrudRepository<
   typeof PromoCodes.prototype.promoId,
   PromoCodesRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(PromoCodes, dataSource);
   }
 }

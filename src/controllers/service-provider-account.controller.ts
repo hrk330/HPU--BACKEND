@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  ServiceProvider,
-  Account,
-} from '../models';
+import {ServiceProvider, Account} from '../models';
 import {ServiceProviderRepository} from '../repositories';
 
 export class ServiceProviderAccountController {
   constructor(
-    @repository(ServiceProviderRepository) protected serviceProviderRepository: ServiceProviderRepository,
-  ) { }
+    @repository(ServiceProviderRepository)
+    protected serviceProviderRepository: ServiceProviderRepository,
+  ) {}
 
   @get('/service-providers/{id}/account', {
     responses: {
@@ -61,11 +59,12 @@ export class ServiceProviderAccountController {
           schema: getModelSchemaRef(Account, {
             title: 'NewAccountInServiceProvider',
             exclude: ['accountId'],
-            optional: ['userId']
+            optional: ['userId'],
           }),
         },
       },
-    }) account: Omit<Account, 'accountId'>,
+    })
+    account: Omit<Account, 'accountId'>,
   ): Promise<Account> {
     return this.serviceProviderRepository.account(id).create(account);
   }
@@ -88,7 +87,8 @@ export class ServiceProviderAccountController {
       },
     })
     account: Partial<Account>,
-    @param.query.object('where', getWhereSchemaFor(Account)) where?: Where<Account>,
+    @param.query.object('where', getWhereSchemaFor(Account))
+    where?: Where<Account>,
   ): Promise<Count> {
     return this.serviceProviderRepository.account(id).patch(account, where);
   }
@@ -103,7 +103,8 @@ export class ServiceProviderAccountController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(Account)) where?: Where<Account>,
+    @param.query.object('where', getWhereSchemaFor(Account))
+    where?: Where<Account>,
   ): Promise<Count> {
     return this.serviceProviderRepository.account(id).delete(where);
   }

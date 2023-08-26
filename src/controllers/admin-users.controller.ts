@@ -1,5 +1,9 @@
 import {TokenService} from '@loopback/authentication';
-import {MyUserService, TokenServiceBindings, UserServiceBindings} from '@loopback/authentication-jwt';
+import {
+  MyUserService,
+  TokenServiceBindings,
+  UserServiceBindings,
+} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
 import {
   Count,
@@ -21,8 +25,20 @@ import {
 } from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AdminUsers, CredentialsRequest, CredentialsRequestBody, Roles, Tasks, UserCreds, UserTasks} from '../models';
-import {AdminUsersRepository, RolesRepository, TasksRepository} from '../repositories';
+import {
+  AdminUsers,
+  CredentialsRequest,
+  CredentialsRequestBody,
+  Roles,
+  Tasks,
+  UserCreds,
+  UserTasks,
+} from '../models';
+import {
+  AdminUsersRepository,
+  RolesRepository,
+  TasksRepository,
+} from '../repositories';
 
 export class AdminUsersController {
   constructor(
@@ -36,8 +52,7 @@ export class AdminUsersController {
     public userService: MyUserService,
     @repository(RolesRepository)
     public rolesRepository: RolesRepository,
-  ) { }
-
+  ) {}
 
   @post('/adminUsers/login', {
     responses: {
@@ -62,9 +77,17 @@ export class AdminUsersController {
     @requestBody(CredentialsRequestBody) credentials: CredentialsRequest,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    const result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
+    const result = {
+      code: 5,
+      msg: 'Invalid email or password.',
+      token: '',
+      user: {},
+    };
     try {
-      const filter = {where: {email: credentials.email}, include: [{'relation': 'userCreds'}]};
+      const filter = {
+        where: {email: credentials.email},
+        include: [{relation: 'userCreds'}],
+      };
       const user = await this.adminUsersRepository.findOne(filter);
 
       //const user = await this.userService.verifyCredentials(credentials);
@@ -72,16 +95,17 @@ export class AdminUsersController {
         const salt = user.userCreds.salt;
         const password = await hash(credentials.password, salt);
         if (password === user.userCreds.password) {
-
           //this.appUsersRepository.updateById(id, appUsers)
           // convert a User object into a UserProfile object (reduced set of properties)
 
           // create a JSON Web Token based on the user profile
-          result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+          result.token = await this.jwtService.generateToken(
+            this.userService.convertToUserProfile(user),
+          );
           user.userCreds = new UserCreds();
           result.user = user;
           result.code = 0;
-          result.msg = "User logged in successfully.";
+          result.msg = 'User logged in successfully.';
         }
       }
     } catch (e) {
@@ -109,32 +133,38 @@ export class AdminUsersController {
     })
     adminUsers: Omit<AdminUsers, 'id'>,
   ): Promise<Object> {
-    const result = {code: 5, msg: "", adminUser: {}};
-    if (!await this.checkAdminUserExists(adminUsers.email)) {
-			if (await this.checkIfValidRole(adminUsers.roleId)) {
-	      const userTasks: UserTasks[] = adminUsers.userTasksList;
-	      adminUsers.userTasksList = [];
-	      const dbAdminUser = await this.adminUsersRepository.create(_.omit(adminUsers, 'password'));
-	      if (dbAdminUser) {
-	        const salt = await genSalt();
-	        const password = await hash(adminUsers.password, salt);
-	        await this.adminUsersRepository.userCreds(dbAdminUser.id).create({password, salt});
-	        const dbUserTasks: UserTasks[] = await this.addUserTasks(userTasks, dbAdminUser.id)
-	        dbAdminUser.userTasks = [...dbUserTasks];
-	        result.adminUser = dbAdminUser;
-	        result.code = 0;
-	        result.msg = "User and tasks created successfully.";
-	     
-	      }
-      }else {
-	      result.msg = "Invalid role.";
-	    }
+    const result = {code: 5, msg: '', adminUser: {}};
+    if (!(await this.checkAdminUserExists(adminUsers.email))) {
+      if (await this.checkIfValidRole(adminUsers.roleId)) {
+        const userTasks: UserTasks[] = adminUsers.userTasksList;
+        adminUsers.userTasksList = [];
+        const dbAdminUser = await this.adminUsersRepository.create(
+          _.omit(adminUsers, 'password'),
+        );
+        if (dbAdminUser) {
+          const salt = await genSalt();
+          const password = await hash(adminUsers.password, salt);
+          await this.adminUsersRepository
+            .userCreds(dbAdminUser.id)
+            .create({password, salt});
+          const dbUserTasks: UserTasks[] = await this.addUserTasks(
+            userTasks,
+            dbAdminUser.id,
+          );
+          dbAdminUser.userTasks = [...dbUserTasks];
+          result.adminUser = dbAdminUser;
+          result.code = 0;
+          result.msg = 'User and tasks created successfully.';
+        }
+      } else {
+        result.msg = 'Invalid role.';
+      }
     } else {
-      result.msg = "User already exists.";
+      result.msg = 'User already exists.';
     }
     return result;
   }
-  
+
   async checkIfValidRole(roleId: string): Promise<boolean> {
     let result = false;
     try {
@@ -147,11 +177,13 @@ export class AdminUsersController {
     }
     return result;
   }
-  
+
   async checkAdminUserExists(email: string): Promise<boolean> {
     let result = true;
     try {
-      const adminUsers: AdminUsers[] = await this.adminUsersRepository.find({where: {email: email}});
+      const adminUsers: AdminUsers[] = await this.adminUsersRepository.find({
+        where: {email: email},
+      });
       if (adminUsers && adminUsers.length < 1) {
         result = false;
       }
@@ -161,30 +193,41 @@ export class AdminUsersController {
     return result;
   }
 
-  async addUserTasks(userTasks: UserTasks[], adminUsersId: string): Promise<UserTasks[]> {
+  async addUserTasks(
+    userTasks: UserTasks[],
+    adminUsersId: string,
+  ): Promise<UserTasks[]> {
     const dbUserTasks: UserTasks[] = [];
     if (Array.isArray(userTasks) && userTasks.length > 0) {
       userTasks = await this.checkTasks(userTasks, adminUsersId);
       for (const userTask of userTasks) {
-        const dbRoleTask: UserTasks = await this.adminUsersRepository.userTasks(adminUsersId).create(userTask);
+        const dbRoleTask: UserTasks = await this.adminUsersRepository
+          .userTasks(adminUsersId)
+          .create(userTask);
         dbUserTasks.push(dbRoleTask);
       }
     }
     return dbUserTasks;
   }
 
-  async checkTasks(userTasks: UserTasks[], adminUsersId: string): Promise<UserTasks[]> {
+  async checkTasks(
+    userTasks: UserTasks[],
+    adminUsersId: string,
+  ): Promise<UserTasks[]> {
     let tasks: string[] = [];
     for (const userTask of userTasks) {
       tasks.push(userTask.taskId);
     }
-    const dbTasks: Tasks[] = await this.tasksRepository.find({where: {taskId: {inq: tasks}}, fields: ['taskId']});
+    const dbTasks: Tasks[] = await this.tasksRepository.find({
+      where: {taskId: {inq: tasks}},
+      fields: ['taskId'],
+    });
     tasks = [];
     for (const dbTask of dbTasks) {
       tasks.push(dbTask.taskId);
     }
 
-    for (let index = 0; index < userTasks.length;) {
+    for (let index = 0; index < userTasks.length; ) {
       const taskId = userTasks[index].taskId;
       if (tasks.indexOf(taskId) < 0) {
         userTasks.splice(+index, 1);
@@ -193,7 +236,9 @@ export class AdminUsersController {
       }
     }
 
-    const dbUsertasks = await this.adminUsersRepository.userTasks(adminUsersId).find({fields: ['userTaskId', 'taskId']});
+    const dbUsertasks = await this.adminUsersRepository
+      .userTasks(adminUsersId)
+      .find({fields: ['userTaskId', 'taskId']});
     for (const dbUsertask of dbUsertasks) {
       for (const userTask of userTasks) {
         if (dbUsertask.taskId === userTask.taskId) {
@@ -204,15 +249,35 @@ export class AdminUsersController {
     return userTasks;
   }
 
-  async updateUserTasks(userTasks: UserTasks[], adminUsersId: string): Promise<void> {
+  async updateUserTasks(
+    userTasks: UserTasks[],
+    adminUsersId: string,
+  ): Promise<void> {
     if (Array.isArray(userTasks) && userTasks.length > 0) {
       userTasks = await this.checkTasks(userTasks, adminUsersId);
       for (const userTask of userTasks) {
         if (userTask.userTaskId !== undefined) {
           userTask.updatedAt = new Date();
-          await this.adminUsersRepository.userTasks(adminUsersId).patch(_.pick(userTask, ['isViewAllowed', 'isUpdateAllowed', 'isDeleteAllowed', 'isCreateAllowed', 'updatedAt']), {userTaskId: userTask.userTaskId, adminUsersId: userTask.adminUsersId, taskId: userTask.taskId});
+          await this.adminUsersRepository
+            .userTasks(adminUsersId)
+            .patch(
+              _.pick(userTask, [
+                'isViewAllowed',
+                'isUpdateAllowed',
+                'isDeleteAllowed',
+                'isCreateAllowed',
+                'updatedAt',
+              ]),
+              {
+                userTaskId: userTask.userTaskId,
+                adminUsersId: userTask.adminUsersId,
+                taskId: userTask.taskId,
+              },
+            );
         } else {
-          await this.adminUsersRepository.userTasks(adminUsersId).create(userTask);
+          await this.adminUsersRepository
+            .userTasks(adminUsersId)
+            .create(userTask);
         }
       }
     }
@@ -232,21 +297,22 @@ export class AdminUsersController {
     })
     adminUsers: AdminUsers,
   ): Promise<Object> {
-    const result = {code: 5, msg: "", adminUser: {}};
+    const result = {code: 5, msg: '', adminUser: {}};
 
-    
     adminUsers.userTasksList = [];
     adminUsers.updatedAt = new Date();
     if (await this.checkIfValidRole(adminUsers.roleId)) {
-	    await this.adminUsersRepository.updateById(adminUsers.id, adminUsers);
-	    const dbAdminUser = await this.adminUsersRepository.findById(adminUsers.id, {});
-	    result.adminUser = dbAdminUser;
-	    result.code = 0;
-	    result.msg = "Record updated successfully.";
+      await this.adminUsersRepository.updateById(adminUsers.id, adminUsers);
+      const dbAdminUser = await this.adminUsersRepository.findById(
+        adminUsers.id,
+        {},
+      );
+      result.adminUser = dbAdminUser;
+      result.code = 0;
+      result.msg = 'Record updated successfully.';
     } else {
-			result.msg = "Invalid role";
-		}
-	
+      result.msg = 'Invalid role';
+    }
 
     return result;
   }
@@ -277,26 +343,30 @@ export class AdminUsersController {
   async find(
     @param.filter(AdminUsers) filter?: Filter<AdminUsers>,
   ): Promise<AdminUsers[]> {
-	  const dbAdminUsers: AdminUsers[] = await this.adminUsersRepository.find({});
-	  const userRolesList = [];
-	  
-	  for(const adminUser of dbAdminUsers){
-		  userRolesList.push(adminUser.roleId);
-	  }
-	  
-	  const dbRoles: Roles[] = await this.rolesRepository.find({where: {roleId: {inq: userRolesList}}});
-	  const rolesMap = new Map <string, Roles>();
-	  
-	  for(const role of dbRoles) {
-		  rolesMap.set(role.roleId, role);
-	  }
-	  
-	  for (let index = 0; index < dbAdminUsers.length; ) {
-		 	const role: Roles | undefined = rolesMap.get(dbAdminUsers[index].roleId+'');      
+    const dbAdminUsers: AdminUsers[] = await this.adminUsersRepository.find({});
+    const userRolesList = [];
+
+    for (const adminUser of dbAdminUsers) {
+      userRolesList.push(adminUser.roleId);
+    }
+
+    const dbRoles: Roles[] = await this.rolesRepository.find({
+      where: {roleId: {inq: userRolesList}},
+    });
+    const rolesMap = new Map<string, Roles>();
+
+    for (const role of dbRoles) {
+      rolesMap.set(role.roleId, role);
+    }
+
+    for (let index = 0; index < dbAdminUsers.length; ) {
+      const role: Roles | undefined = rolesMap.get(
+        dbAdminUsers[index].roleId + '',
+      );
       dbAdminUsers[index].roleName = role?.roleName;
       ++index;
     }
-	  
+
     return dbAdminUsers;
   }
 
@@ -330,12 +400,15 @@ export class AdminUsersController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(AdminUsers, {exclude: 'where'}) filter?: FilterExcludingWhere<AdminUsers>
+    @param.filter(AdminUsers, {exclude: 'where'})
+    filter?: FilterExcludingWhere<AdminUsers>,
   ): Promise<AdminUsers> {
     const adminUser = await this.adminUsersRepository.findById(id, {});
-    const dbUsertasks: UserTasks[] = await this.adminUsersRepository.userTasks((adminUser).id).find({});
+    const dbUsertasks: UserTasks[] = await this.adminUsersRepository
+      .userTasks(adminUser.id)
+      .find({});
     adminUser.userTasks = [...dbUsertasks];
-    return adminUser
+    return adminUser;
   }
 
   @patch('/adminUsers/{id}')

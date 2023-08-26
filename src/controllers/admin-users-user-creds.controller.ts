@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  AdminUsers,
-  UserCreds,
-} from '../models';
+import {AdminUsers, UserCreds} from '../models';
 import {AdminUsersRepository} from '../repositories';
 
 export class AdminUsersUserCredsController {
   constructor(
-    @repository(AdminUsersRepository) protected adminUsersRepository: AdminUsersRepository,
-  ) { }
+    @repository(AdminUsersRepository)
+    protected adminUsersRepository: AdminUsersRepository,
+  ) {}
 
   @get('/admin-users/{id}/user-creds', {
     responses: {
@@ -61,11 +59,12 @@ export class AdminUsersUserCredsController {
           schema: getModelSchemaRef(UserCreds, {
             title: 'NewUserCredsInAdminUsers',
             exclude: ['id'],
-            optional: ['id']
+            optional: ['id'],
           }),
         },
       },
-    }) userCreds: Omit<UserCreds, 'id'>,
+    })
+    userCreds: Omit<UserCreds, 'id'>,
   ): Promise<UserCreds> {
     return this.adminUsersRepository.userCreds(id).create(userCreds);
   }
@@ -88,7 +87,8 @@ export class AdminUsersUserCredsController {
       },
     })
     userCreds: Partial<UserCreds>,
-    @param.query.object('where', getWhereSchemaFor(UserCreds)) where?: Where<UserCreds>,
+    @param.query.object('where', getWhereSchemaFor(UserCreds))
+    where?: Where<UserCreds>,
   ): Promise<Count> {
     return this.adminUsersRepository.userCreds(id).patch(userCreds, where);
   }
@@ -103,7 +103,8 @@ export class AdminUsersUserCredsController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(UserCreds)) where?: Where<UserCreds>,
+    @param.query.object('where', getWhereSchemaFor(UserCreds))
+    where?: Where<UserCreds>,
   ): Promise<Count> {
     return this.adminUsersRepository.userCreds(id).delete(where);
   }

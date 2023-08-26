@@ -8,9 +8,7 @@ export class ServicesRepository extends DefaultCrudRepository<
   typeof Services.prototype.serviceId,
   ServicesRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(Services, dataSource);
   }
 }

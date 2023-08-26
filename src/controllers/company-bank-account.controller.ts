@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  Company,
-  BankAccount,
-} from '../models';
+import {Company, BankAccount} from '../models';
 import {CompanyRepository} from '../repositories';
 
 export class CompanyBankAccountController {
   constructor(
-    @repository(CompanyRepository) protected companyRepository: CompanyRepository,
-  ) { }
+    @repository(CompanyRepository)
+    protected companyRepository: CompanyRepository,
+  ) {}
 
   @get('/companies/{id}/bank-account', {
     responses: {
@@ -61,11 +59,12 @@ export class CompanyBankAccountController {
           schema: getModelSchemaRef(BankAccount, {
             title: 'NewBankAccountInCompany',
             exclude: ['bankAccountId'],
-            optional: ['userId']
+            optional: ['userId'],
           }),
         },
       },
-    }) bankAccount: Omit<BankAccount, 'bankAccountId'>,
+    })
+    bankAccount: Omit<BankAccount, 'bankAccountId'>,
   ): Promise<BankAccount> {
     return this.companyRepository.bankAccount(id).create(bankAccount);
   }
@@ -88,7 +87,8 @@ export class CompanyBankAccountController {
       },
     })
     bankAccount: Partial<BankAccount>,
-    @param.query.object('where', getWhereSchemaFor(BankAccount)) where?: Where<BankAccount>,
+    @param.query.object('where', getWhereSchemaFor(BankAccount))
+    where?: Where<BankAccount>,
   ): Promise<Count> {
     return this.companyRepository.bankAccount(id).patch(bankAccount, where);
   }
@@ -103,7 +103,8 @@ export class CompanyBankAccountController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(BankAccount)) where?: Where<BankAccount>,
+    @param.query.object('where', getWhereSchemaFor(BankAccount))
+    where?: Where<BankAccount>,
   ): Promise<Count> {
     return this.companyRepository.bankAccount(id).delete(where);
   }

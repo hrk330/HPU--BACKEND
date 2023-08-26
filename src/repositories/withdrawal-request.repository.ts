@@ -8,9 +8,7 @@ export class WithdrawalRequestRepository extends DefaultCrudRepository<
   typeof WithdrawalRequest.prototype.withdrawlRequestId,
   WithdrawalRequestRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(WithdrawalRequest, dataSource);
   }
 }

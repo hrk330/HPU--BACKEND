@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  CrashReports,
-  Witness,
-} from '../models';
+import {CrashReports, Witness} from '../models';
 import {CrashReportsRepository} from '../repositories';
 
 export class CrashReportsWitnessController {
   constructor(
-    @repository(CrashReportsRepository) protected crashReportsRepository: CrashReportsRepository,
-  ) { }
+    @repository(CrashReportsRepository)
+    protected crashReportsRepository: CrashReportsRepository,
+  ) {}
 
   @get('/crash-reports/{id}/witnesses', {
     responses: {
@@ -61,11 +59,12 @@ export class CrashReportsWitnessController {
           schema: getModelSchemaRef(Witness, {
             title: 'NewWitnessInCrashReports',
             exclude: ['witnessId'],
-            optional: ['crashReportId']
+            optional: ['crashReportId'],
           }),
         },
       },
-    }) witness: Omit<Witness, 'witnessId'>,
+    })
+    witness: Omit<Witness, 'witnessId'>,
   ): Promise<Witness> {
     return this.crashReportsRepository.witnesses(id).create(witness);
   }
@@ -88,7 +87,8 @@ export class CrashReportsWitnessController {
       },
     })
     witness: Partial<Witness>,
-    @param.query.object('where', getWhereSchemaFor(Witness)) where?: Where<Witness>,
+    @param.query.object('where', getWhereSchemaFor(Witness))
+    where?: Where<Witness>,
   ): Promise<Count> {
     return this.crashReportsRepository.witnesses(id).patch(witness, where);
   }
@@ -103,7 +103,8 @@ export class CrashReportsWitnessController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(Witness)) where?: Where<Witness>,
+    @param.query.object('where', getWhereSchemaFor(Witness))
+    where?: Where<Witness>,
   ): Promise<Count> {
     return this.crashReportsRepository.witnesses(id).delete(where);
   }

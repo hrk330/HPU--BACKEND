@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  Company,
-  UserCreds,
-} from '../models';
+import {Company, UserCreds} from '../models';
 import {CompanyRepository} from '../repositories';
 
 export class CompanyUserCredsController {
   constructor(
-    @repository(CompanyRepository) protected companyRepository: CompanyRepository,
-  ) { }
+    @repository(CompanyRepository)
+    protected companyRepository: CompanyRepository,
+  ) {}
 
   @get('/companies/{id}/user-creds', {
     responses: {
@@ -61,11 +59,12 @@ export class CompanyUserCredsController {
           schema: getModelSchemaRef(UserCreds, {
             title: 'NewUserCredsInCompany',
             exclude: ['id'],
-            optional: ['userId']
+            optional: ['userId'],
           }),
         },
       },
-    }) userCreds: Omit<UserCreds, 'id'>,
+    })
+    userCreds: Omit<UserCreds, 'id'>,
   ): Promise<UserCreds> {
     return this.companyRepository.userCreds(id).create(userCreds);
   }
@@ -88,7 +87,8 @@ export class CompanyUserCredsController {
       },
     })
     userCreds: Partial<UserCreds>,
-    @param.query.object('where', getWhereSchemaFor(UserCreds)) where?: Where<UserCreds>,
+    @param.query.object('where', getWhereSchemaFor(UserCreds))
+    where?: Where<UserCreds>,
   ): Promise<Count> {
     return this.companyRepository.userCreds(id).patch(userCreds, where);
   }
@@ -103,7 +103,8 @@ export class CompanyUserCredsController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(UserCreds)) where?: Where<UserCreds>,
+    @param.query.object('where', getWhereSchemaFor(UserCreds))
+    where?: Where<UserCreds>,
   ): Promise<Count> {
     return this.companyRepository.userCreds(id).delete(where);
   }

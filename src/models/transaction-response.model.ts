@@ -169,10 +169,10 @@ export class TransactionResponse extends Model {
     required: false,
   })
   status: string;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -196,4 +196,5 @@ export interface TransactionResponseRelations {
   // describe navigational properties here
 }
 
-export type TransactionResponseWithRelations = TransactionResponse & TransactionResponseRelations;
+export type TransactionResponseWithRelations = TransactionResponse &
+  TransactionResponseRelations;

@@ -1,14 +1,45 @@
 import {authenticate, TokenService} from '@loopback/authentication';
-import {MyUserService, TokenServiceBindings, User, UserServiceBindings, } from '@loopback/authentication-jwt';
+import {
+  MyUserService,
+  TokenServiceBindings,
+  User,
+  UserServiceBindings,
+} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
-import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where, } from '@loopback/repository';
-import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
+import {
+  Count,
+  CountSchema,
+  Filter,
+  FilterExcludingWhere,
+  repository,
+  Where,
+} from '@loopback/repository';
+import {
+  del,
+  get,
+  getModelSchemaRef,
+  param,
+  patch,
+  post,
+  put,
+  requestBody,
+  response,
+} from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {AppUsers, CredentialsRequest, CredentialsRequestBody, ServiceOrders, UserCreds} from '../models';
-import {AppUsersRepository, ServiceOrdersRepository, VerificationCodesRepository} from '../repositories';
-
+import {
+  AppUsers,
+  CredentialsRequest,
+  CredentialsRequestBody,
+  ServiceOrders,
+  UserCreds,
+} from '../models';
+import {
+  AppUsersRepository,
+  ServiceOrdersRepository,
+  VerificationCodesRepository,
+} from '../repositories';
 
 export class AppUserController {
   constructor(
@@ -22,7 +53,7 @@ export class AppUserController {
     protected verificationCodesRepository: VerificationCodesRepository,
     @repository(ServiceOrdersRepository)
     public serviceOrdersRepository: ServiceOrdersRepository,
-  ) { }
+  ) {}
 
   @authenticate('jwt')
   @get('/whoAmI', {
@@ -70,25 +101,34 @@ export class AppUserController {
     @requestBody(CredentialsRequestBody) credentials: CredentialsRequest,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    const result = {code: 5, msg: "Invalid email or password.", token: '', user: {}};
+    const result = {
+      code: 5,
+      msg: 'Invalid email or password.',
+      token: '',
+      user: {},
+    };
     try {
-      const user = await this.appUsersRepository.findOne({where: {email: credentials.email, roleId : "APPUSER"}, include: [{'relation': 'userCreds'}]});
+      const user = await this.appUsersRepository.findOne({
+        where: {email: credentials.email, roleId: 'APPUSER'},
+        include: [{relation: 'userCreds'}],
+      });
 
       //const user = await this.userService.verifyCredentials(credentials);
       if (user?.userCreds) {
         const salt = user.userCreds.salt;
         const password = await hash(credentials.password, salt);
         if (password === user.userCreds.password) {
-
           //this.appUsersRepository.updateById(id, appUsers)
           // convert a User object into a UserProfile object (reduced set of properties)
 
           // create a JSON Web Token based on the user profile
-          result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+          result.token = await this.jwtService.generateToken(
+            this.userService.convertToUserProfile(user),
+          );
           user.userCreds = new UserCreds();
           result.user = user;
           result.code = 0;
-          result.msg = "User logged in successfully.";
+          result.msg = 'User logged in successfully.';
         }
       }
     } catch (e) {
@@ -124,31 +164,39 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-
-    let result = {code: 5, msg: "User registeration failed.", token: '', userId: ''};
+    let result = {
+      code: 5,
+      msg: 'User registeration failed.',
+      token: '',
+      userId: '',
+    };
     try {
-      const filter = {where: {email: newUserRequest.email, roleId: "APPUSER"}};
+      const filter = {where: {email: newUserRequest.email, roleId: 'APPUSER'}};
       const user = await this.appUsersRepository.findOne(filter);
 
       if (user?.id) {
-        result = {code: 5, msg: "User already exists", token: '', userId: ''};
+        result = {code: 5, msg: 'User already exists', token: '', userId: ''};
       } else {
         const salt = await genSalt();
         const password = await hash(newUserRequest.password, salt);
-        newUserRequest.roleId = "APPUSER";
+        newUserRequest.roleId = 'APPUSER';
         const savedUser = await this.appUsersRepository.create(
           _.omit(newUserRequest, 'password'),
         );
         if (savedUser) {
-          await this.appUsersRepository.userCreds(savedUser.id).create({password, salt});
-          await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
+          await this.appUsersRepository
+            .userCreds(savedUser.id)
+            .create({password, salt});
+          await this.appUsersRepository
+            .account(savedUser.id)
+            .create({balanceAmount: 0});
           const userProfile = this.userService.convertToUserProfile(savedUser);
 
           result.userId = savedUser.id;
           // create a JSON Web Token based on the user profile
           result.token = await this.jwtService.generateToken(userProfile);
           result.code = 0;
-          result.msg = "User registered successfully.";
+          result.msg = 'User registered successfully.';
         }
       }
     } catch (e) {
@@ -184,16 +232,29 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType, roleId: "APPUSER"}};
+    const filter = {
+      where: {
+        socialId: newUserRequest.socialId,
+        socialIdType: newUserRequest.socialIdType,
+        roleId: 'APPUSER',
+      },
+    };
     const user = await this.appUsersRepository.findOne(filter);
-    let result = {code: 0, msg: "User registered successfully.", token: '', userId: ''};
+    let result = {
+      code: 0,
+      msg: 'User registered successfully.',
+      token: '',
+      userId: '',
+    };
     if (user) {
-      result = {code: 5, msg: "User already exists", token: '', userId: ''};
+      result = {code: 5, msg: 'User already exists', token: '', userId: ''};
     } else {
-      newUserRequest.roleId = "APPUSER";
+      newUserRequest.roleId = 'APPUSER';
       const savedUser = await this.appUsersRepository.create(newUserRequest);
-      if(savedUser) {
-      	await this.appUsersRepository.account(savedUser.id).create({balanceAmount: 0});
+      if (savedUser) {
+        await this.appUsersRepository
+          .account(savedUser.id)
+          .create({balanceAmount: 0});
       }
 
       const userProfile = this.userService.convertToUserProfile(savedUser);
@@ -237,20 +298,27 @@ export class AppUserController {
     newUserRequest: AppUsers,
   ): Promise<String> {
     // ensure the user exists, and the password is correct
-    const result = {code: 5, msg: "Invalid Login.", token: '', user: {}};
+    const result = {code: 5, msg: 'Invalid Login.', token: '', user: {}};
     try {
-      const filter = {where: {socialId: newUserRequest.socialId, socialIdType: newUserRequest.socialIdType, roleId : "APPUSER"}};
+      const filter = {
+        where: {
+          socialId: newUserRequest.socialId,
+          socialIdType: newUserRequest.socialIdType,
+          roleId: 'APPUSER',
+        },
+      };
       const user = await this.appUsersRepository.findOne(filter);
       if (user) {
-
         //this.appUsersRepository.updateById(id, appUsers)
         // convert a User object into a UserProfile object (reduced set of properties)
 
         // create a JSON Web Token based on the user profile
-        result.token = await this.jwtService.generateToken(this.userService.convertToUserProfile(user));
+        result.token = await this.jwtService.generateToken(
+          this.userService.convertToUserProfile(user),
+        );
         result.user = user;
         result.code = 0;
-        result.msg = "User logged in successfully";
+        result.msg = 'User logged in successfully';
       }
     } catch (e) {
       result.code = 5;
@@ -286,12 +354,18 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    await this.appUsersRepository.updateById(newUserRequest.id, _.omit(newUserRequest, 'email'));
+    await this.appUsersRepository.updateById(
+      newUserRequest.id,
+      _.omit(newUserRequest, 'email'),
+    );
     const user = await this.appUsersRepository.findById(newUserRequest.id, {});
-    const result = {code: 0, msg: "User profile updated successfully.", user: user};
+    const result = {
+      code: 0,
+      msg: 'User profile updated successfully.',
+      user: user,
+    };
     return JSON.stringify(result);
   }
-  
 
   @authenticate('jwt')
   @post('/appUsers/updateEndpoint', {
@@ -320,12 +394,19 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    await this.appUsersRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'endpoint'));
+    await this.appUsersRepository.updateById(
+      newUserRequest.id,
+      _.pick(newUserRequest, 'endpoint'),
+    );
     const user = await this.appUsersRepository.findById(newUserRequest.id, {});
-    const result = {code: 0, msg: "User profile updated successfully.", user: user};
+    const result = {
+      code: 0,
+      msg: 'User profile updated successfully.',
+      user: user,
+    };
     return JSON.stringify(result);
   }
-  
+
   @authenticate('jwt')
   @post('/appUsers/logoutAppUser', {
     responses: {
@@ -353,8 +434,8 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    await this.appUsersRepository.updateById(newUserRequest.id, {'endpoint': ''});
-    const result = {code: 0, msg: "User logged out successfully."};
+    await this.appUsersRepository.updateById(newUserRequest.id, {endpoint: ''});
+    const result = {code: 0, msg: 'User logged out successfully.'};
     return JSON.stringify(result);
   }
 
@@ -377,24 +458,27 @@ export class AppUserController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(AppUsers, {
-            title: 'NewUser', partial: true
+            title: 'NewUser',
+            partial: true,
           }),
         },
       },
     })
-    newUserRequest: AppUsers
+    newUserRequest: AppUsers,
   ): Promise<String> {
-    const result = {code: 5, msg: "Reset password failed."};
+    const result = {code: 5, msg: 'Reset password failed.'};
 
-    const filter = {where: {email: newUserRequest.email, roleId : "APPUSER"}};
+    const filter = {where: {email: newUserRequest.email, roleId: 'APPUSER'}};
     const user = await this.appUsersRepository.findOne(filter);
     if (user) {
       const salt = await genSalt();
       const password = await hash(newUserRequest.password, salt);
       const updatedAt = new Date();
-      await this.appUsersRepository.userCreds(user.id).patch({password, salt, updatedAt});
+      await this.appUsersRepository
+        .userCreds(user.id)
+        .patch({password, salt, updatedAt});
       result.code = 0;
-      result.msg = "Password has been reset successfully.";
+      result.msg = 'Password has been reset successfully.';
     }
 
     return JSON.stringify(result);
@@ -405,12 +489,10 @@ export class AppUserController {
     description: 'AppUsers model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(AppUsers) where?: Where<AppUsers>,
-  ): Promise<Count> {
+  async count(@param.where(AppUsers) where?: Where<AppUsers>): Promise<Count> {
     return this.appUsersRepository.count(where);
   }
-  
+
   @get('/appUsers/getSearchedUsers/{email}')
   @response(200, {
     description: 'Array of AppUsers model instances',
@@ -426,8 +508,11 @@ export class AppUserController {
   async findByEmail(
     @param.path.string('email') email: string,
   ): Promise<User[]> {
-	 
-    return this.appUsersRepository.find({where: {roleId: "APPUSER", email: {like: email}}, limit: 10, fields: ["id", "email"]});
+    return this.appUsersRepository.find({
+      where: {roleId: 'APPUSER', email: {like: email}},
+      limit: 10,
+      fields: ['id', 'email'],
+    });
   }
 
   @get('/appUsers')
@@ -479,13 +564,19 @@ export class AppUserController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(AppUsers, {exclude: 'where'}) filter?: FilterExcludingWhere<AppUsers>
+    @param.filter(AppUsers, {exclude: 'where'})
+    filter?: FilterExcludingWhere<AppUsers>,
   ): Promise<User> {
-	  const orders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {userId: id}});
-	  const appuser: AppUsers = await this.appUsersRepository.findById(id, filter);
-    if(orders?.length > 0) {
-			appuser.totalOrders  = orders?.length;
-		}
+    const orders: ServiceOrders[] = await this.serviceOrdersRepository.find({
+      where: {userId: id},
+    });
+    const appuser: AppUsers = await this.appUsersRepository.findById(
+      id,
+      filter,
+    );
+    if (orders?.length > 0) {
+      appuser.totalOrders = orders?.length;
+    }
     return appuser;
   }
 

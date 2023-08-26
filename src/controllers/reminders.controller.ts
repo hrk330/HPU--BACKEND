@@ -23,7 +23,7 @@ import {RemindersRepository} from '../repositories';
 export class RemindersController {
   constructor(
     @repository(RemindersRepository)
-    public remindersRepository : RemindersRepository,
+    public remindersRepository: RemindersRepository,
   ) {}
 
   @post('/reminders')
@@ -106,7 +106,8 @@ export class RemindersController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Reminders, {exclude: 'where'}) filter?: FilterExcludingWhere<Reminders>
+    @param.filter(Reminders, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Reminders>,
   ): Promise<Reminders> {
     return this.remindersRepository.findById(id, filter);
   }

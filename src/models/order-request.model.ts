@@ -1,6 +1,6 @@
 import {Model, model, property} from '@loopback/repository';
-import { Payment } from './payment.model';
-import { ServiceOrders } from './service-orders.model';
+import {Payment} from './payment.model';
+import {ServiceOrders} from './service-orders.model';
 
 @model()
 export class OrderRequest extends Model {
@@ -13,7 +13,6 @@ export class OrderRequest extends Model {
     type: 'object',
   })
   payment: Payment;
-
 
   constructor(data?: Partial<OrderRequest>) {
     super(data);

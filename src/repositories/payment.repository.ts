@@ -8,9 +8,7 @@ export class PaymentRepository extends DefaultCrudRepository<
   typeof Payment.prototype.paymentId,
   PaymentRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(Payment, dataSource);
   }
 }

@@ -8,9 +8,7 @@ export class DocumentTypesRepository extends DefaultCrudRepository<
   typeof DocumentTypes.prototype.docTypeId,
   DocumentTypesRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(DocumentTypes, dataSource);
   }
 }

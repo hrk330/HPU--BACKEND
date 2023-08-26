@@ -8,7 +8,7 @@ export class BankAccount extends Entity {
     generated: true,
   })
   bankAccountId?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -19,43 +19,43 @@ export class BankAccount extends Entity {
     required: true,
   })
   accountHolderName: string;
-  
+
   @property({
     type: 'string',
     required: true,
   })
   accountNumber: string;
-  
+
   @property({
     type: 'string',
     required: true,
   })
-	bankName: string;
-	
-	@property({
+  bankName: string;
+
+  @property({
     type: 'string',
     required: true,
   })
-	accountType: string;
-	
-	@property({
+  accountType: string;
+
+  @property({
     type: 'string',
   })
   address?: string;
-  
+
   @property({
     type: 'string',
   })
   zipCode?: string;
-  
+
   @property({
     type: 'string',
   })
   status?: string;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -63,7 +63,6 @@ export class BankAccount extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-
 
   constructor(data?: Partial<BankAccount>) {
     super(data);

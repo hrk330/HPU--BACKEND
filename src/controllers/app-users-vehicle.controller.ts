@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  AppUsers,
-  Vehicle,
-} from '../models';
+import {AppUsers, Vehicle} from '../models';
 import {AppUsersRepository} from '../repositories';
 
 export class AppUsersVehicleController {
   constructor(
-    @repository(AppUsersRepository) protected appUsersRepository: AppUsersRepository,
-  ) { }
+    @repository(AppUsersRepository)
+    protected appUsersRepository: AppUsersRepository,
+  ) {}
 
   @get('/app-users/{id}/vehicles', {
     responses: {
@@ -61,11 +59,12 @@ export class AppUsersVehicleController {
           schema: getModelSchemaRef(Vehicle, {
             title: 'NewVehicleInAppUsers',
             exclude: ['vehicleId'],
-            optional: ['userId']
+            optional: ['userId'],
           }),
         },
       },
-    }) vehicle: Omit<Vehicle, 'vehicleId'>,
+    })
+    vehicle: Omit<Vehicle, 'vehicleId'>,
   ): Promise<Vehicle> {
     return this.appUsersRepository.vehicles(id).create(vehicle);
   }
@@ -88,7 +87,8 @@ export class AppUsersVehicleController {
       },
     })
     vehicle: Partial<Vehicle>,
-    @param.query.object('where', getWhereSchemaFor(Vehicle)) where?: Where<Vehicle>,
+    @param.query.object('where', getWhereSchemaFor(Vehicle))
+    where?: Where<Vehicle>,
   ): Promise<Count> {
     return this.appUsersRepository.vehicles(id).patch(vehicle, where);
   }
@@ -103,7 +103,8 @@ export class AppUsersVehicleController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(Vehicle)) where?: Where<Vehicle>,
+    @param.query.object('where', getWhereSchemaFor(Vehicle))
+    where?: Where<Vehicle>,
   ): Promise<Count> {
     return this.appUsersRepository.vehicles(id).delete(where);
   }

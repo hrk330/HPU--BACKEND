@@ -23,7 +23,7 @@ import {UserDocsRepository} from '../repositories';
 export class UserDocsController {
   constructor(
     @repository(UserDocsRepository)
-    public userDocsRepository : UserDocsRepository,
+    public userDocsRepository: UserDocsRepository,
   ) {}
 
   @post('/userDocs')
@@ -52,9 +52,7 @@ export class UserDocsController {
     description: 'UserDocs model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(UserDocs) where?: Where<UserDocs>,
-  ): Promise<Count> {
+  async count(@param.where(UserDocs) where?: Where<UserDocs>): Promise<Count> {
     return this.userDocsRepository.count(where);
   }
 
@@ -106,7 +104,8 @@ export class UserDocsController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(UserDocs, {exclude: 'where'}) filter?: FilterExcludingWhere<UserDocs>
+    @param.filter(UserDocs, {exclude: 'where'})
+    filter?: FilterExcludingWhere<UserDocs>,
   ): Promise<UserDocs> {
     return this.userDocsRepository.findById(id, filter);
   }
@@ -126,7 +125,11 @@ export class UserDocsController {
     })
     userDocs: UserDocs,
   ): Promise<string> {
-    const result = {code: 0, msg: "Document updated successfully.", userDoc: {}};
+    const result = {
+      code: 0,
+      msg: 'Document updated successfully.',
+      userDoc: {},
+    };
     await this.userDocsRepository.updateById(id, userDocs);
     const userDoc: UserDocs = await this.userDocsRepository.findById(id, {});
     result.userDoc = userDoc;

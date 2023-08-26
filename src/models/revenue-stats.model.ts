@@ -22,7 +22,6 @@ export class RevenueStats extends Model {
   })
   outstandingCash?: number;
 
-
   constructor(data?: Partial<RevenueStats>) {
     super(data);
   }

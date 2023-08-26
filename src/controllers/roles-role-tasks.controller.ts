@@ -15,16 +15,13 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  Roles,
-  RoleTasks,
-} from '../models';
+import {Roles, RoleTasks} from '../models';
 import {RolesRepository} from '../repositories';
 
 export class RolesRoleTasksController {
   constructor(
     @repository(RolesRepository) protected rolesRepository: RolesRepository,
-  ) { }
+  ) {}
 
   @get('/roles/{id}/role-tasks', {
     responses: {
@@ -61,11 +58,12 @@ export class RolesRoleTasksController {
           schema: getModelSchemaRef(RoleTasks, {
             title: 'NewRoleTasksInRoles',
             exclude: ['roleTaskId'],
-            optional: ['roleId']
+            optional: ['roleId'],
           }),
         },
       },
-    }) roleTasks: Omit<RoleTasks, 'roleTaskId'>,
+    })
+    roleTasks: Omit<RoleTasks, 'roleTaskId'>,
   ): Promise<RoleTasks> {
     return this.rolesRepository.roleTasks(id).create(roleTasks);
   }
@@ -88,7 +86,8 @@ export class RolesRoleTasksController {
       },
     })
     roleTasks: Partial<RoleTasks>,
-    @param.query.object('where', getWhereSchemaFor(RoleTasks)) where?: Where<RoleTasks>,
+    @param.query.object('where', getWhereSchemaFor(RoleTasks))
+    where?: Where<RoleTasks>,
   ): Promise<Count> {
     return this.rolesRepository.roleTasks(id).patch(roleTasks, where);
   }
@@ -103,7 +102,8 @@ export class RolesRoleTasksController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(RoleTasks)) where?: Where<RoleTasks>,
+    @param.query.object('where', getWhereSchemaFor(RoleTasks))
+    where?: Where<RoleTasks>,
   ): Promise<Count> {
     return this.rolesRepository.roleTasks(id).delete(where);
   }

@@ -8,9 +8,7 @@ export class TasksRepository extends DefaultCrudRepository<
   typeof Tasks.prototype.taskId,
   TasksRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(Tasks, dataSource);
   }
 }

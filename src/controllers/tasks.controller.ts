@@ -23,7 +23,7 @@ import {TasksRepository} from '../repositories';
 export class TasksController {
   constructor(
     @repository(TasksRepository)
-    public tasksRepository : TasksRepository,
+    public tasksRepository: TasksRepository,
   ) {}
 
   @post('/tasks')
@@ -37,7 +37,6 @@ export class TasksController {
         'application/json': {
           schema: getModelSchemaRef(Tasks, {
             title: 'NewTasks',
-            
           }),
         },
       },
@@ -52,9 +51,7 @@ export class TasksController {
     description: 'Tasks model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(Tasks) where?: Where<Tasks>,
-  ): Promise<Count> {
+  async count(@param.where(Tasks) where?: Where<Tasks>): Promise<Count> {
     return this.tasksRepository.count(where);
   }
 
@@ -70,9 +67,7 @@ export class TasksController {
       },
     },
   })
-  async find(
-    @param.filter(Tasks) filter?: Filter<Tasks>,
-  ): Promise<Tasks[]> {
+  async find(@param.filter(Tasks) filter?: Filter<Tasks>): Promise<Tasks[]> {
     return this.tasksRepository.find(filter);
   }
 
@@ -106,7 +101,8 @@ export class TasksController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Tasks, {exclude: 'where'}) filter?: FilterExcludingWhere<Tasks>
+    @param.filter(Tasks, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Tasks>,
   ): Promise<Tasks> {
     return this.tasksRepository.findById(id, filter);
   }

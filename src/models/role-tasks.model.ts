@@ -47,7 +47,7 @@ export class RoleTasks extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -55,7 +55,6 @@ export class RoleTasks extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-
 
   constructor(data?: Partial<RoleTasks>) {
     super(data);

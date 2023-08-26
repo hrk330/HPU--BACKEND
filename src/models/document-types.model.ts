@@ -14,16 +14,16 @@ export class DocumentTypes extends Entity {
     required: true,
   })
   docType: string;
-  
+
   @property({
     type: 'boolean',
-    default: true
+    default: true,
   })
   isActive?: boolean;
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -31,7 +31,6 @@ export class DocumentTypes extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-
 
   constructor(data?: Partial<DocumentTypes>) {
     super(data);

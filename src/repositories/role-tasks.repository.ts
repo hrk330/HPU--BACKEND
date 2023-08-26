@@ -8,9 +8,7 @@ export class RoleTasksRepository extends DefaultCrudRepository<
   typeof RoleTasks.prototype.roleTaskId,
   RoleTasksRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(RoleTasks, dataSource);
   }
 }

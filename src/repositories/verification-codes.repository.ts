@@ -8,9 +8,7 @@ export class VerificationCodesRepository extends DefaultCrudRepository<
   typeof VerificationCodes.prototype.id,
   VerificationCodesRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(VerificationCodes, dataSource);
   }
 }

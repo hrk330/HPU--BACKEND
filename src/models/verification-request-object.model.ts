@@ -27,7 +27,6 @@ export class VerificationRequestObject extends Model {
   })
   type: string;
 
-
   constructor(data?: Partial<VerificationRequestObject>) {
     super(data);
   }
@@ -37,4 +36,5 @@ export interface VerificationRequestObjectRelations {
   // describe navigational properties here
 }
 
-export type VerificationRequestObjectWithRelations = VerificationRequestObject & VerificationRequestObjectRelations;
+export type VerificationRequestObjectWithRelations = VerificationRequestObject &
+  VerificationRequestObjectRelations;

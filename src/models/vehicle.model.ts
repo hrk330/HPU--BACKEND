@@ -3,7 +3,6 @@ import {Reminders} from './reminders.model';
 
 @model()
 export class Vehicle extends Entity {
-
   @property({
     type: 'string',
     id: true,
@@ -15,7 +14,7 @@ export class Vehicle extends Entity {
     type: 'string',
   })
   plateNumber?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -43,7 +42,7 @@ export class Vehicle extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 

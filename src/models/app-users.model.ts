@@ -5,11 +5,10 @@ import {Vehicle} from './vehicle.model';
 import {UserDocs} from './user-docs.model';
 import {Account} from './account.model';
 import {WithdrawalRequest} from './withdrawal-request.model';
-import { ServiceProviderServices } from './service-provider-services.model';
+import {ServiceProviderServices} from './service-provider-services.model';
 
 @model()
 export class AppUsers extends Entity {
-
   @property({
     type: 'string',
     id: true,
@@ -106,7 +105,7 @@ export class AppUsers extends Entity {
     type: 'string',
   })
   roleId?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -124,13 +123,13 @@ export class AppUsers extends Entity {
 
   @property({
     type: 'string',
-    default: 'N'
+    default: 'N',
   })
   isMobileVerified?: string;
 
   @property({
     type: 'string',
-    default: 'N'
+    default: 'N',
   })
   isProfileCompleted?: string;
 
@@ -145,44 +144,44 @@ export class AppUsers extends Entity {
   serviceProviderType?: string;
 
   @property({
-    type: 'string'
+    type: 'string',
   })
   endpoint: string;
 
   @property({
-    type: 'string'
+    type: 'string',
   })
   socialId: string;
 
   @property({
-    type: 'string'
+    type: 'string',
   })
   socialIdType?: string;
 
   @property({
     type: 'string',
-    default: 'P'
+    default: 'P',
   })
   userStatus?: string;
-  
+
   @property({
     type: 'string',
-    default: 'OF'
+    default: 'OF',
   })
   userOnlineStatus?: string;
-  
+
   @property({
     type: 'number',
     default: 0,
   })
   rating?: number;
-  
+
   @property({
     type: 'number',
     default: 0,
   })
   totalOrders?: number;
-  
+
   @property({
     type: 'string',
   })
@@ -195,7 +194,7 @@ export class AppUsers extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -203,7 +202,7 @@ export class AppUsers extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-  
+
   @property({
     type: 'array',
     itemType: 'object',

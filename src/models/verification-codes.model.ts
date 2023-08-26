@@ -19,7 +19,6 @@ export class VerificationCodes extends Entity {
   })
   key?: string;
 
-
   @property({
     type: 'string',
   })
@@ -37,7 +36,7 @@ export class VerificationCodes extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -55,4 +54,5 @@ export interface VerificationCodesRelations {
   // describe navigational properties here
 }
 
-export type VerificationCodesWithRelations = VerificationCodes & VerificationCodesRelations;
+export type VerificationCodesWithRelations = VerificationCodes &
+  VerificationCodesRelations;

@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  ServiceProvider,
-  WithdrawalRequest,
-} from '../models';
+import {ServiceProvider, WithdrawalRequest} from '../models';
 import {ServiceProviderRepository} from '../repositories';
 
 export class ServiceProviderWithdrawalRequestController {
   constructor(
-    @repository(ServiceProviderRepository) protected serviceProviderRepository: ServiceProviderRepository,
-  ) { }
+    @repository(ServiceProviderRepository)
+    protected serviceProviderRepository: ServiceProviderRepository,
+  ) {}
 
   @get('/service-providers/{id}/withdrawal-requests', {
     responses: {
@@ -32,7 +30,10 @@ export class ServiceProviderWithdrawalRequestController {
         description: 'Array of ServiceProvider has many WithdrawalRequest',
         content: {
           'application/json': {
-            schema: {type: 'array', items: getModelSchemaRef(WithdrawalRequest)},
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(WithdrawalRequest),
+            },
           },
         },
       },
@@ -49,7 +50,9 @@ export class ServiceProviderWithdrawalRequestController {
     responses: {
       '200': {
         description: 'ServiceProvider model instance',
-        content: {'application/json': {schema: getModelSchemaRef(WithdrawalRequest)}},
+        content: {
+          'application/json': {schema: getModelSchemaRef(WithdrawalRequest)},
+        },
       },
     },
   })
@@ -61,13 +64,16 @@ export class ServiceProviderWithdrawalRequestController {
           schema: getModelSchemaRef(WithdrawalRequest, {
             title: 'NewWithdrawalRequestInServiceProvider',
             exclude: ['withdrawlRequestId'],
-            optional: ['serviceProviderId']
+            optional: ['serviceProviderId'],
           }),
         },
       },
-    }) withdrawalRequest: Omit<WithdrawalRequest, 'withdrawlRequestId'>,
+    })
+    withdrawalRequest: Omit<WithdrawalRequest, 'withdrawlRequestId'>,
   ): Promise<WithdrawalRequest> {
-    return this.serviceProviderRepository.withdrawalRequests(id).create(withdrawalRequest);
+    return this.serviceProviderRepository
+      .withdrawalRequests(id)
+      .create(withdrawalRequest);
   }
 
   @patch('/service-providers/{id}/withdrawal-requests', {
@@ -88,9 +94,12 @@ export class ServiceProviderWithdrawalRequestController {
       },
     })
     withdrawalRequest: Partial<WithdrawalRequest>,
-    @param.query.object('where', getWhereSchemaFor(WithdrawalRequest)) where?: Where<WithdrawalRequest>,
+    @param.query.object('where', getWhereSchemaFor(WithdrawalRequest))
+    where?: Where<WithdrawalRequest>,
   ): Promise<Count> {
-    return this.serviceProviderRepository.withdrawalRequests(id).patch(withdrawalRequest, where);
+    return this.serviceProviderRepository
+      .withdrawalRequests(id)
+      .patch(withdrawalRequest, where);
   }
 
   @del('/service-providers/{id}/withdrawal-requests', {
@@ -103,7 +112,8 @@ export class ServiceProviderWithdrawalRequestController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(WithdrawalRequest)) where?: Where<WithdrawalRequest>,
+    @param.query.object('where', getWhereSchemaFor(WithdrawalRequest))
+    where?: Where<WithdrawalRequest>,
   ): Promise<Count> {
     return this.serviceProviderRepository.withdrawalRequests(id).delete(where);
   }
