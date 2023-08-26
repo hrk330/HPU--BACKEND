@@ -204,7 +204,6 @@ export class ServicesProviderController {
                   finalService.serviceId + '',
                 );
                 if (
-                  serviceProviderServices &&
                   serviceProviderServices?.serviceId &&
                   savedUser.id
                 ) {
@@ -321,7 +320,6 @@ export class ServicesProviderController {
             const serviceProviderServices: ServiceProviderServices | undefined =
               serviceProviderServiceMap.get(finalService.serviceId + '');
             if (
-              serviceProviderServices &&
               serviceProviderServices?.serviceId &&
               user.id
             ) {

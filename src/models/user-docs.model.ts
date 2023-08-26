@@ -39,18 +39,18 @@ export class UserDocs extends Entity {
     required: true,
   })
   userId: string;
-  
+
   @property({
     type: 'string',
-    default: 'P'
+    default: 'P',
   })
   docStatus?: string;
-  
+
   @property({
     type: 'string',
   })
   comments?: string;
-  
+
   @property({
     type: 'boolean',
   })
@@ -58,7 +58,7 @@ export class UserDocs extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
