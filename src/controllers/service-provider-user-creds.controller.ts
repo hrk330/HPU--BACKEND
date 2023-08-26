@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  ServiceProvider,
-  UserCreds,
-} from '../models';
+import {ServiceProvider, UserCreds} from '../models';
 import {ServiceProviderRepository} from '../repositories';
 
 export class ServiceProviderUserCredsController {
   constructor(
-    @repository(ServiceProviderRepository) protected serviceProviderRepository: ServiceProviderRepository,
-  ) { }
+    @repository(ServiceProviderRepository)
+    protected serviceProviderRepository: ServiceProviderRepository,
+  ) {}
 
   @get('/service-providers/{id}/user-creds', {
     responses: {
@@ -61,11 +59,12 @@ export class ServiceProviderUserCredsController {
           schema: getModelSchemaRef(UserCreds, {
             title: 'NewUserCredsInServiceProvider',
             exclude: ['id'],
-            optional: ['userId']
+            optional: ['userId'],
           }),
         },
       },
-    }) userCreds: Omit<UserCreds, 'id'>,
+    })
+    userCreds: Omit<UserCreds, 'id'>,
   ): Promise<UserCreds> {
     return this.serviceProviderRepository.userCreds(id).create(userCreds);
   }
@@ -88,7 +87,8 @@ export class ServiceProviderUserCredsController {
       },
     })
     userCreds: Partial<UserCreds>,
-    @param.query.object('where', getWhereSchemaFor(UserCreds)) where?: Where<UserCreds>,
+    @param.query.object('where', getWhereSchemaFor(UserCreds))
+    where?: Where<UserCreds>,
   ): Promise<Count> {
     return this.serviceProviderRepository.userCreds(id).patch(userCreds, where);
   }
@@ -103,7 +103,8 @@ export class ServiceProviderUserCredsController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(UserCreds)) where?: Where<UserCreds>,
+    @param.query.object('where', getWhereSchemaFor(UserCreds))
+    where?: Where<UserCreds>,
   ): Promise<Count> {
     return this.serviceProviderRepository.userCreds(id).delete(where);
   }

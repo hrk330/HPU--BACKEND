@@ -8,9 +8,7 @@ export class UserCredsRepository extends DefaultCrudRepository<
   typeof UserCreds.prototype.id,
   UserCredsRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(UserCreds, dataSource);
   }
 }

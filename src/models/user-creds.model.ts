@@ -2,7 +2,6 @@ import {Entity, model, property} from '@loopback/repository';
 
 @model()
 export class UserCreds extends Entity {
-
   @property({
     type: 'string',
     id: true,
@@ -30,7 +29,7 @@ export class UserCreds extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -38,7 +37,6 @@ export class UserCreds extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-
 
   constructor(data?: Partial<UserCreds>) {
     super(data);

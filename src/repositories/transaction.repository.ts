@@ -8,9 +8,7 @@ export class TransactionRepository extends DefaultCrudRepository<
   typeof Transaction.prototype.transactionId,
   TransactionRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(Transaction, dataSource);
   }
 }

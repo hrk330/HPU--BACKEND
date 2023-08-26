@@ -3,7 +3,6 @@ import {getModelSchemaRef} from '@loopback/rest';
 
 @model()
 export class CredentialsRequest extends Model {
-
   @property({
     type: 'string',
     format: 'email',
@@ -18,11 +17,9 @@ export class CredentialsRequest extends Model {
   })
   password: string;
 
-
   constructor(data?: Partial<CredentialsRequest>) {
     super(data);
   }
-
 }
 
 export const CredentialsRequestBody = {
@@ -41,4 +38,5 @@ export interface CredentialsRequestRelations {
   // describe navigational properties here
 }
 
-export type CredentialsRequestWithRelations = CredentialsRequest & CredentialsRequestRelations;
+export type CredentialsRequestWithRelations = CredentialsRequest &
+  CredentialsRequestRelations;

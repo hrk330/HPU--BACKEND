@@ -23,7 +23,7 @@ import {CrashReportsRepository} from '../repositories';
 export class CrashReportsController {
   constructor(
     @repository(CrashReportsRepository)
-    public crashReportsRepository : CrashReportsRepository,
+    public crashReportsRepository: CrashReportsRepository,
   ) {}
 
   @post('/crashReports')
@@ -106,7 +106,8 @@ export class CrashReportsController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(CrashReports, {exclude: 'where'}) filter?: FilterExcludingWhere<CrashReports>
+    @param.filter(CrashReports, {exclude: 'where'})
+    filter?: FilterExcludingWhere<CrashReports>,
   ): Promise<CrashReports> {
     return this.crashReportsRepository.findById(id, filter);
   }

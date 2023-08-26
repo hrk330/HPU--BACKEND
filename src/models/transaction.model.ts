@@ -14,7 +14,7 @@ export class Transaction extends Entity {
     required: true,
   })
   serviceOrderId: string;
-  
+
   @property({
     type: 'string',
     required: false,
@@ -182,10 +182,10 @@ export class Transaction extends Entity {
     required: false,
   })
   status: string;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 

@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  AppUsers,
-  UserCreds,
-} from '../models';
+import {AppUsers, UserCreds} from '../models';
 import {AppUsersRepository} from '../repositories';
 
 export class AppUsersUserCredsController {
   constructor(
-    @repository(AppUsersRepository) protected appUsersRepository: AppUsersRepository,
-  ) { }
+    @repository(AppUsersRepository)
+    protected appUsersRepository: AppUsersRepository,
+  ) {}
 
   @get('/app-users/{id}/user-creds', {
     responses: {
@@ -61,11 +59,12 @@ export class AppUsersUserCredsController {
           schema: getModelSchemaRef(UserCreds, {
             title: 'NewUserCredsInAppUsers',
             exclude: ['id'],
-            optional: ['userId']
+            optional: ['userId'],
           }),
         },
       },
-    }) userCreds: Omit<UserCreds, 'id'>,
+    })
+    userCreds: Omit<UserCreds, 'id'>,
   ): Promise<UserCreds> {
     return this.appUsersRepository.userCreds(id).create(userCreds);
   }
@@ -88,7 +87,8 @@ export class AppUsersUserCredsController {
       },
     })
     userCreds: Partial<UserCreds>,
-    @param.query.object('where', getWhereSchemaFor(UserCreds)) where?: Where<UserCreds>,
+    @param.query.object('where', getWhereSchemaFor(UserCreds))
+    where?: Where<UserCreds>,
   ): Promise<Count> {
     return this.appUsersRepository.userCreds(id).patch(userCreds, where);
   }
@@ -103,7 +103,8 @@ export class AppUsersUserCredsController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(UserCreds)) where?: Where<UserCreds>,
+    @param.query.object('where', getWhereSchemaFor(UserCreds))
+    where?: Where<UserCreds>,
   ): Promise<Count> {
     return this.appUsersRepository.userCreds(id).delete(where);
   }

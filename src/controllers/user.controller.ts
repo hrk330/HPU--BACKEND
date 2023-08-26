@@ -2,7 +2,6 @@
 
 // import {inject} from '@loopback/core';
 
-
 export class UserController {
   constructor() {}
 }

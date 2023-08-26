@@ -78,7 +78,7 @@ export class PromoCodes extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -86,7 +86,6 @@ export class PromoCodes extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-
 
   constructor(data?: Partial<PromoCodes>) {
     super(data);

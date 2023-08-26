@@ -101,7 +101,7 @@ export class AdminUsers extends Entity {
     type: 'string',
   })
   roleId: string;
-  
+
   @property({
     type: 'string',
   })
@@ -114,13 +114,13 @@ export class AdminUsers extends Entity {
 
   @property({
     type: 'string',
-    default: 'N'
+    default: 'N',
   })
   isMobileVerified?: string;
 
   @property({
     type: 'string',
-    default: 'N'
+    default: 'N',
   })
   isProfileCompleted?: string;
 
@@ -141,7 +141,7 @@ export class AdminUsers extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 

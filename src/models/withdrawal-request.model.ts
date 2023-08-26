@@ -26,10 +26,10 @@ export class WithdrawalRequest extends Entity {
 
   @property({
     type: 'string',
-    default: "L"
+    default: 'L',
   })
   status?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -47,7 +47,6 @@ export class WithdrawalRequest extends Entity {
 
   @property({
     type: 'string',
-
   })
   accountHolderName?: string;
 
@@ -61,15 +60,15 @@ export class WithdrawalRequest extends Entity {
   })
   withdrawalAmount?: number;
 
-	@property({
+  @property({
     type: 'string',
-    default: "S"
+    default: 'S',
   })
   createdBy?: string;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -92,4 +91,5 @@ export interface WithdrawalRequestRelations {
   // describe navigational properties here
 }
 
-export type WithdrawlRequestsWithRelations = WithdrawalRequest & WithdrawalRequestRelations;
+export type WithdrawlRequestsWithRelations = WithdrawalRequest &
+  WithdrawalRequestRelations;

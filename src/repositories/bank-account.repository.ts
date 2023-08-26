@@ -8,9 +8,7 @@ export class BankAccountRepository extends DefaultCrudRepository<
   typeof BankAccount.prototype.bankAccountId,
   BankAccountRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(BankAccount, dataSource);
   }
 }

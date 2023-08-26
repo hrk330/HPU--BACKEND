@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  AdminUsers,
-  UserTasks,
-} from '../models';
+import {AdminUsers, UserTasks} from '../models';
 import {AdminUsersRepository} from '../repositories';
 
 export class AdminUsersUserTasksController {
   constructor(
-    @repository(AdminUsersRepository) protected adminUsersRepository: AdminUsersRepository,
-  ) { }
+    @repository(AdminUsersRepository)
+    protected adminUsersRepository: AdminUsersRepository,
+  ) {}
 
   @get('/admin-users/{id}/user-tasks', {
     responses: {
@@ -61,11 +59,12 @@ export class AdminUsersUserTasksController {
           schema: getModelSchemaRef(UserTasks, {
             title: 'NewUserTasksInAdminUsers',
             exclude: ['userTaskId'],
-            optional: ['adminUsersId']
+            optional: ['adminUsersId'],
           }),
         },
       },
-    }) userTasks: Omit<UserTasks, 'userTaskId'>,
+    })
+    userTasks: Omit<UserTasks, 'userTaskId'>,
   ): Promise<UserTasks> {
     return this.adminUsersRepository.userTasks(id).create(userTasks);
   }
@@ -88,7 +87,8 @@ export class AdminUsersUserTasksController {
       },
     })
     userTasks: Partial<UserTasks>,
-    @param.query.object('where', getWhereSchemaFor(UserTasks)) where?: Where<UserTasks>,
+    @param.query.object('where', getWhereSchemaFor(UserTasks))
+    where?: Where<UserTasks>,
   ): Promise<Count> {
     return this.adminUsersRepository.userTasks(id).patch(userTasks, where);
   }
@@ -103,7 +103,8 @@ export class AdminUsersUserTasksController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(UserTasks)) where?: Where<UserTasks>,
+    @param.query.object('where', getWhereSchemaFor(UserTasks))
+    where?: Where<UserTasks>,
   ): Promise<Count> {
     return this.adminUsersRepository.userTasks(id).delete(where);
   }

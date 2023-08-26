@@ -18,12 +18,16 @@ import {
   response,
 } from '@loopback/rest';
 import {Account, ServiceOrders, WithdrawalRequest} from '../models';
-import {AccountRepository, ServiceOrdersRepository, ServiceProviderRepository} from '../repositories';
+import {
+  AccountRepository,
+  ServiceOrdersRepository,
+  ServiceProviderRepository,
+} from '../repositories';
 
 export class AccountsController {
   constructor(
     @repository(AccountRepository)
-    public accountRepository : AccountRepository,
+    public accountRepository: AccountRepository,
     @repository(ServiceOrdersRepository)
     public serviceOrdersRepository: ServiceOrdersRepository,
     @repository(ServiceProviderRepository)
@@ -56,9 +60,7 @@ export class AccountsController {
     description: 'Account model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(Account) where?: Where<Account>,
-  ): Promise<Count> {
+  async count(@param.where(Account) where?: Where<Account>): Promise<Count> {
     return this.accountRepository.count(where);
   }
 
@@ -79,7 +81,7 @@ export class AccountsController {
   ): Promise<Account[]> {
     return this.accountRepository.find(filter);
   }
-  
+
   @get('/accounts/serviceProvider/getAccountInfo/{serviceProviderId}')
   @response(200, {
     description: 'Array of Account model instances',
@@ -93,39 +95,54 @@ export class AccountsController {
     },
   })
   async getAccountInfo(
-	  @param.path.string('serviceProviderId') serviceProviderId: string,
+    @param.path.string('serviceProviderId') serviceProviderId: string,
   ): Promise<string> {
-	  const result = {code: 5, msg: "No record found.", account: {}, withdrawalRequests: {}, totalWithdrawanAmount: 0, totalEarnedAmmount: 0};
-	  const account: Account = await this.serviceProviderRepository.account(serviceProviderId).get({});
-	  if(account?.accountId) {
-			const last5WithdrawalRequests: WithdrawalRequest[] = await this.accountRepository.withdrawalRequests(account.accountId).find({limit: 5, order: ['createdAt desc']});
-			const allWithdrawalRequests4Sum: WithdrawalRequest[] = await this.accountRepository.withdrawalRequests(account.accountId).find({where: {status: "C"}, fields: ['withdrawalAmount']});
-			let totalWithdrawanAmount = 0;
-			if(allWithdrawalRequests4Sum?.length > 0) {
-				allWithdrawalRequests4Sum.forEach((withdrawalRequest) => {
-					if(withdrawalRequest?.withdrawalAmount) {
-						totalWithdrawanAmount += withdrawalRequest.withdrawalAmount;	
-					}
-					
-				});
-			}
-			
-			let totalEarnedAmmount = 0;
-			const orders: ServiceOrders[] = await this.serviceOrdersRepository.find({where: {serviceProviderId: serviceProviderId, status: "PC"}})
-			orders.forEach((order) => {
-				if(order?.netAmount) {
-					totalEarnedAmmount += order.netAmount; 
-				}
-			});
-			result.code = 0;
-			result.account = account;
-			result.withdrawalRequests = last5WithdrawalRequests;
-			result.totalWithdrawanAmount = totalWithdrawanAmount;
-			result.totalEarnedAmmount = totalEarnedAmmount;
-	  }
-	  
+    const result = {
+      code: 5,
+      msg: 'No record found.',
+      account: {},
+      withdrawalRequests: {},
+      totalWithdrawanAmount: 0,
+      totalEarnedAmmount: 0,
+    };
+    const account: Account = await this.serviceProviderRepository
+      .account(serviceProviderId)
+      .get({});
+    if (account?.accountId) {
+      const last5WithdrawalRequests: WithdrawalRequest[] =
+        await this.accountRepository
+          .withdrawalRequests(account.accountId)
+          .find({limit: 5, order: ['createdAt desc']});
+      const allWithdrawalRequests4Sum: WithdrawalRequest[] =
+        await this.accountRepository
+          .withdrawalRequests(account.accountId)
+          .find({where: {status: 'C'}, fields: ['withdrawalAmount']});
+      let totalWithdrawanAmount = 0;
+      if (allWithdrawalRequests4Sum?.length > 0) {
+        allWithdrawalRequests4Sum.forEach(withdrawalRequest => {
+          if (withdrawalRequest?.withdrawalAmount) {
+            totalWithdrawanAmount += withdrawalRequest.withdrawalAmount;
+          }
+        });
+      }
+
+      let totalEarnedAmmount = 0;
+      const orders: ServiceOrders[] = await this.serviceOrdersRepository.find({
+        where: {serviceProviderId: serviceProviderId, status: 'PC'},
+      });
+      orders.forEach(order => {
+        if (order?.netAmount) {
+          totalEarnedAmmount += order.netAmount;
+        }
+      });
+      result.code = 0;
+      result.account = account;
+      result.withdrawalRequests = last5WithdrawalRequests;
+      result.totalWithdrawanAmount = totalWithdrawanAmount;
+      result.totalEarnedAmmount = totalEarnedAmmount;
+    }
+
     return JSON.stringify(result);
-    
   }
 
   @patch('/accounts')
@@ -158,7 +175,8 @@ export class AccountsController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Account, {exclude: 'where'}) filter?: FilterExcludingWhere<Account>
+    @param.filter(Account, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Account>,
   ): Promise<Account> {
     return this.accountRepository.findById(id, filter);
   }

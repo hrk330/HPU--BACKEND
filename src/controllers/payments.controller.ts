@@ -23,7 +23,7 @@ import {PaymentRepository} from '../repositories';
 export class PaymentsController {
   constructor(
     @repository(PaymentRepository)
-    public paymentRepository : PaymentRepository,
+    public paymentRepository: PaymentRepository,
   ) {}
 
   @post('/payments')
@@ -52,9 +52,7 @@ export class PaymentsController {
     description: 'Payment model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(Payment) where?: Where<Payment>,
-  ): Promise<Count> {
+  async count(@param.where(Payment) where?: Where<Payment>): Promise<Count> {
     return this.paymentRepository.count(where);
   }
 
@@ -106,7 +104,8 @@ export class PaymentsController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Payment, {exclude: 'where'}) filter?: FilterExcludingWhere<Payment>
+    @param.filter(Payment, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Payment>,
   ): Promise<Payment> {
     return this.paymentRepository.findById(id, filter);
   }

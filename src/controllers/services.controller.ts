@@ -24,7 +24,7 @@ export class ServicesController {
   constructor(
     @repository(ServicesRepository)
     public servicesRepository: ServicesRepository,
-  ) { }
+  ) {}
 
   @post('/services/createService')
   @response(200, {
@@ -52,9 +52,7 @@ export class ServicesController {
     description: 'Services model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(Services) where?: Where<Services>,
-  ): Promise<Count> {
+  async count(@param.where(Services) where?: Where<Services>): Promise<Count> {
     return this.servicesRepository.count(where);
   }
 
@@ -106,7 +104,8 @@ export class ServicesController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Services, {exclude: 'where'}) filter?: FilterExcludingWhere<Services>
+    @param.filter(Services, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Services>,
   ): Promise<Services> {
     return this.servicesRepository.findById(id, filter);
   }
@@ -138,7 +137,13 @@ export class ServicesController {
     }
 
     await this.servicesRepository.updateById(id, services);
-    return {success: {code: 0, msg: "Record updated successfully.", service: await this.servicesRepository.findById(id, {})}};
+    return {
+      success: {
+        code: 0,
+        msg: 'Record updated successfully.',
+        service: await this.servicesRepository.findById(id, {}),
+      },
+    };
   }
 
   @put('/services/{id}')

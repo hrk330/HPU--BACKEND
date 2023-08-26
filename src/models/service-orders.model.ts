@@ -1,8 +1,8 @@
 import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
 import {Services} from './services.model';
 import {CrashReports} from './crash-reports.model';
-import { UserDocs } from './user-docs.model';
-import { ServiceProvider } from './service-provider.model';
+import {UserDocs} from './user-docs.model';
+import {ServiceProvider} from './service-provider.model';
 
 @model()
 export class ServiceOrders extends Entity {
@@ -27,7 +27,7 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   userId: string;
-  
+
   @property({
     type: 'string',
   })
@@ -37,7 +37,7 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   serviceProviderName?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -52,12 +52,12 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   vehicleType?: string;
-  
+
   @property({
     type: 'string',
   })
   vehicleId?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -67,7 +67,7 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   companyId?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -118,11 +118,11 @@ export class ServiceOrders extends Entity {
   })
   promoCode?: string;
 
-	@property({
+  @property({
     type: 'number',
   })
   discountAmount?: number;
-  
+
   @property({
     type: 'number',
   })
@@ -157,22 +157,22 @@ export class ServiceOrders extends Entity {
     type: 'number',
   })
   netAmount: number;
-  
+
   @property({
     type: 'number',
   })
   serviceFee: number;
-  
+
   @property({
     type: 'boolean',
   })
   serviceFeePaid: boolean;
-  
+
   @property({
     type: 'string',
   })
   paymentType?: string;
-  
+
   @property({
     type: 'number',
   })
@@ -187,27 +187,27 @@ export class ServiceOrders extends Entity {
     type: 'number',
   })
   rating: number;
-  
+
   @property({
     type: 'boolean',
   })
   accidental?: boolean;
-  
+
   @property({
     type: 'date',
   })
   confirmedAt?: Date;
 
-	@property({
+  @property({
     type: 'date',
   })
   scheduledAt?: Date;
-  
+
   @property({
     type: 'date',
   })
   expectedAt?: Date;
-  
+
   @property({
     type: 'date',
   })
@@ -223,47 +223,47 @@ export class ServiceOrders extends Entity {
   })
   startedAt?: Date;
 
-	@property({
+  @property({
     type: 'date',
   })
   payedAt?: Date;
-	
+
   @property({
     type: 'date',
   })
   completedAt?: Date;
-  
+
   @property({
     type: 'any',
   })
   serviceProvider: ServiceProvider;
-  
+
   @property({
     type: 'array',
     itemType: 'string',
   })
   proofOfWorkDocIds: string[];
-  
+
   @property({
     type: 'array',
     itemType: 'string',
   })
   requirements: string[];
-  
+
   @property({
     type: 'array',
     itemType: 'object',
   })
   proofOfWorkDocs: UserDocs[];
-  
+
   @property({
     type: 'string',
   })
   additionalNote?: string;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 

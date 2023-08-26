@@ -8,9 +8,7 @@ export class RemindersRepository extends DefaultCrudRepository<
   typeof Reminders.prototype.reminderId,
   RemindersRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(Reminders, dataSource);
   }
 }

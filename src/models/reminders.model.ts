@@ -8,7 +8,7 @@ export class Reminders extends Entity {
     generated: true,
   })
   reminderId?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -18,36 +18,36 @@ export class Reminders extends Entity {
     type: 'string',
   })
   plateNumber?: string;
-  
+
   @property({
     type: 'string',
   })
   userId?: string;
-  
+
   @property({
     type: 'string',
   })
   status?: string;
-  
+
   @property({
     type: 'string',
   })
   comments?: string;
-  
+
   @property({
     type: 'boolean',
     default: true,
   })
   isActive?: boolean;
 
-	@property({
+  @property({
     type: 'date',
   })
   reminderDate?: Date;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -55,7 +55,6 @@ export class Reminders extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-
 
   constructor(data?: Partial<Reminders>) {
     super(data);

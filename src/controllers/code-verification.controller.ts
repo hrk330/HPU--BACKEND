@@ -3,12 +3,15 @@
 import {repository} from '@loopback/repository';
 import {getModelSchemaRef, post, requestBody} from '@loopback/rest';
 import {AppUsers, ServiceProvider, VerificationRequestObject} from '../models';
-import {AppUsersRepository, ServiceProviderRepository, VerificationCodesRepository} from '../repositories';
+import {
+  AppUsersRepository,
+  ServiceProviderRepository,
+  VerificationCodesRepository,
+} from '../repositories';
 import {authenticate} from '@loopback/authentication';
 import _ from 'lodash';
 
 // import {inject} from '@loopback/core';
-
 
 export class CodeVerificationController {
   constructor(
@@ -18,7 +21,7 @@ export class CodeVerificationController {
     public appUsersRepository: AppUsersRepository,
     @repository(ServiceProviderRepository)
     public serviceProviderRepository: ServiceProviderRepository,
-  ) { }
+  ) {}
 
   @post('/codeVerification/appUser/verifyCode', {
     responses: {
@@ -37,25 +40,29 @@ export class CodeVerificationController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(VerificationRequestObject, {
-            title: 'VerificationRequestObject', partial: true
+            title: 'VerificationRequestObject',
+            partial: true,
           }),
         },
       },
     })
-    verificationRequestObject: VerificationRequestObject
+    verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    const result = {code: 5, msg: "Verification code was not verified."};
-    
-    if(verificationRequestObject.type === "E") { verificationRequestObject.type = "EA"; }
-    else if(verificationRequestObject.type === "U") { verificationRequestObject.type = "UA"; }
-    
-    if(await this.verifyVerificationCode(verificationRequestObject)) {
+    const result = {code: 5, msg: 'Verification code was not verified.'};
+
+    if (verificationRequestObject.type === 'E') {
+      verificationRequestObject.type = 'EA';
+    } else if (verificationRequestObject.type === 'U') {
+      verificationRequestObject.type = 'UA';
+    }
+
+    if (await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
-      result.msg = "Verification code has been verified.";
+      result.msg = 'Verification code has been verified.';
     }
     return JSON.stringify(result);
   }
-  
+
   @post('/codeVerification/serviceProvider/verifyCode', {
     responses: {
       '200': {
@@ -73,41 +80,74 @@ export class CodeVerificationController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(VerificationRequestObject, {
-            title: 'VerificationRequestObject', partial: true
+            title: 'VerificationRequestObject',
+            partial: true,
           }),
         },
       },
     })
-    verificationRequestObject: VerificationRequestObject
+    verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-	  const result = {code: 5, msg: "Verification code was not verified."};
-    
-    if(verificationRequestObject.type === "E") { verificationRequestObject.type = "ES"; }
-    else if(verificationRequestObject.type === "U") { verificationRequestObject.type = "US"; }
-    
-    if(await this.verifyVerificationCode(verificationRequestObject)) {
+    const result = {code: 5, msg: 'Verification code was not verified.'};
+
+    if (verificationRequestObject.type === 'E') {
+      verificationRequestObject.type = 'ES';
+    } else if (verificationRequestObject.type === 'U') {
+      verificationRequestObject.type = 'US';
+    }
+
+    if (await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
-      result.msg = "Verification code has been verified.";
+      result.msg = 'Verification code has been verified.';
     }
     return JSON.stringify(result);
   }
 
-  async verifyVerificationCode(verificationRequestObject: VerificationRequestObject) : Promise<boolean> {
+  async verifyVerificationCode(
+    verificationRequestObject: VerificationRequestObject,
+  ): Promise<boolean> {
     let result = false;
-    let verificationKey = "";
+    let verificationKey = '';
 
-    if(verificationRequestObject.type === "ES" || verificationRequestObject.type === "EA") { verificationKey = verificationRequestObject.email; }
-    else if(verificationRequestObject.type === "US" || verificationRequestObject.type === "UA") { verificationKey = verificationRequestObject.userId;}
+    if (
+      verificationRequestObject.type === 'ES' ||
+      verificationRequestObject.type === 'EA'
+    ) {
+      verificationKey = verificationRequestObject.email;
+    } else if (
+      verificationRequestObject.type === 'US' ||
+      verificationRequestObject.type === 'UA'
+    ) {
+      verificationKey = verificationRequestObject.userId;
+    }
 
-    const verificationCodefilter = {where: {key: verificationKey, code: verificationRequestObject.verificationCode, type: verificationRequestObject.type, status: 'L'}, order: ['createdAt desc']};
-    const verificationCodeObject = await this.verificationCodesRepository.findOne(verificationCodefilter);
+    const verificationCodefilter = {
+      where: {
+        key: verificationKey,
+        code: verificationRequestObject.verificationCode,
+        type: verificationRequestObject.type,
+        status: 'L',
+      },
+      order: ['createdAt desc'],
+    };
+    const verificationCodeObject =
+      await this.verificationCodesRepository.findOne(verificationCodefilter);
     if (verificationCodeObject) {
       const currentDateTime = new Date();
-      if (verificationCodeObject.expiry && currentDateTime < verificationCodeObject.expiry) {
-        await this.verificationCodesRepository.updateById(verificationCodeObject.id, {status: 'V', lastTry: currentDateTime});
+      if (
+        verificationCodeObject.expiry &&
+        currentDateTime < verificationCodeObject.expiry
+      ) {
+        await this.verificationCodesRepository.updateById(
+          verificationCodeObject.id,
+          {status: 'V', lastTry: currentDateTime},
+        );
         result = true;
       } else {
-        await this.verificationCodesRepository.updateById(verificationCodeObject.id, {status: 'E', lastTry: currentDateTime});
+        await this.verificationCodesRepository.updateById(
+          verificationCodeObject.id,
+          {status: 'E', lastTry: currentDateTime},
+        );
       }
     }
     return result;
@@ -140,13 +180,21 @@ export class CodeVerificationController {
     })
     verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    let result = {code: 5, msg: "Code verification Failed.", user: {}};
+    let result = {code: 5, msg: 'Code verification Failed.', user: {}};
 
-    const codeVerificationResponse: boolean = await this.verifyVerificationCode(verificationRequestObject);
-    if(codeVerificationResponse) {
-      await this.appUsersRepository.updateById(verificationRequestObject.userId, _.pick(verificationRequestObject, 'phoneNo'));
-      const user = await this.appUsersRepository.findById(verificationRequestObject.userId, {});
-      result = {code: 0, msg: "User profile updated successfully.", user: user};
+    const codeVerificationResponse: boolean = await this.verifyVerificationCode(
+      verificationRequestObject,
+    );
+    if (codeVerificationResponse) {
+      await this.appUsersRepository.updateById(
+        verificationRequestObject.userId,
+        _.pick(verificationRequestObject, 'phoneNo'),
+      );
+      const user = await this.appUsersRepository.findById(
+        verificationRequestObject.userId,
+        {},
+      );
+      result = {code: 0, msg: 'User profile updated successfully.', user: user};
     }
     return JSON.stringify(result);
   }
@@ -178,15 +226,19 @@ export class CodeVerificationController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    let result = {code: 5, msg: "Code verification Failed.", user: {}};
-    const verificationRequestObject: VerificationRequestObject = new VerificationRequestObject;
+    let result = {code: 5, msg: 'Code verification Failed.', user: {}};
+    const verificationRequestObject: VerificationRequestObject =
+      new VerificationRequestObject();
     verificationRequestObject.userId = newUserRequest.id;
-    verificationRequestObject.type = "U";
-    verificationRequestObject.verificationCode = newUserRequest.verificationCode;
+    verificationRequestObject.type = 'U';
+    verificationRequestObject.verificationCode =
+      newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await this.verifyVerificationCode(verificationRequestObject);
+    const codeVerificationResponse: boolean = await this.verifyVerificationCode(
+      verificationRequestObject,
+    );
     if (codeVerificationResponse) {
-      result = {code: 0, msg: "Phone Number verified successfully.", user: {}};
+      result = {code: 0, msg: 'Phone Number verified successfully.', user: {}};
     }
     return JSON.stringify(result);
   }
@@ -218,15 +270,19 @@ export class CodeVerificationController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    let result = {code: 5, msg: "Code verification Failed.", user: {}};
-    const verificationRequestObject: VerificationRequestObject = new VerificationRequestObject;
+    let result = {code: 5, msg: 'Code verification Failed.', user: {}};
+    const verificationRequestObject: VerificationRequestObject =
+      new VerificationRequestObject();
     verificationRequestObject.email = newUserRequest.email;
-    verificationRequestObject.type = "E";
-    verificationRequestObject.verificationCode = newUserRequest.verificationCode;
+    verificationRequestObject.type = 'E';
+    verificationRequestObject.verificationCode =
+      newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await this.verifyVerificationCode(verificationRequestObject);
+    const codeVerificationResponse: boolean = await this.verifyVerificationCode(
+      verificationRequestObject,
+    );
     if (codeVerificationResponse) {
-      result = {code: 0, msg: "Email verified successfully.", user: {}};
+      result = {code: 0, msg: 'Email verified successfully.', user: {}};
     }
     return JSON.stringify(result);
   }
@@ -258,17 +314,27 @@ export class CodeVerificationController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    let result = {code: 5, msg: "Code verification Failed.", user: {}};
-    const verificationRequestObject: VerificationRequestObject = new VerificationRequestObject;
+    let result = {code: 5, msg: 'Code verification Failed.', user: {}};
+    const verificationRequestObject: VerificationRequestObject =
+      new VerificationRequestObject();
     verificationRequestObject.userId = newUserRequest.id;
-    verificationRequestObject.type = "E";
-    verificationRequestObject.verificationCode = newUserRequest.verificationCode;
+    verificationRequestObject.type = 'E';
+    verificationRequestObject.verificationCode =
+      newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await this.verifyVerificationCode(verificationRequestObject);
+    const codeVerificationResponse: boolean = await this.verifyVerificationCode(
+      verificationRequestObject,
+    );
     if (codeVerificationResponse) {
-      await this.appUsersRepository.updateById(newUserRequest.id, _.pick(newUserRequest, 'email'));
-      const user = await this.appUsersRepository.findById(newUserRequest.id, {});
-      result = {code: 0, msg: "User profile updated successfully.", user: user};
+      await this.appUsersRepository.updateById(
+        newUserRequest.id,
+        _.pick(newUserRequest, 'email'),
+      );
+      const user = await this.appUsersRepository.findById(
+        newUserRequest.id,
+        {},
+      );
+      result = {code: 0, msg: 'User profile updated successfully.', user: user};
     }
     return JSON.stringify(result);
   }
@@ -290,18 +356,22 @@ export class CodeVerificationController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(VerificationRequestObject, {
-            title: 'VerificationRequestObject', partial: true
+            title: 'VerificationRequestObject',
+            partial: true,
           }),
         },
       },
-    }) verificationRequestObject: VerificationRequestObject,
+    })
+    verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-
-    const user = await this.appUsersRepository.findOne({where: {email: verificationRequestObject.email, roleId : "APPUSER"}});
-		return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject, "EA"));	
-
+    const user = await this.appUsersRepository.findOne({
+      where: {email: verificationRequestObject.email, roleId: 'APPUSER'},
+    });
+    return JSON.stringify(
+      await this.insertVerificationCode(user, verificationRequestObject, 'EA'),
+    );
   }
-  
+
   @post('/codeVerification/serviceProvider/sendEmailCode', {
     responses: {
       '200': {
@@ -319,33 +389,49 @@ export class CodeVerificationController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(VerificationRequestObject, {
-            title: 'VerificationRequestObject', partial: true
+            title: 'VerificationRequestObject',
+            partial: true,
           }),
         },
       },
-    }) verificationRequestObject: VerificationRequestObject,
+    })
+    verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-  
-    const user = await this.serviceProviderRepository.findOne({where: {email: verificationRequestObject.email, roleId : "SERVICEPROVIDER"}});
-    return JSON.stringify(await this.insertVerificationCode(user, verificationRequestObject, "ES"));
-    	
+    const user = await this.serviceProviderRepository.findOne({
+      where: {
+        email: verificationRequestObject.email,
+        roleId: 'SERVICEPROVIDER',
+      },
+    });
+    return JSON.stringify(
+      await this.insertVerificationCode(user, verificationRequestObject, 'ES'),
+    );
   }
-  
-  async insertVerificationCode(user: AppUsers| ServiceProvider | null, verificationRequestObject: VerificationRequestObject, codeType: string): Promise<object>{
-	  
-	  const result = {code: 5, msg: "Verification code not sent."};
-	  const successMessage = "Verification code sent successfully.";
-	  if (verificationRequestObject?.type === 'RP') {
+
+  async insertVerificationCode(
+    user: AppUsers | ServiceProvider | null,
+    verificationRequestObject: VerificationRequestObject,
+    codeType: string,
+  ): Promise<object> {
+    const result = {code: 5, msg: 'Verification code not sent.'};
+    const successMessage = 'Verification code sent successfully.';
+    if (verificationRequestObject?.type === 'RP') {
       if (!user?.id) {
         result.code = 5;
-        result.msg = "User does not exits.";
+        result.msg = 'User does not exits.';
       } else if (user?.id && user?.socialId?.length > 0) {
-			  result.code = 5;
-        result.msg = "Reset password is not allowed for accounts signed up with social id.";
-		  } else {
-		  	
+        result.code = 5;
+        result.msg =
+          'Reset password is not allowed for accounts signed up with social id.';
+      } else {
         try {
-          await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: codeType, status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+          await this.verificationCodesRepository.create({
+            key: verificationRequestObject.email,
+            code: await this.getRandomInt(999999),
+            type: codeType,
+            status: 'L',
+            expiry: (await this.addMinutes(new Date(), 15)).toString(),
+          });
           // mailOptions.to = verificationRequestObject.email;
           // mailOptions.text = "Your Verification Code is: " + verificationCode;
           // console.log("before sending");
@@ -356,16 +442,22 @@ export class CodeVerificationController {
           result.msg = successMessage;
         } catch (e) {
           result.code = 5;
-          result.msg = "Some error occured while sending verification code.";
+          result.msg = 'Some error occured while sending verification code.';
         }
       }
     } else if (verificationRequestObject?.type === 'SU') {
       if (user?.id) {
         result.code = 5;
-        result.msg = "User already exits.";
+        result.msg = 'User already exits.';
       } else {
         try {
-          await this.verificationCodesRepository.create({key: verificationRequestObject.email, code: await this.getRandomInt(999999), type: codeType, status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+          await this.verificationCodesRepository.create({
+            key: verificationRequestObject.email,
+            code: await this.getRandomInt(999999),
+            type: codeType,
+            status: 'L',
+            expiry: (await this.addMinutes(new Date(), 15)).toString(),
+          });
           result.code = 0;
           result.msg = successMessage;
         } catch (e) {
@@ -375,7 +467,7 @@ export class CodeVerificationController {
       }
     }
     return result;
-  } 
+  }
 
   @post('/appUsers/sendSmsCode', {
     responses: {
@@ -394,18 +486,25 @@ export class CodeVerificationController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(VerificationRequestObject, {
-            title: 'VerificationRequestObject', partial: true
+            title: 'VerificationRequestObject',
+            partial: true,
           }),
         },
       },
     })
-    verificationRequestObject: VerificationRequestObject
+    verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    const result = {code: 5, msg: "Verification code not sent."};
+    const result = {code: 5, msg: 'Verification code not sent.'};
     try {
-      await this.verificationCodesRepository.create({key: verificationRequestObject.userId, code: await this.getRandomInt(999999), type: 'U', status: 'L', expiry: (await this.addMinutes(new Date(), 15)).toString()});
+      await this.verificationCodesRepository.create({
+        key: verificationRequestObject.userId,
+        code: await this.getRandomInt(999999),
+        type: 'U',
+        status: 'L',
+        expiry: (await this.addMinutes(new Date(), 15)).toString(),
+      });
       result.code = 0;
-      result.msg = "Verification code sent successfully.";
+      result.msg = 'Verification code sent successfully.';
     } catch (e) {
       result.code = 5;
       result.msg = e.message;
@@ -415,7 +514,7 @@ export class CodeVerificationController {
 
   async getRandomInt(max: number): Promise<string> {
     //return Math.floor(Math.random() * max).toString();
-    return "1234";
+    return '1234';
   }
 
   async addMinutes(date: Date, minutes: number): Promise<Date> {

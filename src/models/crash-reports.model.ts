@@ -1,5 +1,5 @@
 import {Entity, model, property, hasMany} from '@loopback/repository';
-import { UserDocs } from './user-docs.model';
+import {UserDocs} from './user-docs.model';
 import {Witness} from './witness.model';
 
 @model()
@@ -40,12 +40,12 @@ export class CrashReports extends Entity {
     required: true,
   })
   userId: string;
-  
+
   @property({
     type: 'string',
   })
   serviceProviderId: string;
-  
+
   @property({
     type: 'string',
   })
@@ -115,12 +115,12 @@ export class CrashReports extends Entity {
     type: 'string',
   })
   assessorName?: string;
-  
+
   @property({
     type: 'string',
   })
   serviceOrderId?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -128,7 +128,7 @@ export class CrashReports extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -136,31 +136,31 @@ export class CrashReports extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-  
+
   @property({
     type: 'array',
     itemType: 'string',
   })
   crashReportDocIds: string[];
-  
+
   @property({
     type: 'array',
     itemType: 'string',
   })
   otherPartyDocIds: string[];
-  
+
   @property({
     type: 'array',
     itemType: 'object',
   })
   crashReportDocs: UserDocs[];
-  
+
   @property({
     type: 'array',
     itemType: 'object',
   })
   witnessList: Witness[];
-  
+
   @property({
     type: 'array',
     itemType: 'object',

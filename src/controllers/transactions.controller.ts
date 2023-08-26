@@ -23,7 +23,7 @@ import {TransactionRepository} from '../repositories';
 export class TransactionsController {
   constructor(
     @repository(TransactionRepository)
-    public transactionRepository : TransactionRepository,
+    public transactionRepository: TransactionRepository,
   ) {}
 
   @post('/transactions')
@@ -106,7 +106,8 @@ export class TransactionsController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Transaction, {exclude: 'where'}) filter?: FilterExcludingWhere<Transaction>
+    @param.filter(Transaction, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Transaction>,
   ): Promise<Transaction> {
     return this.transactionRepository.findById(id, filter);
   }

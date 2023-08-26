@@ -23,7 +23,7 @@ import {UserTasksRepository} from '../repositories';
 export class UserTasksController {
   constructor(
     @repository(UserTasksRepository)
-    public userTasksRepository : UserTasksRepository,
+    public userTasksRepository: UserTasksRepository,
   ) {}
 
   @post('/userTasks')
@@ -106,7 +106,8 @@ export class UserTasksController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(UserTasks, {exclude: 'where'}) filter?: FilterExcludingWhere<UserTasks>
+    @param.filter(UserTasks, {exclude: 'where'})
+    filter?: FilterExcludingWhere<UserTasks>,
   ): Promise<UserTasks> {
     return this.userTasksRepository.findById(id, filter);
   }

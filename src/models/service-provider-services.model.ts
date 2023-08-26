@@ -8,7 +8,7 @@ export class ServiceProviderServices extends Entity {
     generated: true,
   })
   id: string;
-  
+
   @property({
     type: 'string',
     required: true,
@@ -24,24 +24,24 @@ export class ServiceProviderServices extends Entity {
     type: 'string',
   })
   serviceType?: string;
-  
+
   @property({
     type: 'string',
   })
   vehicleType?: string;
-  
+
   @property({
     type: 'string',
     required: true,
   })
   userId: string;
-  
+
   @property({
     type: 'boolean',
-    default: true
+    default: true,
   })
   isActive?: boolean;
-  
+
   @property({
     type: 'boolean',
   })
@@ -49,7 +49,7 @@ export class ServiceProviderServices extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -67,4 +67,5 @@ export interface ServiceProviderServicesRelations {
   // describe navigational properties here
 }
 
-export type ServiceProviderServicesWithRelations = ServiceProviderServices & ServiceProviderServicesRelations;
+export type ServiceProviderServicesWithRelations = ServiceProviderServices &
+  ServiceProviderServicesRelations;

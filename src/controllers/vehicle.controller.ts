@@ -1,8 +1,4 @@
-import {
-  Filter,
-  FilterExcludingWhere,
-  repository,
-} from '@loopback/repository';
+import {Filter, FilterExcludingWhere, repository} from '@loopback/repository';
 import {
   get,
   getModelSchemaRef,
@@ -18,7 +14,7 @@ export class VehicleController {
   constructor(
     @repository(VehicleRepository)
     public vehicleRepository: VehicleRepository,
-  ) { }
+  ) {}
 
   @post('/vehicles/addVehicle')
   @response(200, {
@@ -38,7 +34,7 @@ export class VehicleController {
     })
     vehicle: Omit<Vehicle, 'vehicleId'>,
   ): Promise<string> {
-	  const result = {code: 0, msg: "Vehicle created successfully", vehicle: {}};
+    const result = {code: 0, msg: 'Vehicle created successfully', vehicle: {}};
     result.vehicle = await this.vehicleRepository.create(vehicle);
     return JSON.stringify(result);
   }
@@ -60,7 +56,7 @@ export class VehicleController {
   ): Promise<Vehicle[]> {
     return this.vehicleRepository.find(filter);
   }
-  
+
   @get('/getUserVehicles/{userId}')
   @response(200, {
     description: 'Array of Vehicle model instances',
@@ -74,11 +70,11 @@ export class VehicleController {
     },
   })
   async findUserVehicles(
-	  @param.path.string('userId') userId: string,
+    @param.path.string('userId') userId: string,
     @param.filter(Vehicle) filter?: Filter<Vehicle>,
   ): Promise<string> {
-	  filter = {...filter, where: {userId: userId}};
-    const result = {code: 0, msg: "Vehicle fetched successfully", vehicle: {}};
+    filter = {...filter, where: {userId: userId}};
+    const result = {code: 0, msg: 'Vehicle fetched successfully', vehicle: {}};
     result.vehicle = await this.vehicleRepository.find(filter);
     return JSON.stringify(result);
   }
@@ -94,9 +90,10 @@ export class VehicleController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Vehicle, {exclude: 'where'}) filter?: FilterExcludingWhere<Vehicle>
+    @param.filter(Vehicle, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Vehicle>,
   ): Promise<string> {
-	  const result = {code: 0, msg: "Vehicle fetched successfully", vehicle: {}};
+    const result = {code: 0, msg: 'Vehicle fetched successfully', vehicle: {}};
     result.vehicle = await this.vehicleRepository.findById(id, filter);
     return JSON.stringify(result);
   }
@@ -116,8 +113,8 @@ export class VehicleController {
     })
     vehicle: Vehicle,
   ): Promise<string> {
-	  const result = {code: 0, msg: "Vehicle updated successfully.", vehicle: {}};
-	  await this.vehicleRepository.updateById(id, vehicle);
+    const result = {code: 0, msg: 'Vehicle updated successfully.', vehicle: {}};
+    await this.vehicleRepository.updateById(id, vehicle);
     result.vehicle = await this.vehicleRepository.findById(id, {});
     return JSON.stringify(result);
   }
@@ -127,7 +124,7 @@ export class VehicleController {
     description: 'Vehicle DELETE success',
   })
   async deleteById(@param.path.string('id') id: string): Promise<string> {
-	  const result = {code: 0, msg: "Vehicle deleted."};
+    const result = {code: 0, msg: 'Vehicle deleted.'};
     await this.vehicleRepository.deleteById(id);
     return JSON.stringify(result);
   }

@@ -8,47 +8,47 @@ export class Payment extends Entity {
     generated: true,
   })
   paymentId?: string;
-  
+
   @property({
     type: 'string',
     required: true,
   })
   payerId: string;
-  
+
   @property({
     type: 'string',
   })
   paymentOrderId: string;
-  
+
   @property({
     type: 'string',
     required: true,
   })
   receiverId: string;
-  
+
   @property({
     type: 'string',
   })
   withdrawalRequestId: string;
-  
+
   @property({
-    type: 'string'
+    type: 'string',
   })
   paymentType: string;
-  
+
   @property({
     type: 'number',
   })
   paymentAmount: number;
-  
+
   @property({
-    type: 'string'
+    type: 'string',
   })
   paymentStatus: string;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -56,7 +56,6 @@ export class Payment extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-
 
   constructor(data?: Partial<Payment>) {
     super(data);

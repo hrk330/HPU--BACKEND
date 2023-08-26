@@ -51,4 +51,5 @@ export interface ServiceProviderStatsRelations {
   // describe navigational properties here
 }
 
-export type ServiceProviderStatsWithRelations = ServiceProviderStats & ServiceProviderStatsRelations;
+export type ServiceProviderStatsWithRelations = ServiceProviderStats &
+  ServiceProviderStatsRelations;

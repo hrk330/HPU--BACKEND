@@ -23,7 +23,7 @@ import {RoleTasksRepository} from '../repositories';
 export class RoleTasksController {
   constructor(
     @repository(RoleTasksRepository)
-    public roleTasksRepository : RoleTasksRepository,
+    public roleTasksRepository: RoleTasksRepository,
   ) {}
 
   @post('/roleTasks')
@@ -106,7 +106,8 @@ export class RoleTasksController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(RoleTasks, {exclude: 'where'}) filter?: FilterExcludingWhere<RoleTasks>
+    @param.filter(RoleTasks, {exclude: 'where'})
+    filter?: FilterExcludingWhere<RoleTasks>,
   ): Promise<RoleTasks> {
     return this.roleTasksRepository.findById(id, filter);
   }

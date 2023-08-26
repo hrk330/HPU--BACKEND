@@ -28,7 +28,7 @@ export class Services extends Entity {
     type: 'number',
   })
   price: number;
-  
+
   @property({
     type: 'number',
   })
@@ -46,10 +46,10 @@ export class Services extends Entity {
 
   @property({
     type: 'boolean',
-    default: true
+    default: true,
   })
   isActive?: boolean;
-  
+
   @property({
     type: 'boolean',
   })
@@ -57,7 +57,7 @@ export class Services extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 

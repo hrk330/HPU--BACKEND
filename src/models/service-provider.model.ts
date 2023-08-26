@@ -1,6 +1,6 @@
-import { UserCredentials } from '@loopback/authentication-jwt';
+import {UserCredentials} from '@loopback/authentication-jwt';
 import {Entity, model, property, hasOne, hasMany} from '@loopback/repository';
-import { ServiceProviderServices } from './service-provider-services.model';
+import {ServiceProviderServices} from './service-provider-services.model';
 import {UserCreds} from './user-creds.model';
 import {UserDocs} from './user-docs.model';
 import {WithdrawalRequest} from './withdrawal-request.model';
@@ -14,7 +14,7 @@ export class ServiceProvider extends Entity {
     generated: true,
   })
   id: string;
-  
+
   @property({
     type: 'string',
   })
@@ -34,12 +34,12 @@ export class ServiceProvider extends Entity {
     type: 'string',
   })
   password: string;
-  
+
   @property({
     type: 'string',
   })
   companyId?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -114,7 +114,7 @@ export class ServiceProvider extends Entity {
     type: 'string',
   })
   roleId?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -132,13 +132,13 @@ export class ServiceProvider extends Entity {
 
   @property({
     type: 'string',
-    default: 'N'
+    default: 'N',
   })
   isMobileVerified?: string;
 
   @property({
     type: 'string',
-    default: 'N'
+    default: 'N',
   })
   isProfileCompleted?: string;
 
@@ -153,44 +153,44 @@ export class ServiceProvider extends Entity {
   serviceProviderType?: string;
 
   @property({
-    type: 'string'
+    type: 'string',
   })
   endpoint: string;
 
   @property({
-    type: 'string'
+    type: 'string',
   })
   socialId: string;
 
   @property({
-    type: 'string'
+    type: 'string',
   })
   socialIdType?: string;
 
   @property({
     type: 'string',
-    default: 'P'
+    default: 'P',
   })
   userStatus?: string;
-  
+
   @property({
     type: 'string',
-    default: 'OF'
+    default: 'OF',
   })
   userOnlineStatus?: string;
-  
+
   @property({
     type: 'number',
     default: 0,
   })
   rating?: number;
-  
+
   @property({
     type: 'number',
     default: 0,
   })
   totalOrders?: number;
-  
+
   @property({
     type: 'string',
   })
@@ -203,7 +203,7 @@ export class ServiceProvider extends Entity {
 
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -211,7 +211,7 @@ export class ServiceProvider extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
-  
+
   @property({
     type: 'array',
     itemType: 'object',
@@ -241,4 +241,5 @@ export interface ServiceProviderRelations {
   // describe navigational properties here
 }
 
-export type ServiceProviderWithRelations = ServiceProvider & ServiceProviderRelations;
+export type ServiceProviderWithRelations = ServiceProvider &
+  ServiceProviderRelations;

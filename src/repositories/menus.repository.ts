@@ -8,9 +8,7 @@ export class MenusRepository extends DefaultCrudRepository<
   typeof Menus.prototype.menuId,
   MenusRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(Menus, dataSource);
   }
 }

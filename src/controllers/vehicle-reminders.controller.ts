@@ -1,9 +1,4 @@
-import {
-  CountSchema,
-  Filter,
-  repository,
-  Where,
-} from '@loopback/repository';
+import {CountSchema, Filter, repository, Where} from '@loopback/repository';
 import {
   get,
   getModelSchemaRef,
@@ -12,16 +7,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  Vehicle,
-  Reminders,
-} from '../models';
+import {Vehicle, Reminders} from '../models';
 import {VehicleRepository} from '../repositories';
 
 export class VehicleRemindersController {
   constructor(
-    @repository(VehicleRepository) protected vehicleRepository: VehicleRepository,
-  ) { }
+    @repository(VehicleRepository)
+    protected vehicleRepository: VehicleRepository,
+  ) {}
 
   @get('/vehicles/{id}/getVehicleReminders', {
     responses: {
@@ -39,14 +32,18 @@ export class VehicleRemindersController {
     @param.path.string('id') id: string,
     @param.query.object('filter') filter?: Filter<Reminders>,
   ): Promise<string> {
-	  const result = {code: 5, msg: "Some error occured while getting reminders.", reminder: {}};
-	  try{
-    	result.reminder = await this.vehicleRepository.reminders(id).find(filter);
-    	result.code = 0;
-    	result.msg = "Reminders fetched successfully.";
-    } catch(e) {
-			console.log(e);
-		}
+    const result = {
+      code: 5,
+      msg: 'Some error occured while getting reminders.',
+      reminder: {},
+    };
+    try {
+      result.reminder = await this.vehicleRepository.reminders(id).find(filter);
+      result.code = 0;
+      result.msg = 'Reminders fetched successfully.';
+    } catch (e) {
+      console.log(e);
+    }
     return JSON.stringify(result);
   }
 
@@ -66,20 +63,27 @@ export class VehicleRemindersController {
           schema: getModelSchemaRef(Reminders, {
             title: 'NewRemindersInVehicle',
             exclude: ['reminderId'],
-            optional: ['vehicleId']
+            optional: ['vehicleId'],
           }),
         },
       },
-    }) reminders: Omit<Reminders, 'reminderId'>,
+    })
+    reminders: Omit<Reminders, 'reminderId'>,
   ): Promise<string> {
-	  const result = {code: 5, msg: "Some error occured while creating reminder.", reminder: {}};
-	  try{
-    	result.reminder = await this.vehicleRepository.reminders(id).create(reminders);
-    	result.code = 0;
-    	result.msg = "Reminder created successfully."
-    } catch(e) {
-			console.log(e);
-		}
+    const result = {
+      code: 5,
+      msg: 'Some error occured while creating reminder.',
+      reminder: {},
+    };
+    try {
+      result.reminder = await this.vehicleRepository
+        .reminders(id)
+        .create(reminders);
+      result.code = 0;
+      result.msg = 'Reminder created successfully.';
+    } catch (e) {
+      console.log(e);
+    }
     return JSON.stringify(result);
   }
 
@@ -101,17 +105,24 @@ export class VehicleRemindersController {
       },
     })
     reminders: Partial<Reminders>,
-    @param.query.object('where', getWhereSchemaFor(Reminders)) where?: Where<Reminders>,
+    @param.query.object('where', getWhereSchemaFor(Reminders))
+    where?: Where<Reminders>,
   ): Promise<string> {
-	  const result = {code: 5, msg: "Some error occured while updating reminder.", reminder: {}};
-	  try{
-    	await this.vehicleRepository.reminders(id).patch(reminders, where);
-    	result.reminder = await this.vehicleRepository.reminders(id).find({where});
-    	result.code = 0;
-    	result.msg = "Reminder updated successfully."
-  	 } catch(e) {
-			console.log(e);
-		}
+    const result = {
+      code: 5,
+      msg: 'Some error occured while updating reminder.',
+      reminder: {},
+    };
+    try {
+      await this.vehicleRepository.reminders(id).patch(reminders, where);
+      result.reminder = await this.vehicleRepository
+        .reminders(id)
+        .find({where});
+      result.code = 0;
+      result.msg = 'Reminder updated successfully.';
+    } catch (e) {
+      console.log(e);
+    }
     return JSON.stringify(result);
   }
 
@@ -125,16 +136,21 @@ export class VehicleRemindersController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(Reminders)) where?: Where<Reminders>,
+    @param.query.object('where', getWhereSchemaFor(Reminders))
+    where?: Where<Reminders>,
   ): Promise<string> {
-	  const result = {code: 5, msg: "Some error occured while deleting reminder.", reminder: {}};
-	  try{
-    	await this.vehicleRepository.reminders(id).delete(where);
-    	result.code = 0;
-    	result.msg = "Reminder deleted successfully."
-  	 } catch(e) {
-			console.log(e);
-		}
+    const result = {
+      code: 5,
+      msg: 'Some error occured while deleting reminder.',
+      reminder: {},
+    };
+    try {
+      await this.vehicleRepository.reminders(id).delete(where);
+      result.code = 0;
+      result.msg = 'Reminder deleted successfully.';
+    } catch (e) {
+      console.log(e);
+    }
     return JSON.stringify(result);
   }
 }

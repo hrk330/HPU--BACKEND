@@ -1,4 +1,4 @@
-import { UserCredentials } from '@loopback/authentication-jwt';
+import {UserCredentials} from '@loopback/authentication-jwt';
 import {Entity, model, property, hasOne, hasMany} from '@loopback/repository';
 import {UserCreds} from './user-creds.model';
 import {Account} from './account.model';
@@ -13,7 +13,7 @@ export class Company extends Entity {
     generated: true,
   })
   id: string;
-  
+
   @property({
     type: 'string',
   })
@@ -36,12 +36,12 @@ export class Company extends Entity {
     required: true,
   })
   phoneNo: string;
-  
+
   @property({
     type: 'string',
   })
   profilePic?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -71,7 +71,7 @@ export class Company extends Entity {
     type: 'string',
   })
   zipCode?: string;
-  
+
   @property({
     type: 'string',
   })
@@ -81,57 +81,57 @@ export class Company extends Entity {
     type: 'string',
   })
   status?: string;
-  
+
   @property({
     type: 'number',
   })
   totalRiders?: number;
-  
+
   @property({
     type: 'number',
   })
   totalOrders?: number;
-  
+
   @property({
     type: 'number',
   })
   completionRate?: number;
-  
+
   @property({
     type: 'number',
   })
   totalEarning?: number;
-  
+
   @property({
     type: 'number',
   })
   totalRevenue?: number;
-  
+
   @property({
     type: 'number',
   })
   balance?: number;
-  
+
   @property({
     type: 'string',
     required: true,
   })
   companyLocation: string;
-  
+
   @property({
     type: 'string',
     required: true,
   })
   companyLocationCoordinates: string;
-  
+
   @property({
     type: 'object',
   })
   bankAccountInfo: BankAccount;
-  
+
   @property({
     type: 'date',
-    default: "$now"
+    default: '$now',
   })
   createdAt?: Date;
 
@@ -140,7 +140,7 @@ export class Company extends Entity {
   })
   updatedAt?: Date;
 
-	userCredentials: UserCredentials;
+  userCredentials: UserCredentials;
 
   @hasOne(() => UserCreds, {keyTo: 'userId'})
   userCreds: UserCreds;

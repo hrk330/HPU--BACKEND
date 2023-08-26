@@ -8,9 +8,7 @@ export class WitnessRepository extends DefaultCrudRepository<
   typeof Witness.prototype.witnessId,
   WitnessRelations
 > {
-  constructor(
-    @inject('datasources.MongoDb') dataSource: MongoDbDataSource,
-  ) {
+  constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {
     super(Witness, dataSource);
   }
 }

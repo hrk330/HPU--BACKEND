@@ -15,16 +15,14 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
-import {
-  Company,
-  ServiceProvider,
-} from '../models';
+import {Company, ServiceProvider} from '../models';
 import {CompanyRepository} from '../repositories';
 
 export class CompanyServiceProviderController {
   constructor(
-    @repository(CompanyRepository) protected companyRepository: CompanyRepository,
-  ) { }
+    @repository(CompanyRepository)
+    protected companyRepository: CompanyRepository,
+  ) {}
 
   @get('/companies/{id}/service-providers', {
     responses: {
@@ -49,7 +47,9 @@ export class CompanyServiceProviderController {
     responses: {
       '200': {
         description: 'Company model instance',
-        content: {'application/json': {schema: getModelSchemaRef(ServiceProvider)}},
+        content: {
+          'application/json': {schema: getModelSchemaRef(ServiceProvider)},
+        },
       },
     },
   })
@@ -61,11 +61,12 @@ export class CompanyServiceProviderController {
           schema: getModelSchemaRef(ServiceProvider, {
             title: 'NewServiceProviderInCompany',
             exclude: ['id'],
-            optional: ['companyId']
+            optional: ['companyId'],
           }),
         },
       },
-    }) serviceProvider: Omit<ServiceProvider, 'id'>,
+    })
+    serviceProvider: Omit<ServiceProvider, 'id'>,
   ): Promise<ServiceProvider> {
     return this.companyRepository.serviceProviders(id).create(serviceProvider);
   }
@@ -88,9 +89,12 @@ export class CompanyServiceProviderController {
       },
     })
     serviceProvider: Partial<ServiceProvider>,
-    @param.query.object('where', getWhereSchemaFor(ServiceProvider)) where?: Where<ServiceProvider>,
+    @param.query.object('where', getWhereSchemaFor(ServiceProvider))
+    where?: Where<ServiceProvider>,
   ): Promise<Count> {
-    return this.companyRepository.serviceProviders(id).patch(serviceProvider, where);
+    return this.companyRepository
+      .serviceProviders(id)
+      .patch(serviceProvider, where);
   }
 
   @del('/companies/{id}/service-providers', {
@@ -103,7 +107,8 @@ export class CompanyServiceProviderController {
   })
   async delete(
     @param.path.string('id') id: string,
-    @param.query.object('where', getWhereSchemaFor(ServiceProvider)) where?: Where<ServiceProvider>,
+    @param.query.object('where', getWhereSchemaFor(ServiceProvider))
+    where?: Where<ServiceProvider>,
   ): Promise<Count> {
     return this.companyRepository.serviceProviders(id).delete(where);
   }
