@@ -203,10 +203,7 @@ export class ServicesProviderController {
                   | undefined = serviceProviderServiceMap.get(
                   finalService.serviceId + '',
                 );
-                if (
-                  serviceProviderServices?.serviceId &&
-                  savedUser.id
-                ) {
+                if (serviceProviderServices?.serviceId && savedUser.id) {
                   const serviceProviderServiceArray: Array<ServiceProviderServices> =
                     await this.checkServiceProviderServiceExist(
                       serviceProviderServices?.serviceId,
@@ -319,10 +316,7 @@ export class ServicesProviderController {
           for (const finalService of finalServicesArray) {
             const serviceProviderServices: ServiceProviderServices | undefined =
               serviceProviderServiceMap.get(finalService.serviceId + '');
-            if (
-              serviceProviderServices?.serviceId &&
-              user.id
-            ) {
+            if (serviceProviderServices?.serviceId && user.id) {
               const serviceProviderServiceArray: Array<ServiceProviderServices> =
                 await this.checkServiceProviderServiceExist(
                   serviceProviderServices?.serviceId,

@@ -17,7 +17,11 @@ import _ from 'lodash';
 import {unlink} from 'node:fs/promises';
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {UserDocs} from '../models';
-import {AppUsersRepository} from '../repositories';
+import {
+  AppUsersRepository,
+  CompanyRepository,
+  ServiceProviderRepository,
+} from '../repositories';
 import {FileUploadHandler} from '../types';
 
 /**
@@ -32,6 +36,10 @@ export class FileUploadController {
     @inject(FILE_UPLOAD_SERVICE) private handler: FileUploadHandler,
     @repository(AppUsersRepository)
     public appUsersRepository: AppUsersRepository,
+    @repository(CompanyRepository)
+    public companyRepository: CompanyRepository,
+    @repository(ServiceProviderRepository)
+    public serviceProviderRepository: ServiceProviderRepository,
   ) {}
 
   @post('/files/{userId}', {
@@ -158,8 +166,19 @@ export class FileUploadController {
           });
       }
 
-      if (request.body.docType === 'PP') {
+      if (request.body.docType === 'AUPP') {
+        //update appuser profile pic
         await this.appUsersRepository.updateById(request.body.userId, {
+          profilePic: '/assets/media/' + file.filename,
+        });
+      } else if (request.body.docType === 'SPPP') {
+        //update service provider profile pic
+        await this.serviceProviderRepository.updateById(request.body.userId, {
+          profilePic: '/assets/media/' + file.filename,
+        });
+      } else if (request.body.docType === 'COPP') {
+        //update company profile pic
+        await this.companyRepository.updateById(request.body.userId, {
           profilePic: '/assets/media/' + file.filename,
         });
       }
