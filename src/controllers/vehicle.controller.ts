@@ -83,6 +83,8 @@ export class VehicleController {
     try {
       if (filter) {
         filter.where = {...filter?.where, userId: userId};
+      } else {
+        filter = {where: {userId: userId}};
       }
       result.vehicle = await this.vehicleRepository.find(filter);
     } catch (e) {

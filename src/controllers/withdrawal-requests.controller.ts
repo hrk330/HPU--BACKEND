@@ -97,7 +97,9 @@ export class WithdrawalRequestsController {
     };
     try {
       if (filter) {
-        filter.where = {...filter?.where, serviceProviderId: serviceProviderId};
+        filter.where = {...filter.where, serviceProviderId: serviceProviderId};
+      } else {
+        filter = {where: {serviceProviderId: serviceProviderId}};
       }
       if (serviceProviderId) {
         result.withdrawalRequest = await this.withdrawalRequestRepository.find(

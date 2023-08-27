@@ -1374,7 +1374,12 @@ export class ServiceOrdersController {
       orders: {},
     };
     try {
-      filter = {...filter, where: {serviceProviderId: serviceProviderId}};
+      if (filter) {
+        filter.where = {...filter.where, serviceProviderId: serviceProviderId};
+      } else {
+        filter = {where: {serviceProviderId: serviceProviderId}};
+      }
+
       if (serviceProviderId && serviceProviderId.length > 0) {
         const orders: ServiceOrders[] = await this.serviceOrdersRepository.find(
           filter,
@@ -1672,7 +1677,7 @@ export class ServiceOrdersController {
     const result = {code: 0, msg: 'Order fetched successfully.', order: {}};
     let dbServiceOrders: ServiceOrders[] = [];
     const requiredServiceIdArray: string[] = [];
-    if (orderType === 'dfy') {
+    if (orderType?.toUpperCase() === 'DFY') {
       requiredServiceIdArray.push('Done For You');
     } else {
       requiredServiceIdArray.push('General Assistance');

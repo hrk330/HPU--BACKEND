@@ -12,9 +12,17 @@ import {
   Company,
   CredentialsRequest,
   CredentialsRequestBody,
+  ServiceOrders,
+  ServiceProvider,
+  Services,
   UserCreds,
 } from '../models';
-import {CompanyRepository} from '../repositories';
+import {
+  CompanyRepository,
+  ServiceOrdersRepository,
+  ServiceProviderRepository,
+  ServicesRepository,
+} from '../repositories';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
 import {
@@ -22,7 +30,7 @@ import {
   TokenServiceBindings,
   UserServiceBindings,
 } from '@loopback/authentication-jwt';
-import {TokenService} from '@loopback/authentication';
+import {authenticate, TokenService} from '@loopback/authentication';
 import {inject} from '@loopback/core';
 
 export class CompanyController {
@@ -33,6 +41,12 @@ export class CompanyController {
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
+    @repository(ServiceOrdersRepository)
+    public serviceOrdersRepository: ServiceOrdersRepository,
+    @repository(ServicesRepository)
+    public servicesRepository: ServicesRepository,
+    @repository(ServiceProviderRepository)
+    public serviceProviderRepository: ServiceProviderRepository,
   ) {}
 
   @post('/companies/login', {
@@ -282,5 +296,147 @@ export class CompanyController {
       result.msg = e.message;
     }
     return JSON.stringify(result);
+  }
+
+  @authenticate('jwt')
+  @get('/companies/getServiceProviders/{companyId}')
+  @response(200, {
+    description: 'Array of ServiceOrders model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(ServiceOrders, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findCompanyServiceProviders(
+    @param.path.string('companyId') companyId: string,
+    @param.filter(ServiceProvider) filter?: Filter<ServiceProvider>,
+  ): Promise<string> {
+    let result = {
+      code: 5,
+      msg: 'Some error occured while getting serviceProviders.',
+      serviceProviders: {},
+    };
+    try {
+      const dbCompany = await this.companyRepository.findById(companyId);
+
+      if (dbCompany) {
+        if (filter) {
+          filter.where = {
+            ...filter.where,
+            companyId: companyId,
+            serviceProviderType: dbCompany.companyType,
+          };
+          if (filter.limit && filter.limit > 50) {
+            filter = {...filter, limit: 50};
+          }
+        } else {
+          filter = {
+            where: {
+              companyId: companyId,
+              serviceProviderType: dbCompany.companyType,
+            },
+            limit: 50,
+          };
+        }
+
+        const serviceProviders: ServiceProvider[] =
+          await this.serviceProviderRepository.find(filter);
+        result = {
+          code: 0,
+          msg: 'ServiceProviders fetched successfully.',
+          serviceProviders: serviceProviders,
+        };
+      }
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+
+  @authenticate('jwt')
+  @get('/companies/getOrders/{companyId}')
+  @response(200, {
+    description: 'Array of ServiceOrders model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(ServiceOrders, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findCompanyOrders(
+    @param.path.string('companyId') companyId: string,
+    @param.filter(ServiceOrders) filter?: Filter<ServiceOrders>,
+  ): Promise<string> {
+    let result = {
+      code: 5,
+      msg: 'Some error occured while getting orders.',
+      orders: {},
+    };
+    try {
+      const dbCompany = await this.companyRepository.findById(companyId);
+
+      if (dbCompany) {
+        const serviceIdArray: string[] = await this.getServiceIdArrayForOrder(
+          dbCompany.companyType,
+        );
+        if (serviceIdArray?.length > 0) {
+          if (filter) {
+            filter.where = {
+              ...filter.where,
+              companyId: companyId,
+              serviceId: {inq: serviceIdArray},
+            };
+          } else {
+            filter = {
+              where: {
+                companyId: companyId,
+                serviceId: {inq: serviceIdArray},
+              },
+            };
+          }
+          const orders: ServiceOrders[] =
+            await this.serviceOrdersRepository.find(filter);
+          result = {
+            code: 0,
+            msg: 'Orders fetched successfully.',
+            orders: orders,
+          };
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+
+  async getServiceIdArrayForOrder(companyType: string): Promise<string[]> {
+    const requiredServiceTypeArray: string[] = [];
+    let serviceArray: Services[] = [];
+    if (companyType === 'DFY') {
+      requiredServiceTypeArray.push('Done For You');
+    } else if (companyType === 'SP') {
+      requiredServiceTypeArray.push('General Assistance');
+      requiredServiceTypeArray.push('Car Tow');
+    }
+    if (requiredServiceTypeArray.length > 0) {
+      serviceArray = await this.servicesRepository.find({
+        where: {serviceType: {inq: requiredServiceTypeArray}},
+        fields: ['serviceId'],
+      });
+    }
+    return serviceArray.length > 0
+      ? serviceArray.map(service => service.serviceId)
+      : [];
   }
 }
