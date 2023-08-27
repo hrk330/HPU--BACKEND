@@ -333,7 +333,16 @@ export class CompanyController {
           if (filter.limit && filter.limit > 50) {
             filter = {...filter, limit: 50};
           }
+        } else {
+          filter = {
+            where: {
+              companyId: companyId,
+              serviceProviderType: dbCompany.companyType,
+            },
+            limit: 50,
+          };
         }
+
         const serviceProviders: ServiceProvider[] =
           await this.serviceProviderRepository.find(filter);
         result = {
@@ -385,6 +394,13 @@ export class CompanyController {
               ...filter.where,
               companyId: companyId,
               serviceId: {inq: serviceIdArray},
+            };
+          } else {
+            filter = {
+              where: {
+                companyId: companyId,
+                serviceId: {inq: serviceIdArray},
+              },
             };
           }
           const orders: ServiceOrders[] =

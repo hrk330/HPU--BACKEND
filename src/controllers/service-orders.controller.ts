@@ -1376,6 +1376,8 @@ export class ServiceOrdersController {
     try {
       if (filter) {
         filter.where = {...filter.where, serviceProviderId: serviceProviderId};
+      } else {
+        filter = {where: {serviceProviderId: serviceProviderId}};
       }
 
       if (serviceProviderId && serviceProviderId.length > 0) {
