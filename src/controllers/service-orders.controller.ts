@@ -112,6 +112,9 @@ export class ServiceOrdersController {
         } else {
           serviceOrders.grossAmount = service.price;
         }
+        if (!serviceOrders.serviceFeePaid) {
+          serviceOrders.grossAmount += serviceOrders.serviceFee;
+        }
         if (serviceOrders.taxPercentage) {
           serviceOrders.taxAmount =
             serviceOrders.grossAmount * (serviceOrders.taxPercentage / 100);
@@ -120,9 +123,7 @@ export class ServiceOrdersController {
         }
         serviceOrders.netAmount =
           serviceOrders.grossAmount + serviceOrders.taxAmount;
-        if (!serviceOrders.serviceFeePaid) {
-          serviceOrders.netAmount += serviceOrders.serviceFee;
-        }
+        
         if (serviceOrders?.promoCode) {
           const promoCodeObj: PromoCodes | null =
             await this.promoCodesRepository.findOne({
@@ -159,6 +160,9 @@ export class ServiceOrdersController {
               serviceOrders.promoId = promoCodeObj.promoId;
               serviceOrders.discountType = promoCodeObj.discountType;
               serviceOrders.discountValue = promoCodeObj.discountValue;
+              if (!serviceOrders.serviceFeePaid) {
+			          serviceOrders.grossAmount += serviceOrders.serviceFee;
+			        }
               if (serviceOrders.taxPercentage) {
                 serviceOrders.taxAmount =
                   (serviceOrders.grossAmount - promoDiscount) *
@@ -170,9 +174,7 @@ export class ServiceOrdersController {
                 serviceOrders.grossAmount -
                 promoDiscount +
                 serviceOrders.taxAmount;
-              if (!serviceOrders.serviceFeePaid) {
-                serviceOrders.netAmount += serviceOrders.serviceFee;
-              }
+              
               promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
               promoCodeObj.updatedAt = new Date();
               await this.promoCodesRepository.updateById(
@@ -268,6 +270,10 @@ export class ServiceOrdersController {
       } else {
         serviceOrders.grossAmount = service.price;
       }
+      
+      if (!serviceOrders.serviceFeePaid) {
+        serviceOrders.grossAmount += serviceOrders.serviceFee;
+      }
 
       if (serviceOrders.taxPercentage) {
         serviceOrders.taxAmount =
@@ -277,9 +283,7 @@ export class ServiceOrdersController {
       }
       serviceOrders.netAmount =
         serviceOrders.grossAmount + serviceOrders.taxAmount;
-      if (!serviceOrders.serviceFeePaid) {
-        serviceOrders.netAmount += serviceOrders.serviceFee;
-      }
+      
       createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
       const serviceProviders: ServiceProvider[] =
         await this.serviceProviderRepository.find({
@@ -1204,6 +1208,10 @@ export class ServiceOrdersController {
           dbOrder.promoId = promoCodeObj.promoId;
           dbOrder.discountType = promoCodeObj.discountType;
           dbOrder.discountValue = promoCodeObj.discountValue;
+          
+          if (!serviceOrders.serviceFeePaid) {
+	          serviceOrders.grossAmount += serviceOrders.serviceFee;
+	        }
           if (dbOrder.taxPercentage) {
             dbOrder.taxAmount =
               (dbOrder.grossAmount - promoDiscount) *
@@ -1213,9 +1221,6 @@ export class ServiceOrdersController {
           }
           dbOrder.netAmount =
             dbOrder.grossAmount - promoDiscount + dbOrder.taxAmount;
-          if (!dbOrder.serviceFeePaid) {
-            dbOrder.netAmount += dbOrder.serviceFee;
-          }
           dbOrder.updatedAt = new Date();
           await this.serviceOrdersRepository.updateById(
             dbOrder.serviceOrderId,
