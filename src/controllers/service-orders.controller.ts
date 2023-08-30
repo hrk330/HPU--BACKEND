@@ -1589,6 +1589,7 @@ export class ServiceOrdersController {
   async findByAppUserId(
     @param.path.string('serviceOrderId') serviceOrderId: string,
     @param.path.string('appUserId') appUserId: string,
+    @param.filter(ServiceOrders) filter?: Filter<ServiceOrders>,
   ): Promise<string> {
     let result = {
       code: 5,
@@ -1598,10 +1599,22 @@ export class ServiceOrdersController {
     };
     try {
       if (appUserId?.length > 0 && serviceOrderId?.length > 0) {
+		  	if (filter) {
+	        filter.where = {
+						...filter.where, 
+						serviceOrderId: serviceOrderId, 
+						userId: appUserId
+					};
+	      } else {
+	        filter = {
+            where: {
+							serviceOrderId: serviceOrderId, 
+							userId: appUserId
+						},
+          };
+	      }
         const dbServiceOrders: ServiceOrders[] =
-          await this.serviceOrdersRepository.find({
-            where: {serviceOrderId: serviceOrderId, userId: appUserId},
-          });
+          await this.serviceOrdersRepository.find(filter);
         if (dbServiceOrders?.length > 0) {
           let serviceProvider = {};
           if (dbServiceOrders[0]?.serviceProviderId) {
@@ -1636,6 +1649,7 @@ export class ServiceOrdersController {
   })
   async findUserServiceOrders(
     @param.path.string('appUserId') appUserId: string,
+    @param.filter(ServiceOrders) filter?: Filter<ServiceOrders>,
   ): Promise<string> {
     let result = {
       code: 5,
@@ -1644,8 +1658,13 @@ export class ServiceOrdersController {
     };
     try {
       if (appUserId?.length > 0) {
+			  if (filter) {
+	        filter.where = {...filter.where, userId: appUserId};
+	      } else {
+	        filter = {where: {userId: appUserId}};
+	      }
         const dbServiceOrders: ServiceOrders[] =
-          await this.serviceOrdersRepository.find({where: {userId: appUserId}});
+          await this.serviceOrdersRepository.find(filter);
         if (dbServiceOrders && dbServiceOrders.length > 0) {
           result = {
             code: 0,
