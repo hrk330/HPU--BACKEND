@@ -438,6 +438,75 @@ export class ServiceOrdersController {
     }
     return JSON.stringify(result);
   }
+  
+  @post('/serviceOrders/adminUser/completeOrder')
+  @response(200, {
+    description: 'ServiceOrders model instance',
+    content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
+  })
+  async adminCompleteOrder(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(OrderRequest, {partial: true}),
+        },
+      },
+    })
+    orderRequest: OrderRequest,
+  ): Promise<string> {
+    let result = {
+      code: 5,
+      msg: 'Some error occured while completing order.',
+      order: {},
+    };
+    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
+      orderRequest.serviceOrder.serviceOrderId,
+    );
+    if (
+      dbOrder?.status &&
+      ['UC','SC','AC'].indexOf(dbOrder?.status) === -1 &&
+      orderRequest?.serviceOrder?.status === 'CO' &&
+      orderRequest?.serviceOrder?.serviceOrderId
+    ) {
+      try {
+        await this.populateStatusDates(orderRequest.serviceOrder);
+
+        await this.serviceOrdersRepository.updateById(
+          orderRequest.serviceOrder.serviceOrderId,
+          orderRequest.serviceOrder,
+        );
+        dbOrder = await this.serviceOrdersRepository.findById(
+          orderRequest.serviceOrder.serviceOrderId,
+        );
+        await this.sendOrderUpdateNotification(dbOrder);
+        
+        const serviceProvider: ServiceProvider =
+            await this.serviceProviderRepository.findById(
+              dbOrder.serviceProviderId,
+              {fields: ['endpoint']},
+            );
+
+        if (serviceProvider?.endpoint?.length > 20) {
+          await this.sendOrderNotification(
+            serviceProvider.endpoint,
+            'Order Completed',
+            'Order has been completed.',
+            dbOrder,
+          );
+        }
+        result = {
+          code: 0,
+          msg: 'Order completed successfully.',
+          order: dbOrder,
+        };
+      } catch (e) {
+        console.log(e);
+        result.code = 5;
+        result.msg = e.message;
+      }
+    }
+    return JSON.stringify(result);
+  }
 
   @post('/serviceOrders/appUser/initiatePayment')
   @response(200, {
