@@ -50,12 +50,6 @@ export class CodeVerificationController {
   ): Promise<String> {
     const result = {code: 5, msg: 'Verification code was not verified.'};
 
-    if (verificationRequestObject.type === 'E') {
-      verificationRequestObject.type = 'EA';
-    } else if (verificationRequestObject.type === 'U') {
-      verificationRequestObject.type = 'UA';
-    }
-
     if (await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
       result.msg = 'Verification code has been verified.';
@@ -110,13 +104,11 @@ export class CodeVerificationController {
     let verificationKey = '';
 
     if (
-      verificationRequestObject.type === 'ES' ||
-      verificationRequestObject.type === 'EA'
+      verificationRequestObject.type === 'E'
     ) {
       verificationKey = verificationRequestObject.email;
     } else if (
-      verificationRequestObject.type === 'US' ||
-      verificationRequestObject.type === 'UA'
+      verificationRequestObject.type === 'U'
     ) {
       verificationKey = verificationRequestObject.userId;
     }
