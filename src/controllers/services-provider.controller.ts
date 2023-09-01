@@ -163,7 +163,7 @@ export class ServicesProviderController {
           serviceProvider.roleId = 'SERVICEPROVIDER';
           serviceProvider.isServiceProviderVerified = 'N';
           const savedUser = await this.serviceProviderRepository.create(
-            _.omit(serviceProvider, 'password'),
+            _.omit(serviceProvider, 'password', 'serviceProviderServicesList'),
           );
           if (savedUser) {
             await this.serviceProviderRepository
@@ -281,7 +281,7 @@ export class ServicesProviderController {
     try {
       await this.serviceProviderRepository.updateById(
         serviceProvider.id,
-        serviceProvider,
+        _.omit(serviceProvider, 'password', 'serviceProviderServicesList'),
       );
       const user = await this.serviceProviderRepository.findById(
         serviceProvider.id,

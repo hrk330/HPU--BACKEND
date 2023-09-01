@@ -84,12 +84,6 @@ export class CodeVerificationController {
   ): Promise<String> {
     const result = {code: 5, msg: 'Verification code was not verified.'};
 
-    if (verificationRequestObject.type === 'E') {
-      verificationRequestObject.type = 'ES';
-    } else if (verificationRequestObject.type === 'U') {
-      verificationRequestObject.type = 'US';
-    }
-
     if (await this.verifyVerificationCode(verificationRequestObject)) {
       result.code = 0;
       result.msg = 'Verification code has been verified.';
@@ -103,13 +97,9 @@ export class CodeVerificationController {
     let result = false;
     let verificationKey = '';
 
-    if (
-      verificationRequestObject.type === 'E'
-    ) {
+    if (verificationRequestObject.type === 'E') {
       verificationKey = verificationRequestObject.email;
-    } else if (
-      verificationRequestObject.type === 'U'
-    ) {
+    } else if (verificationRequestObject.type === 'U') {
       verificationKey = verificationRequestObject.userId;
     }
 
@@ -360,7 +350,7 @@ export class CodeVerificationController {
       where: {email: verificationRequestObject.email, roleId: 'APPUSER'},
     });
     return JSON.stringify(
-      await this.insertVerificationCode(user, verificationRequestObject, 'EA'),
+      await this.insertVerificationCode(user, verificationRequestObject, 'E'),
     );
   }
 
@@ -396,7 +386,7 @@ export class CodeVerificationController {
       },
     });
     return JSON.stringify(
-      await this.insertVerificationCode(user, verificationRequestObject, 'ES'),
+      await this.insertVerificationCode(user, verificationRequestObject, 'E'),
     );
   }
 

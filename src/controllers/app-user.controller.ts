@@ -514,6 +514,121 @@ export class AppUserController {
       fields: ['id', 'email'],
     });
   }
+  
+  @post('/appUsers/admin/createAppUser', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async adminCreateAppUser(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+    let result = {
+      code: 5,
+      msg: 'User creation failed.',
+      user: {},
+    };
+    try {
+      const filter = {where: {email: newUserRequest.email, roleId: 'APPUSER'}};
+      const user = await this.appUsersRepository.findOne(filter);
+
+      if (user?.id) {
+        result = {code: 5, msg: 'User already exists', user: {}};
+      } else {
+        const salt = await genSalt();
+        const password = await hash(newUserRequest.password, salt);
+        newUserRequest.roleId = 'APPUSER';
+        const savedUser = await this.appUsersRepository.create(
+          _.omit(newUserRequest, 'password'),
+        );
+        if (savedUser) {
+          await this.appUsersRepository
+            .userCreds(savedUser.id)
+            .create({password, salt});
+          await this.appUsersRepository
+            .account(savedUser.id)
+            .create({balanceAmount: 0});
+          result.user = savedUser;
+          // create a JSON Web Token based on the user profile
+          result.code = 0;
+          result.msg = 'User created successfully.';
+        }
+      }
+    } catch (e) {
+      result.code = 5;
+      result.msg = e.message;
+    }
+    return JSON.stringify(result);
+  }
+  
+  @authenticate('jwt')
+  @post('/appUsers/admin/updateAppUser', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async adminUpdateAppUser(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(AppUsers, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: AppUsers,
+  ): Promise<String> {
+	  let result = {
+      code: 5,
+      msg: 'User update failed.',
+      user: {},
+    };
+	  try {
+	    await this.appUsersRepository.updateById(
+	      newUserRequest.id,
+	      _.omit(newUserRequest, 'email', 'password'),
+	    );
+	    const user = await this.appUsersRepository.findById(newUserRequest.id, {});
+	    result = {
+	      code: 0,
+	      msg: 'User updated successfully.',
+	      user: user,
+	    };
+    } catch (e) {
+			console.log(e);
+      result.code = 5;
+      result.msg = 'Some error occurred while updating user';
+    }
+    return JSON.stringify(result);
+  }
 
   @get('/appUsers')
   @response(200, {
