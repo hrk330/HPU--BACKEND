@@ -38,7 +38,7 @@ import {
   ServicesRepository,
   TransactionRepository,
 } from '../repositories';
-import {sendMessage} from '../services/firebase-notification.service';
+import {sendMessage} from '../services';
 //import _ from 'lodash';
 
 export class ServiceOrdersController {
