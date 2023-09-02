@@ -10,6 +10,7 @@ import {
 } from '../repositories';
 import {authenticate} from '@loopback/authentication';
 import _ from 'lodash';
+import { CodeVerificationResponse } from '../interfaces';
 
 // import {inject} from '@loopback/core';
 
@@ -48,11 +49,16 @@ export class CodeVerificationController {
     })
     verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    const result = {code: 5, msg: 'Verification code was not verified.'};
-
-    if (await this.verifyVerificationCode(verificationRequestObject)) {
-      result.code = 0;
-      result.msg = 'Verification code has been verified.';
+    let
+     result: CodeVerificationResponse = {code: 5, msg: 'Verification code was not verified.'};
+		const codeVerificationResponse: CodeVerificationResponse = await this.verifyVerificationCode(verificationRequestObject);
+    if (codeVerificationResponse) {
+			if(codeVerificationResponse.code === 0) {
+	      result.code = 0;
+	      result.msg = 'Verification code has been verified.';
+      } else {
+		  	result = codeVerificationResponse;
+	  	}
     }
     return JSON.stringify(result);
   }
@@ -82,19 +88,25 @@ export class CodeVerificationController {
     })
     verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    const result = {code: 5, msg: 'Verification code was not verified.'};
-
-    if (await this.verifyVerificationCode(verificationRequestObject)) {
-      result.code = 0;
-      result.msg = 'Verification code has been verified.';
+    let result: CodeVerificationResponse = {code: 5, msg: 'Verification code was not verified.'};
+	
+		const codeVerificationResponse: CodeVerificationResponse = await this.verifyVerificationCode(verificationRequestObject);
+    if (codeVerificationResponse) {
+			if(codeVerificationResponse.code === 0) {
+	  
+	      result.code = 0;
+	      result.msg = 'Verification code has been verified.';
+      } else {
+		  	result = codeVerificationResponse;
+	  	}
     }
     return JSON.stringify(result);
   }
 
   async verifyVerificationCode(
     verificationRequestObject: VerificationRequestObject,
-  ): Promise<boolean> {
-    let result = false;
+  ): Promise<CodeVerificationResponse> {
+    const result: CodeVerificationResponse = {code: 5, msg: 'Verification code was not verified.'};
     let verificationKey = '';
 
     if (verificationRequestObject.type === 'E') {
@@ -124,12 +136,15 @@ export class CodeVerificationController {
           verificationCodeObject.id,
           {status: 'V', lastTry: currentDateTime},
         );
-        result = true;
+        result.code = 0;
+        result.msg = "Verification code has been verified."
       } else {
         await this.verificationCodesRepository.updateById(
           verificationCodeObject.id,
           {status: 'E', lastTry: currentDateTime},
         );
+        result.code = 5;
+        result.msg = "Verification code has been expired."
       }
     }
     return result;
@@ -162,22 +177,26 @@ export class CodeVerificationController {
     })
     verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    let result = {code: 5, msg: 'Code verification Failed.', user: {}};
+    let result: CodeVerificationResponse = {code: 5, msg: 'Code verification Failed.'};
 
-    const codeVerificationResponse: boolean = await this.verifyVerificationCode(
+    const codeVerificationResponse: CodeVerificationResponse = await this.verifyVerificationCode(
       verificationRequestObject,
     );
-    if (codeVerificationResponse) {
-      await this.appUsersRepository.updateById(
-        verificationRequestObject.userId,
-        _.pick(verificationRequestObject, 'phoneNo'),
-      );
-      const user = await this.appUsersRepository.findById(
-        verificationRequestObject.userId,
-        {},
-      );
-      result = {code: 0, msg: 'User profile updated successfully.', user: user};
-    }
+    if(codeVerificationResponse) {
+	    if (codeVerificationResponse.code === 0) {
+	      await this.appUsersRepository.updateById(
+	        verificationRequestObject.userId,
+	        _.pick(verificationRequestObject, 'phoneNo'),
+	      );
+	      const user = await this.appUsersRepository.findById(
+	        verificationRequestObject.userId,
+	        {},
+	      );
+	      result = {code: 0, msg: 'User profile updated successfully.', user: user};
+	    } else {
+				result = codeVerificationResponse;
+			}
+		}
     return JSON.stringify(result);
   }
 
@@ -208,7 +227,7 @@ export class CodeVerificationController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    let result = {code: 5, msg: 'Code verification Failed.', user: {}};
+    let result: CodeVerificationResponse = {code: 5, msg: 'Code verification Failed.'};
     const verificationRequestObject: VerificationRequestObject =
       new VerificationRequestObject();
     verificationRequestObject.userId = newUserRequest.id;
@@ -216,12 +235,16 @@ export class CodeVerificationController {
     verificationRequestObject.verificationCode =
       newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await this.verifyVerificationCode(
+    const codeVerificationResponse: CodeVerificationResponse = await this.verifyVerificationCode(
       verificationRequestObject,
     );
-    if (codeVerificationResponse) {
-      result = {code: 0, msg: 'Phone Number verified successfully.', user: {}};
-    }
+    if(codeVerificationResponse) {
+	    if (codeVerificationResponse.code === 0) {
+	      result = {code: 0, msg: 'Phone Number verified successfully.'};
+	    } else {
+				result = codeVerificationResponse;
+			}
+		}
     return JSON.stringify(result);
   }
 
@@ -252,7 +275,7 @@ export class CodeVerificationController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    let result = {code: 5, msg: 'Code verification Failed.', user: {}};
+    let result : CodeVerificationResponse = {code: 5, msg: 'Code verification Failed.'};
     const verificationRequestObject: VerificationRequestObject =
       new VerificationRequestObject();
     verificationRequestObject.email = newUserRequest.email;
@@ -260,12 +283,17 @@ export class CodeVerificationController {
     verificationRequestObject.verificationCode =
       newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await this.verifyVerificationCode(
+    const codeVerificationResponse: CodeVerificationResponse = await this.verifyVerificationCode(
       verificationRequestObject,
     );
-    if (codeVerificationResponse) {
-      result = {code: 0, msg: 'Email verified successfully.', user: {}};
-    }
+    if(codeVerificationResponse) {
+	    if (codeVerificationResponse.code === 0) {
+	      result.code = 0;
+	      result.msg = 'Email verified successfully.';
+	    } else {
+				result = codeVerificationResponse;
+			}
+		}
     return JSON.stringify(result);
   }
 
@@ -296,7 +324,7 @@ export class CodeVerificationController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-    let result = {code: 5, msg: 'Code verification Failed.', user: {}};
+    let result: CodeVerificationResponse = {code: 5, msg: 'Code verification Failed.'};
     const verificationRequestObject: VerificationRequestObject =
       new VerificationRequestObject();
     verificationRequestObject.userId = newUserRequest.id;
@@ -304,20 +332,24 @@ export class CodeVerificationController {
     verificationRequestObject.verificationCode =
       newUserRequest.verificationCode;
 
-    const codeVerificationResponse: boolean = await this.verifyVerificationCode(
+    const codeVerificationResponse: CodeVerificationResponse = await this.verifyVerificationCode(
       verificationRequestObject,
     );
     if (codeVerificationResponse) {
-      await this.appUsersRepository.updateById(
-        newUserRequest.id,
-        _.pick(newUserRequest, 'email'),
-      );
-      const user = await this.appUsersRepository.findById(
-        newUserRequest.id,
-        {},
-      );
-      result = {code: 0, msg: 'User profile updated successfully.', user: user};
-    }
+	    if (codeVerificationResponse.code === 0) {
+	      await this.appUsersRepository.updateById(
+	        newUserRequest.id,
+	        _.pick(newUserRequest, 'email'),
+	      );
+	      const user = await this.appUsersRepository.findById(
+	        newUserRequest.id,
+	        {},
+	      );
+	      result = {code: 0, msg: 'User profile updated successfully.', user: user};
+	    } else {
+				result = codeVerificationResponse
+			}
+		}
     return JSON.stringify(result);
   }
 
@@ -394,8 +426,8 @@ export class CodeVerificationController {
     user: AppUsers | ServiceProvider | null,
     verificationRequestObject: VerificationRequestObject,
     codeType: string,
-  ): Promise<object> {
-    const result = {code: 5, msg: 'Verification code not sent.'};
+  ): Promise<CodeVerificationResponse> {
+    const result: CodeVerificationResponse = {code: 5, msg: 'Verification code not sent.'};
     const successMessage = 'Verification code sent successfully.';
     if (verificationRequestObject?.type === 'RP') {
       if (!user?.id) {
@@ -476,7 +508,7 @@ export class CodeVerificationController {
     })
     verificationRequestObject: VerificationRequestObject,
   ): Promise<String> {
-    const result = {code: 5, msg: 'Verification code not sent.'};
+    const result: CodeVerificationResponse = {code: 5, msg: 'Verification code not sent.'};
     try {
       await this.verificationCodesRepository.create({
         key: verificationRequestObject.userId,
