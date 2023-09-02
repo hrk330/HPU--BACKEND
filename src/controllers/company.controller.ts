@@ -32,6 +32,7 @@ import {
 } from '@loopback/authentication-jwt';
 import {authenticate, TokenService} from '@loopback/authentication';
 import {inject} from '@loopback/core';
+import { ChangePasswordRequest } from '../interfaces';
 
 export class CompanyController {
   constructor(
@@ -164,6 +165,53 @@ export class CompanyController {
       result.code = 5;
       result.msg = e.message;
     }
+    return JSON.stringify(result);
+  }
+  
+  
+  @post('/companies/changePassword', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: 'ChangePasswordRequest',
+      },
+    },
+  })
+  async changePassword(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Company, {
+            title: 'NewUser',
+            partial: true,
+          }),
+        },
+      },
+    })
+    changePasswordRequest: ChangePasswordRequest,
+  ): Promise<String> {
+    const result = {code: 5, msg: 'Change password failed.'};
+
+    const dbCompany = await this.companyRepository.findOne({
+			where: {id: changePasswordRequest.id},
+			include: [{relation: 'userCreds'}],
+		});
+		
+    if (dbCompany?.userCreds) {
+      let salt = dbCompany.userCreds.salt;
+      let password = await hash(changePasswordRequest.oldPassword, salt);
+      if (password === dbCompany.userCreds.password) {
+      	salt = await genSalt();
+    		password = await hash(changePasswordRequest.newPassword, salt);
+	      const updatedAt = new Date();
+	      await this.companyRepository
+	        .userCreds(dbCompany.id)
+	        .patch({password, salt, updatedAt});
+	      result.code = 0;
+	      result.msg = 'Password has been changed successfully.';
+      }
+    }
+
     return JSON.stringify(result);
   }
 
