@@ -121,8 +121,11 @@ export class FileUploadController {
         file.destination = '/assets/media/';
       }
       let userDoc: UserDocs = new UserDocs();
-      let userDocsArray: UserDocs[] = await this.userDocsRepository
-        .find({where: {id: request.body.id}});
+      let userDocsArray: UserDocs[] = [];
+      if(request?.body?.id) {
+        userDocsArray = await this.userDocsRepository
+          .find({where: {id: request.body.id}});
+      }
       if (userDocsArray?.length > 0) {
         try {
           await unlink(
@@ -152,6 +155,7 @@ export class FileUploadController {
       } else {
 	      userDoc = await this.userDocsRepository
 	        .create({
+            userId: request.body.userId,
 	          docType: request.body.docType,
 	          docName: file.filename,
 	          docSize: file.size,
