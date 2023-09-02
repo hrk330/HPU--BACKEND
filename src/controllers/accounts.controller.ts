@@ -61,7 +61,7 @@ export class AccountsController {
     content: {'application/json': {schema: CountSchema}},
   })
   async count(@param.where(Account) where?: Where<Account>): Promise<Count> {
-    return this.accountRepository.count(where);
+    return  this.accountRepository.count(where);
   }
 
   @get('/accounts')
