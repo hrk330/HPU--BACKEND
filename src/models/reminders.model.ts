@@ -18,6 +18,11 @@ export class Reminders extends Entity {
     type: 'string',
   })
   plateNumber?: string;
+  
+  @property({
+    type: 'string',
+  })
+  reminderType?: string;
 
   @property({
     type: 'string',

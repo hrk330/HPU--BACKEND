@@ -21,6 +21,7 @@ import {
   AppUsersRepository,
   CompanyRepository,
   ServiceProviderRepository,
+  UserDocsRepository,
 } from '../repositories';
 import {FileUploadHandler} from '../types';
 
@@ -40,6 +41,8 @@ export class FileUploadController {
     public companyRepository: CompanyRepository,
     @repository(ServiceProviderRepository)
     public serviceProviderRepository: ServiceProviderRepository,
+    @repository(UserDocsRepository)
+    public userDocsRepository: UserDocsRepository,
   ) {}
 
   @post('/files/{userId}', {
@@ -118,52 +121,45 @@ export class FileUploadController {
         file.destination = '/assets/media/';
       }
       let userDoc: UserDocs = new UserDocs();
-      if (request.body.docUpdate) {
-        let userDocsArray: UserDocs[] = await this.appUsersRepository
-          .userDocs(request.body.userId)
-          .find({where: {docType: request.body.docType, id: request.body.id}});
-        if (userDocsArray?.length > 0) {
-          try {
-            await unlink(
-              __dirname +
-                '/../../public/assets/media/' +
-                userDocsArray[0].docName,
-            );
-          } catch (e) {
-            console.log(e.message);
-          }
-          await this.appUsersRepository.userDocs(request.body.userId).patch(
-            {
-              docName: file.filename,
-              docSize: file.size,
-              mimetype: file.mimetype,
-              docPath: '/assets/media/',
-              docStatus: 'P',
-              comments: request.body.comments,
-              updatedAt: new Date(),
-            },
-            {docType: request.body.docType, id: request.body.id},
+      let userDocsArray: UserDocs[] = await this.userDocsRepository
+        .find({where: {id: request.body.id}});
+      if (userDocsArray?.length > 0) {
+        try {
+          await unlink(
+            __dirname +
+              '/../../public/assets/media/' +
+              userDocsArray[0].docName,
           );
-          userDocsArray = await this.appUsersRepository
-            .userDocs(request.body.userId)
-            .find({
-              where: {docType: request.body.docType, id: request.body.id},
-            });
-          if (userDocsArray?.length > 0) {
-            userDoc = userDocsArray[0];
-          }
+        } catch (e) {
+          console.log(e.message);
+        }
+        userDoc.docName = file.filename;
+        userDoc.docSize = file.size;
+        userDoc.mimetype = file.mimetype;
+        userDoc.docPath = '/assets/media/';
+        userDoc.docStatus = 'P';
+        userDoc.comments = request.body.comments;
+        userDoc.updatedAt = new Date();
+        await this.userDocsRepository.update(
+          userDoc,
+          {id: request.body.id},
+        );
+        userDoc = new UserDocs();
+        userDocsArray = await this.userDocsRepository.find({where: {id: request.body.id}});
+        if (userDocsArray?.length > 0) {
+          userDoc = userDocsArray[0];
         }
       } else {
-        userDoc = await this.appUsersRepository
-          .userDocs(request.body.userId)
-          .create({
-            docType: request.body.docType,
-            docName: file.filename,
-            docSize: file.size,
-            mimetype: file.mimetype,
-            docPath: '/assets/media/',
-            comments: request.body.comments,
-          });
+	      userDoc = await this.userDocsRepository
+	        .create({
+	          docType: request.body.docType,
+	          docName: file.filename,
+	          docSize: file.size,
+	          mimetype: file.mimetype,
+	          docStatus: 'P',
+	          docPath: '/assets/media/',
+	          comments: request.body.comments,
+	        });
       }
 
       if (request.body.docType === 'AUPP') {

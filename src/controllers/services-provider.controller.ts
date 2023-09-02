@@ -27,6 +27,7 @@ import {
 } from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
+import { ChangePasswordRequest } from '../interfaces';
 import {
   CredentialsRequest,
   CredentialsRequestBody,
@@ -497,6 +498,58 @@ export class ServicesProviderController {
         .patch({password, salt, updatedAt});
       result.code = 0;
       result.msg = 'Password has been reset successfully.';
+    }
+
+    return JSON.stringify(result);
+  }
+  
+  @post('/serviceProvider/changePassword', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async changePassword(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(ServiceProvider, {
+            title: 'NewUser',
+            partial: true,
+          }),
+        },
+      },
+    })
+    changePasswordRequest: ChangePasswordRequest,
+  ): Promise<String> {
+    const result = {code: 5, msg: 'Change password failed.'};
+
+    const user = await this.serviceProviderRepository.findOne({
+			where: {id: changePasswordRequest.id, roleId: 'SERVICEPROVIDER'},
+			include: [{relation: 'userCreds'}],
+		});
+		
+    if (user?.userCreds) {
+      let salt = user.userCreds.salt;
+      let password = await hash(changePasswordRequest.oldPassword, salt);
+      if (password === user.userCreds.password) {
+      	salt = await genSalt();
+    		password = await hash(changePasswordRequest.newPassword, salt);
+	      const updatedAt = new Date();
+	      await this.serviceProviderRepository
+	        .userCreds(user.id)
+	        .patch({password, salt, updatedAt});
+	      result.code = 0;
+	      result.msg = 'Password has been changed successfully.';
+      }
     }
 
     return JSON.stringify(result);
