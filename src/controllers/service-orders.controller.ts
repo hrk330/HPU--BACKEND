@@ -221,6 +221,31 @@ export class ServiceOrdersController {
         result.code = 0;
         result.msg = 'Order created successfully';
         result.order = createdOrder;
+
+        if (serviceOrders.userEmail) {
+          sendCustomMail(
+            serviceOrders.userEmail,
+            'Order Confirmation',
+            serviceOrders.userName,
+            createdOrder.serviceOrderId,
+            serviceOrders.serviceName as string,
+            'orderCreate',
+            undefined,
+            serviceOrders.grossAmount,
+          );
+        }
+        if (serviceOrders.companyEmail) {
+          sendCustomMail(
+            serviceOrders.companyEmail,
+            'New Order Assignment By HPU',
+            serviceOrders.companyName as string,
+            createdOrder.serviceOrderId,
+            serviceOrders.serviceName as string,
+            'orderCreate',
+            undefined,
+            serviceOrders.grossAmount,
+          );
+        }
       }
     } catch (e) {
       console.log(e);
@@ -971,30 +996,6 @@ export class ServiceOrdersController {
           title,
           body,
           serviceOrders,
-        );
-      }
-      if (serviceOrders.userEmail) {
-        sendCustomMail(
-          serviceOrders.userEmail,
-          'Order Confirmation',
-          serviceOrders.userName,
-          serviceOrders.serviceOrderId,
-          serviceOrders.serviceName as string,
-          'orderCreate',
-          undefined,
-          serviceOrders.grossAmount,
-        );
-      }
-      if (serviceOrders.companyEmail) {
-        sendCustomMail(
-          serviceOrders.companyEmail,
-          'New Order Assignment By HPU',
-          serviceOrders.companyName as string,
-          serviceOrders.serviceOrderId,
-          serviceOrders.serviceName as string,
-          'orderCreate',
-          undefined,
-          serviceOrders.grossAmount,
         );
       }
     }
