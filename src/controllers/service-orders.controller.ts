@@ -235,6 +235,7 @@ export class ServiceOrdersController {
           );
         }
         if (serviceOrders.companyEmail) {
+          console.log(serviceOrders.companyEmail);
           sendCustomMail(
             serviceOrders.companyEmail,
             'New Order Assignment By HPU',
