@@ -231,7 +231,7 @@ export class ServiceOrdersController {
             serviceOrders.serviceName as string,
             'orderCreate',
             undefined,
-            serviceOrders.grossAmount,
+            serviceOrders.netAmount,
           );
         }
         if (serviceOrders.companyEmail) {
@@ -243,7 +243,7 @@ export class ServiceOrdersController {
             serviceOrders.serviceName as string,
             'orderCreate',
             undefined,
-            serviceOrders.grossAmount,
+            serviceOrders.netAmount,
           );
         }
       }
@@ -353,7 +353,7 @@ export class ServiceOrdersController {
         serviceOrders.serviceName as string,
         'orderCreate',
         undefined,
-        createdOrder.grossAmount,
+        createdOrder.netAmount,
       );
     }
     return createdOrder;
