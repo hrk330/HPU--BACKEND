@@ -1,22 +1,6 @@
 import {authenticate} from '@loopback/authentication';
-import {
-  Count,
-  CountSchema,
-  Filter,
-  repository,
-  Where,
-} from '@loopback/repository';
-import {
-  del,
-  get,
-  getModelSchemaRef,
-  param,
-  patch,
-  post,
-  put,
-  requestBody,
-  response,
-} from '@loopback/rest';
+import {Count, CountSchema, Filter, repository, Where} from '@loopback/repository';
+import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
 import {
   Account,
   AppUsers,
@@ -39,6 +23,7 @@ import {
   TransactionRepository,
 } from '../repositories';
 import {sendMessage} from '../services';
+
 //import _ from 'lodash';
 
 export class ServiceOrdersController {
@@ -79,14 +64,20 @@ export class ServiceOrdersController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while creating order.',
+      msg: 'Some error occurred while creating order.',
       order: {},
     };
     try {
+      const serviceProvider: ServiceProvider = await this.getServiceProvider(serviceOrders?.serviceProviderId);
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
       );
-      if (service) {
+      const appUser: AppUsers = await this.appUsersRepository.findById(
+        serviceOrders.userId,
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+      );
+
+      if (service && appUser) {
         if (
           serviceOrders?.serviceProviderId &&
           !(service.serviceType === 'Done For You')
@@ -95,7 +86,12 @@ export class ServiceOrdersController {
         } else {
           serviceOrders.status = 'LO';
         }
-
+        serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
+        serviceOrders.userEmail = appUser.email;
+        if(serviceProvider?.firstName && serviceProvider?.lastName && serviceProvider?.email) {
+          serviceOrders.serviceProviderName = serviceProvider.firstName + ' ' + serviceProvider.lastName;
+          serviceOrders.serviceProviderEmail = serviceProvider.email;
+        }
         serviceOrders.taxPercentage = service.salesTax;
         serviceOrders.serviceName = service.serviceName;
         serviceOrders.serviceType = service.serviceType;
@@ -188,27 +184,7 @@ export class ServiceOrdersController {
         const createdOrder: ServiceOrders =
           await this.serviceOrdersRepository.create(serviceOrders);
 
-        if (createdOrder.serviceProviderId) {
-          const serviceProvider: ServiceProvider =
-            await this.serviceProviderRepository.findById(
-              createdOrder.serviceProviderId,
-              {fields: ['endpoint']},
-            );
-
-          if (serviceProvider?.endpoint?.length > 20) {
-            await this.sendOrderNotification(
-              serviceProvider.endpoint,
-              'Order Alert',
-              'New order has been assigned.',
-              createdOrder,
-            );
-          }
-        }
-
-        const appUser: AppUsers = await this.appUsersRepository.findById(
-          createdOrder.userId,
-          {fields: ['endpoint']},
-        );
+        await this.sendServiceProviderOrderUpdateNotification(createdOrder);
 
         if (appUser?.endpoint?.length > 20) {
           await this.sendOrderNotification(
@@ -231,6 +207,18 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
+  async getServiceProvider(serviceProviderId: string): Promise<ServiceProvider> {
+    let serviceProvider: ServiceProvider = new ServiceProvider();
+    if(serviceProviderId) {
+      serviceProvider =
+        await this.serviceProviderRepository.findById(
+          serviceProviderId,
+          {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+        );
+    }
+    return serviceProvider;
+  }
+
   @post('/serviceOrders/appUser/createOrder')
   @response(200, {
     description: 'ServiceOrders model instance',
@@ -251,10 +239,16 @@ export class ServiceOrdersController {
   ): Promise<ServiceOrders> {
     serviceOrders.status = 'LO';
     let createdOrder: ServiceOrders = new ServiceOrders();
+    const appUser: AppUsers = await this.appUsersRepository.findById(
+      serviceOrders.userId,
+      {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+    );
     const service: Services = await this.servicesRepository.findById(
       serviceOrders.serviceId,
     );
-    if (service) {
+    if (service && appUser) {
+      serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
+      serviceOrders.userEmail = appUser.email;
       serviceOrders.taxPercentage = service.salesTax;
       serviceOrders.serviceName = service.serviceName;
       serviceOrders.serviceType = service.serviceType;
@@ -345,7 +339,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while updating order.',
+      msg: 'Some error occurred while updating order.',
       order: {},
     };
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
@@ -369,7 +363,7 @@ export class ServiceOrdersController {
           serviceOrders.serviceOrderId,
         );
 
-        await this.sendOrderUpdateNotification(dbOrder);
+        await this.sendAppUserOrderUpdateNotification(dbOrder);
         result = {code: 0, msg: 'Order updated successfully.', order: dbOrder};
       } catch (e) {
         console.log(e);
@@ -397,7 +391,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while completing order.',
+      msg: 'Some error occurred while completing order.',
       order: {},
       user: {},
     };
@@ -423,7 +417,7 @@ export class ServiceOrdersController {
         const appUser: AppUsers[] = await this.appUsersRepository.find({
           where: {roleId: 'APPUSER', id: dbOrder.userId},
         });
-        await this.sendOrderUpdateNotification(dbOrder);
+        await this.sendAppUserOrderUpdateNotification(dbOrder);
         result = {
           code: 0,
           msg: 'Order completed successfully.',
@@ -456,7 +450,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while completing order.',
+      msg: 'Some error occurred while completing order.',
       order: {},
     };
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
@@ -478,22 +472,9 @@ export class ServiceOrdersController {
         dbOrder = await this.serviceOrdersRepository.findById(
           orderRequest.serviceOrder.serviceOrderId,
         );
-        await this.sendOrderUpdateNotification(dbOrder);
-        
-        const serviceProvider: ServiceProvider =
-            await this.serviceProviderRepository.findById(
-              dbOrder.serviceProviderId,
-              {fields: ['endpoint']},
-            );
-
-        if (serviceProvider?.endpoint?.length > 20) {
-          await this.sendOrderNotification(
-            serviceProvider.endpoint,
-            'Order Completed',
-            'Order has been completed.',
-            dbOrder,
-          );
-        }
+        await this.sendAppUserOrderUpdateNotification(dbOrder);
+        await this.sendServiceProviderOrderUpdateNotification(dbOrder)
+       
         result = {
           code: 0,
           msg: 'Order completed successfully.',
@@ -525,7 +506,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while initiating payment.',
+      msg: 'Some error occurred while initiating payment.',
       order: {},
     };
     if (
@@ -583,20 +564,9 @@ export class ServiceOrdersController {
           dbOrder = await this.serviceOrdersRepository.findById(
             orderRequest?.serviceOrder?.serviceOrderId,
           );
-          const serviceProvider: ServiceProvider =
-            await this.serviceProviderRepository.findById(
-              dbOrder.serviceProviderId,
-              {fields: ['endpoint']},
-            );
 
-          if (serviceProvider?.endpoint?.length > 20) {
-            await this.sendOrderNotification(
-              serviceProvider.endpoint,
-              'Order Alert',
-              'Payment has been initiated.',
-              dbOrder,
-            );
-          }
+          await this.sendServiceProviderOrderUpdateNotification(dbOrder);
+
           result = {
             code: 0,
             msg: 'Payment initiated successfully.',
@@ -703,7 +673,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while completing payment.',
+      msg: 'Some error occurred while completing payment.',
       order: {},
     };
     if (serviceOrderId) {
@@ -821,7 +791,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while completing payment.',
+      msg: 'Some error occurred while completing payment.',
       order: {},
     };
     if (orderRequest?.serviceOrder?.serviceOrderId) {
@@ -853,19 +823,8 @@ export class ServiceOrdersController {
             dbOrder = await this.serviceOrdersRepository.findById(
               orderRequest?.serviceOrder?.serviceOrderId,
             );
-            const appUser: AppUsers = await this.appUsersRepository.findById(
-              dbOrder.userId,
-              {fields: ['endpoint']},
-            );
-
-            if (appUser?.endpoint?.length > 20) {
-              await this.sendOrderNotification(
-                appUser.endpoint,
-                'Order Alert',
-                'Payment has been completed.',
-                dbOrder,
-              );
-            }
+            await this.sendAppUserOrderUpdateNotification(dbOrder);
+            
             result = {
               code: 0,
               msg: 'Payment completed successfully.',
@@ -882,45 +841,108 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
-  async sendOrderUpdateNotification(
+  async sendAppUserOrderUpdateNotification(
     serviceOrders: ServiceOrders,
   ): Promise<void> {
     let title = '',
       body = '';
-    if (serviceOrders?.status) {
+    if(serviceOrders?.userId) {
       const appUser: AppUsers = await this.appUsersRepository.findById(
         serviceOrders.userId,
         {fields: ['endpoint']},
       );
-      if (serviceOrders?.status === 'OA') {
-        title = 'Order Accepted';
-        body = 'Your Order has been accepted.';
-      } else if (serviceOrders?.status === 'AR') {
-        title = 'Service Provider Arrived';
-        body = 'Service Provider has arrived at your location.';
-      } else if (serviceOrders?.status === 'RA') {
-        title = 'Rider is arriving';
-        body = 'Service Provider is arriving at your location.';
-      } else if (serviceOrders?.status === 'CC') {
-        title = 'Time has been confirmed.';
-        body = 'Rider has confimed the time.';
-      } else if (serviceOrders?.status === 'ST') {
-        title = 'Order Started';
-        body = 'Your order has started.';
-      } else if (serviceOrders?.status === 'CO') {
-        title = 'Order Completed';
-        body = 'Your Order has been completed.';
-      } else if (serviceOrders?.status === 'PC') {
-        title = 'Payment Completed';
-        body = 'Your payment has been completed.';
-      }
+      if (serviceOrders?.status && appUser?.endpoint?.length > 20) {
+        if (serviceOrders?.status === 'OA') {
+          title = 'Order Accepted';
+          body = 'Your Order has been accepted.';
+        } else if (serviceOrders?.status === 'AR') {
+          title = 'Service Provider Arrived';
+          body = 'Service Provider has arrived at your location.';
+        } else if (serviceOrders?.status === 'RA') {
+          title = 'Rider is arriving';
+          body = 'Service Provider is arriving at your location.';
+        } else if (serviceOrders?.status === 'CC') {
+          title = 'Time has been confirmed.';
+          body = 'Rider has confirmed the time.';
+        } else if (serviceOrders?.status === 'ST') {
+          title = 'Order Started';
+          body = 'Your order has started.';
+        } else if (serviceOrders?.status === 'CO') {
+          title = 'Order Completed';
+          body = 'Your order has been completed.';
+        } else if (serviceOrders?.status === 'PC') {
+          title = 'Payment Completed';
+          body = 'Your payment has been completed.';
+        } else if (serviceOrders?.status === 'SC') {
+          title = 'Order Canceled';
+          body = 'Order has been canceled by the service provider.';
+        } else if (serviceOrders?.status === 'AC') {
+          title = 'Order Canceled By Admin';
+          body = 'Order has been canceled by the admin.';
+        }
 
-      await this.sendOrderNotification(
-        appUser.endpoint,
-        title,
-        body,
-        serviceOrders,
+
+        await this.sendOrderNotification(
+          appUser.endpoint,
+          title,
+          body,
+          serviceOrders,
+        );
+      }
+    }
+  }
+
+  async sendServiceProviderOrderUpdateNotification(
+    serviceOrders: ServiceOrders,
+  ): Promise<void> {
+    let title = '',
+      body = '';
+    if(serviceOrders?.serviceProviderId) {
+      const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(
+        serviceOrders.serviceProviderId,
+        {fields: ['endpoint']},
       );
+      if (serviceOrders?.status && serviceProvider?.endpoint?.length > 20) {
+        if (serviceOrders?.status === 'LO' || serviceOrders?.status === 'OA') {
+          title = 'Order Alert';
+          body = 'New order has been assigned.';
+        } else if (serviceOrders?.status === 'AR') {
+          title = 'Service Provider Arrived';
+          body = 'Service Provider has arrived at your location.';
+        } else if (serviceOrders?.status === 'RA') {
+          title = 'Rider is arriving';
+          body = 'Service Provider is arriving at your location.';
+        } else if (serviceOrders?.status === 'CC') {
+          title = 'Time has been confirmed.';
+          body = 'Rider has confirmed the time.';
+        } else if (serviceOrders?.status === 'ST') {
+          title = 'Order Started';
+          body = 'Your order has started.';
+        } else if (serviceOrders?.status === 'CO') {
+          title = 'Order Completed';
+          body = 'Order has been completed.';
+        } else if (serviceOrders?.status === 'PC') {
+          title = 'Payment Completed';
+          body = 'Your payment has been completed.';
+        } else if (serviceOrders?.status === 'PI') {
+          title = 'Payment Initiated';
+          body = 'Payment has been initiated.';
+        } else if (serviceOrders?.status === 'UC') {
+          title = 'Order Canceled';
+          body = 'Order has been canceled by the user.';
+        } else if (serviceOrders?.status === 'AC') {
+          title = 'Order Canceled By Admin';
+          body = 'Order has been canceled by the admin.';
+        }
+
+    
+        await this.sendOrderNotification(
+          serviceProvider.endpoint,
+          title,
+          body,
+          serviceOrders,
+        );
+      }
     }
   }
 
@@ -961,7 +983,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while rating order.',
+      msg: 'Some error occurred while rating order.',
       order: {},
     };
     if (serviceOrder?.rating && serviceOrder?.serviceOrderId) {
@@ -1028,7 +1050,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while canceling order.',
+      msg: 'Some error occurred while canceling order.',
       order: {},
     };
     if (serviceOrders?.serviceOrderId) {
@@ -1054,18 +1076,7 @@ export class ServiceOrdersController {
           );
 
           if (dbOrder?.userId) {
-            const appUser: AppUsers = await this.appUsersRepository.findById(
-              dbOrder.userId,
-              {fields: ['endpoint']},
-            );
-            if (appUser?.endpoint?.length > 20) {
-              await this.sendOrderNotification(
-                appUser.endpoint,
-                'Order Alert',
-                'Order has been canceled.',
-                dbOrder,
-              );
-            }
+            await this.sendAppUserOrderUpdateNotification(dbOrder);
           }
 
           result = {code: 0, msg: 'Order canceled.', order: dbOrder};
@@ -1096,7 +1107,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while canceling order.',
+      msg: 'Some error occurred while canceling order.',
       order: {},
     };
     if (serviceOrders?.serviceOrderId) {
@@ -1119,19 +1130,7 @@ export class ServiceOrdersController {
             serviceOrders.serviceOrderId,
           );
           if (dbOrder?.serviceProviderId) {
-            const serviceProvider: ServiceProvider =
-              await this.serviceProviderRepository.findById(
-                dbOrder.serviceProviderId,
-                {fields: ['endpoint']},
-              );
-            if (serviceProvider?.endpoint?.length > 20) {
-              await this.sendOrderNotification(
-                serviceProvider.endpoint,
-                'Order Alert',
-                'Order has been canceled.',
-                dbOrder,
-              );
-            }
+            await this.sendServiceProviderOrderUpdateNotification(dbOrder);
           }
 
           result = {code: 0, msg: 'Order canceled.', order: dbOrder};
@@ -1162,7 +1161,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while canceling order.',
+      msg: 'Some error occurred while canceling order.',
       order: {},
     };
     if (serviceOrders?.serviceOrderId) {
@@ -1184,31 +1183,10 @@ export class ServiceOrdersController {
             serviceOrders.serviceOrderId,
           );
           if (dbOrder?.serviceProviderId) {
-            const serviceProvider: ServiceProvider =
-              await this.serviceProviderRepository.findById(
-                dbOrder.serviceProviderId,
-                {fields: ['endpoint']},
-              );
-            if (serviceProvider?.endpoint?.length > 20) {
-              await this.sendOrderNotification(
-                serviceProvider.endpoint,
-                'Order Alert',
-                'Order has been canceled by admin.',
-                dbOrder,
-              );
-            }
-            const appUser: AppUsers = await this.appUsersRepository.findById(
-              dbOrder.userId,
-              {fields: ['endpoint']},
-            );
-            if (appUser?.endpoint?.length > 20) {
-              await this.sendOrderNotification(
-                appUser.endpoint,
-                'Order Alert',
-                'Order has been canceled by admin.',
-                dbOrder,
-              );
-            }
+            await this.sendServiceProviderOrderUpdateNotification(dbOrder);
+          }
+          if(dbOrder?.userId){
+            await this.sendAppUserOrderUpdateNotification(dbOrder);
           }
           result = {code: 0, msg: 'Order canceled.', order: dbOrder};
         } catch (e) {
@@ -1238,7 +1216,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while applying promo code.',
+      msg: 'Some error occurred while applying promo code.',
       order: {},
     };
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
@@ -1309,7 +1287,7 @@ export class ServiceOrdersController {
               await this.sendOrderNotification(
                 serviceProvider.endpoint,
                 'Order Alert',
-                'A promo code has been applyed by the user.',
+                'A promo code has been applied by the user.',
                 dbOrder,
               );
             }
@@ -1354,7 +1332,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting promo info.',
+      msg: 'Some error occurred while getting promo info.',
       order: {},
     };
     if (
@@ -1444,7 +1422,7 @@ export class ServiceOrdersController {
   ): Promise<Object> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting orders.',
+      msg: 'Some error occurred while getting orders.',
       orders: {},
     };
     try {
@@ -1485,7 +1463,7 @@ export class ServiceOrdersController {
   ): Promise<Object> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting orders.',
+      msg: 'Some error occurred while getting orders.',
       orders: {},
     };
     try {
@@ -1496,11 +1474,9 @@ export class ServiceOrdersController {
         for (const order of orders) {
           try {
             if (order.serviceProviderId) {
-              const serviceProvider =
-                await this.serviceProviderRepository.findById(
-                  order.serviceProviderId,
-                );
-              order.serviceProvider = serviceProvider;
+              order.serviceProvider = await this.serviceProviderRepository.findById(
+                order.serviceProviderId,
+              );
             }
           } catch (e) {
             console.log(e);
@@ -1534,7 +1510,7 @@ export class ServiceOrdersController {
   ): Promise<Object> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting order.',
+      msg: 'Some error occurred while getting order.',
       order: {},
     };
     try {
@@ -1616,7 +1592,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting orders.',
+      msg: 'Some error occurred while getting orders.',
       orders: {},
     };
     try {
@@ -1662,7 +1638,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting order details.',
+      msg: 'Some error occurred while getting order details.',
       orders: {},
       serviceProvider: {},
     };
@@ -1722,7 +1698,7 @@ export class ServiceOrdersController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting orders.',
+      msg: 'Some error occurred while getting orders.',
       orders: {},
     };
     try {

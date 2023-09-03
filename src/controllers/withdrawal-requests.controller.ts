@@ -43,7 +43,7 @@ export class WithdrawalRequestsController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while creating withdrawal request.',
+      msg: 'Some error occurred while creating withdrawal request.',
       withdrawalRequest: {},
     };
     try {
@@ -92,7 +92,7 @@ export class WithdrawalRequestsController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while getting withdrawal requests.',
+      msg: 'Some error occurred while getting withdrawal requests.',
       withdrawalRequest: {},
     };
     try {
@@ -131,7 +131,7 @@ export class WithdrawalRequestsController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while getting withdrawal requests.',
+      msg: 'Some error occurred while getting withdrawal requests.',
       withdrawalRequest: {},
     };
     try {
@@ -162,7 +162,7 @@ export class WithdrawalRequestsController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while getting withdrawal request.',
+      msg: 'Some error occurred while getting withdrawal request.',
       withdrawalRequest: {},
     };
     try {
@@ -193,7 +193,7 @@ export class WithdrawalRequestsController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while getting withdrawal requests.',
+      msg: 'Some error occurred while getting withdrawal requests.',
       withdrawalRequest: {},
     };
     try {

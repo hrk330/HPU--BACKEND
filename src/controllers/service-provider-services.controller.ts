@@ -56,7 +56,7 @@ export class ServiceProviderServicesController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while creating service provider services.',
+      msg: 'Some error occurred while creating service provider services.',
       serviceProviderServicesList: {},
     };
     const servicesArray: Array<string> = [];
@@ -151,7 +151,7 @@ export class ServiceProviderServicesController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while updating service provider services.',
+      msg: 'Some error occurred while updating service provider services.',
       serviceProviderServicesList: {},
     };
     const serviceProviderServiceArray: Array<string> = [];

@@ -275,7 +275,7 @@ export class ServicesProviderController {
   ): Promise<String> {
     let result = {
       code: 5,
-      msg: 'Some error occured while updating service provider.',
+      msg: 'Some error occurred while updating service provider.',
       user: {},
     };
     try {
@@ -564,7 +564,7 @@ export class ServicesProviderController {
   ): Promise<String> {
     let result = {
       code: 5,
-      msg: 'Some error occured while updating profile.',
+      msg: 'Some error occurred while updating profile.',
       user: {},
     };
     try {

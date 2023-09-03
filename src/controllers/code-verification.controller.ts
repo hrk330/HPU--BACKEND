@@ -456,7 +456,7 @@ export class CodeVerificationController {
           result.msg = successMessage;
         } catch (e) {
           result.code = 5;
-          result.msg = 'Some error occured while sending verification code.';
+          result.msg = 'Some error occurred while sending verification code.';
         }
       }
     } else if (verificationRequestObject?.type === 'SU') {

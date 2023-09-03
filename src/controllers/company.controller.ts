@@ -139,25 +139,27 @@ export class CompanyController {
         result.code = 5;
         result.msg = 'Company already exists.';
       } else {
-        const salt = await genSalt();
-        const password = await hash(company.password, salt);
-        const savedCompany = await this.companyRepository.create(
-          _.omit(company, 'password', 'bankAccountInfo'),
-        );
-        if (savedCompany) {
-          await this.companyRepository
-            .userCreds(savedCompany.id)
-            .create({password, salt});
-          await this.companyRepository
-            .account(savedCompany.id)
-            .create({balanceAmount: 0});
-          savedCompany.bankAccount = await this.companyRepository
-            .bankAccount(savedCompany.id)
-            .create(company.bankAccountInfo);
+        if(company.password && company.bankAccountInfo) {
+          const salt = await genSalt();
+          const password = await hash(company.password, salt);
+          const savedCompany = await this.companyRepository.create(
+            _.omit(company, 'password', 'bankAccountInfo'),
+          );
+          if (savedCompany) {
+            await this.companyRepository
+              .userCreds(savedCompany.id)
+              .create({password, salt});
+            await this.companyRepository
+              .account(savedCompany.id)
+              .create({balanceAmount: 0});
+            savedCompany.bankAccount = await this.companyRepository
+              .bankAccount(savedCompany.id)
+              .create(company.bankAccountInfo);
 
-          result.company = savedCompany;
-          result.code = 0;
-          result.msg = 'Company registered successfully.';
+            result.company = savedCompany;
+            result.code = 0;
+            result.msg = 'Company registered successfully.';
+          }
         }
       }
     } catch (e) {
@@ -354,7 +356,7 @@ export class CompanyController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting serviceProviders.',
+      msg: 'Some error occurred while getting serviceProviders.',
       serviceProviders: {},
     };
     try {
@@ -415,7 +417,7 @@ export class CompanyController {
   ): Promise<string> {
     let result = {
       code: 5,
-      msg: 'Some error occured while getting orders.',
+      msg: 'Some error occurred while getting orders.',
       orders: {},
     };
     try {

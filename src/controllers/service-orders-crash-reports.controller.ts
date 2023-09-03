@@ -35,7 +35,7 @@ export class ServiceOrdersCrashReportsController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while getting crash report.',
+      msg: 'Some error occurred while getting crash report.',
       crashReport: {},
     };
     try {
@@ -94,7 +94,7 @@ export class ServiceOrdersCrashReportsController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while creating crash report.',
+      msg: 'Some error occurred while creating crash report.',
       crashReport: {},
     };
     try {
@@ -163,7 +163,7 @@ export class ServiceOrdersCrashReportsController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while updating crash report.',
+      msg: 'Some error occurred while updating crash report.',
       crashReport: {},
     };
     try {
