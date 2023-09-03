@@ -320,6 +320,16 @@ export class ServiceOrdersController {
           }
         }
       }
+      sendCustomMail(
+        serviceOrders.userEmail,
+        'Order Confirmation',
+        serviceOrders.userName,
+        createdOrder.serviceOrderId,
+        serviceOrders.serviceName as string,
+        'orderCreate',
+        undefined,
+        createdOrder.grossAmount,
+      );
     }
     return createdOrder;
   }
@@ -912,7 +922,15 @@ export class ServiceOrdersController {
           serviceOrders,
         );
       }
-      //sendCustomMail;
+
+      sendCustomMail(
+        serviceOrders.userEmail,
+        'Order Confirmation',
+        serviceOrders.userName,
+        serviceOrders.serviceOrderId,
+        serviceOrders.orderType as string,
+        'orderCreate',
+      );
     }
   }
 
@@ -955,7 +973,40 @@ export class ServiceOrdersController {
           serviceOrders,
         );
       }
-      //sendCustomMail;
+      if (serviceOrders.userEmail && serviceOrders.companyEmail == null) {
+        sendCustomMail(
+          serviceOrders.userEmail,
+          'Order Confirmation',
+          serviceOrders.userName,
+          serviceOrders.serviceOrderId,
+          serviceOrders.serviceName as string,
+          'orderCreate',
+          undefined,
+          serviceOrders.grossAmount,
+        );
+      } else if (serviceOrders.userEmail && serviceOrders.companyEmail) {
+        sendCustomMail(
+          serviceOrders.userEmail,
+          'Order Confirmation',
+          serviceOrders.userName,
+          serviceOrders.serviceOrderId,
+          serviceOrders.serviceName as string,
+          'orderCreate',
+          undefined,
+          serviceOrders.grossAmount,
+        );
+
+        sendCustomMail(
+          serviceOrders.companyEmail,
+          'New Order Assignment By HPU',
+          serviceOrders.companyName as string,
+          serviceOrders.serviceOrderId,
+          serviceOrders.serviceName as string,
+          'orderCreate',
+          undefined,
+          serviceOrders.grossAmount,
+        );
+      }
     }
   }
 
