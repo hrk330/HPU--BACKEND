@@ -3,6 +3,12 @@ import {getModelSchemaRef} from '@loopback/rest';
 
 @model()
 export class CredentialsRequest extends Model {
+
+  @property({
+    type: 'string',
+  })
+  id?: string;
+
   @property({
     type: 'string',
     format: 'email',
@@ -16,6 +22,12 @@ export class CredentialsRequest extends Model {
     required: true,
   })
   password: string;
+
+  @property({
+    type: 'string',
+    minLength: 8,
+  })
+  oldPassword?: string;
 
   constructor(data?: Partial<CredentialsRequest>) {
     super(data);

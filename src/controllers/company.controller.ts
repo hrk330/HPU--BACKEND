@@ -32,7 +32,6 @@ import {
 } from '@loopback/authentication-jwt';
 import {authenticate, TokenService} from '@loopback/authentication';
 import {inject} from '@loopback/core';
-import { ChangePasswordRequest } from '../interfaces';
 
 export class CompanyController {
   constructor(
@@ -178,40 +177,30 @@ export class CompanyController {
     },
   })
   async changePassword(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Company, {
-            title: 'NewUser',
-            partial: true,
-          }),
-        },
-      },
-    })
-    changePasswordRequest: ChangePasswordRequest,
+    @requestBody(CredentialsRequestBody) credentialsRequest: CredentialsRequest,
   ): Promise<String> {
     const result = {code: 5, msg: 'Change password failed.'};
+    if(credentialsRequest?.id && credentialsRequest?.password && credentialsRequest?.oldPassword) {
+      const dbCompany = await this.companyRepository.findOne({
+        where: {id: credentialsRequest.id},
+        include: [{relation: 'userCreds'}],
+      });
 
-    const dbCompany = await this.companyRepository.findOne({
-			where: {id: changePasswordRequest.id},
-			include: [{relation: 'userCreds'}],
-		});
-		
-    if (dbCompany?.userCreds) {
-      let salt = dbCompany.userCreds.salt;
-      let password = await hash(changePasswordRequest.oldPassword, salt);
-      if (password === dbCompany.userCreds.password) {
-      	salt = await genSalt();
-    		password = await hash(changePasswordRequest.newPassword, salt);
-	      const updatedAt = new Date();
-	      await this.companyRepository
-	        .userCreds(dbCompany.id)
-	        .patch({password, salt, updatedAt});
-	      result.code = 0;
-	      result.msg = 'Password has been changed successfully.';
+      if (dbCompany?.userCreds) {
+        let salt = dbCompany.userCreds.salt;
+        let password = await hash(credentialsRequest.oldPassword, salt);
+        if (password === dbCompany.userCreds.password) {
+          salt = await genSalt();
+          password = await hash(credentialsRequest.password, salt);
+          const updatedAt = new Date();
+          await this.companyRepository
+            .userCreds(dbCompany.id)
+            .patch({password, salt, updatedAt});
+          result.code = 0;
+          result.msg = 'Password has been changed successfully.';
+        }
       }
     }
-
     return JSON.stringify(result);
   }
 
