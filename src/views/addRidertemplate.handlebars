@@ -1,0 +1,91 @@
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>No-Reply Email</title>
+    <style>
+      .header { width: 100%; background-color: #2C56E4; display: flex;
+      justify-content: center; } #headimg1 { /* Add these styles to center the
+      image */ display: block; margin: 0 auto; margin-top: 50px;margin-bottom:
+      50px;} #hi1{ width: 100%; padding-left: 20px; padding-right: 20px; } #h2f{
+      font-family:Arial, Helvetica, sans-serif;font-weight: 500;} .container {
+      margin: 0 auto; max-width: 600px; /* Set the maximum width of the card */
+      border: 1px solid #ccc; /* Add a border for the card-like appearance */
+      border-radius: 10px; /* Round the corners */ padding: 20px; /* Add padding
+      around the content */ box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a
+      subtle shadow */ } #wel1{width: 100%; padding-left: 20px; } #wel2{
+      padding-right: 10px; } .card { border: 1px solid #ccc; border-radius: 8px;
+      padding: 10px; margin-bottom: 20px; width: 250px; margin-left: 20px; }
+      #para1{ margin-left: 15px; font-family:Arial, Helvetica, sans-serif,
+      Arial, sans-serif; } #para1 span{ font-weight: bold; } .button{
+      margin-left: 20px; display: flex ; align-items: center; justify-content: space-between; width: 100%; margin-right: 20px;} #but1{ height: 60px; background-color:#2C56E4 ;margin-right: 10px;
+      border-radius: 10px; color: white; padding: 10px; padding-left: 10px;
+      padding-top: 5px; padding-bottom: 5px; border-color:#2C56E4 ;width:
+      150px;} .footer { text-align: center; /* Center-align the footer text */
+      margin-top: 20px; font-size: 0.65rem; color: gray; width: 300px; margin: 0
+      auto; /* Center the footer with the specified width */ } .footer span {
+      margin-left: 5px; /* Add space between "at" and email address */ } #wel22{
+      padding-right: 20px; font-size: smaller;}
+      #but1111{ height: 60px; background-color:#2C56E4 ;margin-right: 40px;
+      border-radius: 10px; color: white; padding: 10px; padding-left: 10px;
+      padding-top: 5px; padding-bottom: 5px; border-color:#2C56E4 ;width:
+      150px;}
+    </style>
+
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <img id="headimg1" src="https://i.imgur.com/EfgLoC2.png" alt="HPU" />
+      </div>
+
+      <div class="content">
+        <div id="hi1">
+          <h2 id="h2f">Hi
+            {{name}},
+
+        </div>
+
+
+        <div id="wel1">
+          <p id="wel22">
+            Welcome to the awesome team at <b>{{companyName}}</b>. Your account has been successfully created, and you can access it through the <b>HPU Rider app</b>, which is available for download from the Google Play and Apple App Stores.
+          </p>
+
+          <p id="wel22">
+            To access your account, please use the following
+            credentials:
+            </p>
+        </div>
+
+        <div class="card">
+          <p id="para1">
+            Email:
+            <span>{{username}}</span>
+          </p>
+          <p id="para1">
+            Password:
+            <span>{{password}}</span>
+          </p>
+        </div>
+
+        <div class="button">
+          <button id="but1">Download Android App</button>
+          <button id="but1111">Download iOS App</button>
+        </div>
+        <br />
+
+
+      </div>
+      <div class="footer">
+        If you have any questions or feedback, please feel free to contact our
+        support team at
+        <span>support@platform.com</span>
+      </div>
+    </div>
+  </body>
+
+</html>

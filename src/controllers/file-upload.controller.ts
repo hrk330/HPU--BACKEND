@@ -79,7 +79,7 @@ export class FileUploadController {
     } else {
       return {
         code: 5,
-        msg: 'Some error occured while uploading doc.',
+        msg: 'Some error occurred while uploading doc.',
         userDoc: {},
       };
     }
@@ -94,7 +94,7 @@ export class FileUploadController {
     const files = [];
     if (Array.isArray(uploadedFiles)) {
       for (const entry of uploadedFiles) {
-        const result = await this.insertFilesDate(request, entry);
+        const result = await this.insertFilesData(request, entry);
         files.push(
           _.pick(result.userDoc, [
             'id',
@@ -110,10 +110,10 @@ export class FileUploadController {
     return {code: 0, msg: 'File uploaded successfully', files};
   }
 
-  private async insertFilesDate(request: Request, file: Express.Multer.File) {
+  private async insertFilesData(request: Request, file: Express.Multer.File) {
     const result = {
       code: 5,
-      msg: 'Some error occured while updating doc.',
+      msg: 'Some error occurred while updating doc.',
       userDoc: {},
     };
     try {

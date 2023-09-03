@@ -36,7 +36,17 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
+  userEmail: string;
+
+  @property({
+    type: 'string',
+  })
   serviceProviderName?: string;
+
+  @property({
+    type: 'string',
+  })
+  serviceProviderEmail?: string;
 
   @property({
     type: 'string',
@@ -72,6 +82,11 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   companyName?: string;
+
+  @property({
+    type: 'string',
+  })
+  companyEmail?: string;
 
   @property({
     type: 'string',

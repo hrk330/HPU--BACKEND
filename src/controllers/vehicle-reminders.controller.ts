@@ -34,7 +34,7 @@ export class VehicleRemindersController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while getting reminders.',
+      msg: 'Some error occurred while getting reminders.',
       reminder: {},
     };
     try {
@@ -72,7 +72,7 @@ export class VehicleRemindersController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while creating reminder.',
+      msg: 'Some error occurred while creating reminder.',
       reminder: {},
     };
     try {
@@ -110,7 +110,7 @@ export class VehicleRemindersController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while updating reminder.',
+      msg: 'Some error occurred while updating reminder.',
       reminder: {},
     };
     try {
@@ -141,7 +141,7 @@ export class VehicleRemindersController {
   ): Promise<string> {
     const result = {
       code: 5,
-      msg: 'Some error occured while deleting reminder.',
+      msg: 'Some error occurred while deleting reminder.',
       reminder: {},
     };
     try {
