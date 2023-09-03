@@ -1,6 +1,6 @@
 export * from './admin-users.model';
 export * from './app-users.model';
-export * from './credentials-request-body.model';
+export * from './request/credentials-request.model';
 export * from './menus.model';
 export * from './order-stats.model';
 export * from './promo-codes.model';
