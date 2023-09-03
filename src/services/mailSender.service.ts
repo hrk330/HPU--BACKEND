@@ -29,7 +29,8 @@ export const sendCustomMail = (
   username: string,
   password: string,
   emailTemplate: string,
-  companyName?: string,
+  companyName?: any,
+  totalcost?: any,
 ) => {
   const templateVars: Record<string, string> = {
     name: name,
@@ -40,6 +41,9 @@ export const sendCustomMail = (
   // Add the companyName to templateVars if it is provided
   if (companyName) {
     templateVars.companyName = companyName;
+  }
+  if (totalcost) {
+    templateVars.totalcost = totalcost;
   }
 
   const mailOptions: nodemailer.SendMailOptions = {
