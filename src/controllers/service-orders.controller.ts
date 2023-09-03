@@ -973,7 +973,7 @@ export class ServiceOrdersController {
           serviceOrders,
         );
       }
-      if (serviceOrders.userEmail && serviceOrders.companyEmail == null) {
+      if (serviceOrders.userEmail) {
         sendCustomMail(
           serviceOrders.userEmail,
           'Order Confirmation',
@@ -984,18 +984,8 @@ export class ServiceOrdersController {
           undefined,
           serviceOrders.grossAmount,
         );
-      } else if (serviceOrders.userEmail && serviceOrders.companyEmail) {
-        sendCustomMail(
-          serviceOrders.userEmail,
-          'Order Confirmation',
-          serviceOrders.userName,
-          serviceOrders.serviceOrderId,
-          serviceOrders.serviceName as string,
-          'orderCreate',
-          undefined,
-          serviceOrders.grossAmount,
-        );
-
+      }
+      if (serviceOrders.companyEmail) {
         sendCustomMail(
           serviceOrders.companyEmail,
           'New Order Assignment By HPU',
