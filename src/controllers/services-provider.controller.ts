@@ -40,6 +40,7 @@ import {
   ServiceProviderServicesRepository,
   ServicesRepository,
 } from '../repositories';
+import {sendCustomMail} from '../services';
 
 export class ServicesProviderController {
   constructor(
@@ -243,14 +244,25 @@ export class ServicesProviderController {
             result.code = 0;
             result.msg = 'Service provider created successfully.';
             result.user = savedUser;
+            const subject = 'Rider Registration Credentials';
+            sendCustomMail(
+              savedUser.email,
+              subject,
+              savedUser.firstName,
+              savedUser.email,
+              serviceProvider.password,
+              'addRidertemplate',
+              savedUser.companyName,
+            );
           }
         }
       } else {
         result.msg = 'Enter valid email.';
       }
     } catch (e) {
+      console.log(e);
       result.code = 5;
-      result.msg = e.message;
+      result.msg = 'Some error occured.';
     }
     return JSON.stringify(result);
   }

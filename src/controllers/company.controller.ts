@@ -32,6 +32,7 @@ import {
 } from '@loopback/authentication-jwt';
 import {authenticate, TokenService} from '@loopback/authentication';
 import {inject} from '@loopback/core';
+import {sendCustomMail} from '../services';
 
 export class CompanyController {
   constructor(
@@ -139,7 +140,7 @@ export class CompanyController {
         result.code = 5;
         result.msg = 'Company already exists.';
       } else {
-        if(company.password && company.bankAccountInfo) {
+        if (company.password && company.bankAccountInfo) {
           const salt = await genSalt();
           const password = await hash(company.password, salt);
           const savedCompany = await this.companyRepository.create(
@@ -159,17 +160,26 @@ export class CompanyController {
             result.company = savedCompany;
             result.code = 0;
             result.msg = 'Company registered successfully.';
+
+            sendCustomMail(
+              savedCompany.email,
+              'Company Registration Credentials',
+              savedCompany.companyName,
+              savedCompany.email,
+              company.password,
+              'CompanyAccountCreate',
+            );
           }
         }
       }
     } catch (e) {
+      console.log(e);
       result.code = 5;
       result.msg = e.message;
     }
     return JSON.stringify(result);
   }
-  
-  
+
   @post('/companies/changePassword', {
     responses: {
       '200': {
@@ -182,7 +192,11 @@ export class CompanyController {
     @requestBody(CredentialsRequestBody) credentialsRequest: CredentialsRequest,
   ): Promise<String> {
     const result = {code: 5, msg: 'Change password failed.'};
-    if(credentialsRequest?.id && credentialsRequest?.password && credentialsRequest?.oldPassword) {
+    if (
+      credentialsRequest?.id &&
+      credentialsRequest?.password &&
+      credentialsRequest?.oldPassword
+    ) {
       const dbCompany = await this.companyRepository.findOne({
         where: {id: credentialsRequest.id},
         include: [{relation: 'userCreds'}],

@@ -1,6 +1,22 @@
 import {authenticate} from '@loopback/authentication';
-import {Count, CountSchema, Filter, repository, Where} from '@loopback/repository';
-import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
+import {
+  Count,
+  CountSchema,
+  Filter,
+  repository,
+  Where,
+} from '@loopback/repository';
+import {
+  del,
+  get,
+  getModelSchemaRef,
+  param,
+  patch,
+  post,
+  put,
+  requestBody,
+  response,
+} from '@loopback/rest';
 import {
   Account,
   AppUsers,
@@ -23,7 +39,7 @@ import {
   TransactionRepository,
 } from '../repositories';
 import {sendMessage} from '../services';
-
+import {sendCustomMail} from '../services';
 //import _ from 'lodash';
 
 export class ServiceOrdersController {
@@ -68,7 +84,9 @@ export class ServiceOrdersController {
       order: {},
     };
     try {
-      const serviceProvider: ServiceProvider = await this.getServiceProvider(serviceOrders?.serviceProviderId);
+      const serviceProvider: ServiceProvider = await this.getServiceProvider(
+        serviceOrders?.serviceProviderId,
+      );
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
       );
@@ -88,8 +106,13 @@ export class ServiceOrdersController {
         }
         serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
         serviceOrders.userEmail = appUser.email;
-        if(serviceProvider?.firstName && serviceProvider?.lastName && serviceProvider?.email) {
-          serviceOrders.serviceProviderName = serviceProvider.firstName + ' ' + serviceProvider.lastName;
+        if (
+          serviceProvider?.firstName &&
+          serviceProvider?.lastName &&
+          serviceProvider?.email
+        ) {
+          serviceOrders.serviceProviderName =
+            serviceProvider.firstName + ' ' + serviceProvider.lastName;
           serviceOrders.serviceProviderEmail = serviceProvider.email;
         }
         serviceOrders.taxPercentage = service.salesTax;
@@ -119,7 +142,7 @@ export class ServiceOrdersController {
         }
         serviceOrders.netAmount =
           serviceOrders.grossAmount + serviceOrders.taxAmount;
-        
+
         if (serviceOrders?.promoCode) {
           const promoCodeObj: PromoCodes | null =
             await this.promoCodesRepository.findOne({
@@ -157,8 +180,8 @@ export class ServiceOrdersController {
               serviceOrders.discountType = promoCodeObj.discountType;
               serviceOrders.discountValue = promoCodeObj.discountValue;
               if (!serviceOrders.serviceFeePaid) {
-			          serviceOrders.grossAmount += serviceOrders.serviceFee;
-			        }
+                serviceOrders.grossAmount += serviceOrders.serviceFee;
+              }
               if (serviceOrders.taxPercentage) {
                 serviceOrders.taxAmount =
                   (serviceOrders.grossAmount - promoDiscount) *
@@ -170,7 +193,7 @@ export class ServiceOrdersController {
                 serviceOrders.grossAmount -
                 promoDiscount +
                 serviceOrders.taxAmount;
-              
+
               promoCodeObj.totalUsed = promoCodeObj.totalUsed + 1;
               promoCodeObj.updatedAt = new Date();
               await this.promoCodesRepository.updateById(
@@ -207,14 +230,15 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
-  async getServiceProvider(serviceProviderId: string): Promise<ServiceProvider> {
+  async getServiceProvider(
+    serviceProviderId: string,
+  ): Promise<ServiceProvider> {
     let serviceProvider: ServiceProvider = new ServiceProvider();
-    if(serviceProviderId) {
-      serviceProvider =
-        await this.serviceProviderRepository.findById(
-          serviceProviderId,
-          {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
-        );
+    if (serviceProviderId) {
+      serviceProvider = await this.serviceProviderRepository.findById(
+        serviceProviderId,
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+      );
     }
     return serviceProvider;
   }
@@ -264,7 +288,7 @@ export class ServiceOrdersController {
       } else {
         serviceOrders.grossAmount = service.price;
       }
-      
+
       if (!serviceOrders.serviceFeePaid) {
         serviceOrders.grossAmount += serviceOrders.serviceFee;
       }
@@ -277,7 +301,7 @@ export class ServiceOrdersController {
       }
       serviceOrders.netAmount =
         serviceOrders.grossAmount + serviceOrders.taxAmount;
-      
+
       createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
       const serviceProviders: ServiceProvider[] =
         await this.serviceProviderRepository.find({
@@ -432,7 +456,7 @@ export class ServiceOrdersController {
     }
     return JSON.stringify(result);
   }
-  
+
   @post('/serviceOrders/adminUser/completeOrder')
   @response(200, {
     description: 'ServiceOrders model instance',
@@ -458,7 +482,7 @@ export class ServiceOrdersController {
     );
     if (
       dbOrder?.status &&
-      ['UC','SC','AC'].indexOf(dbOrder?.status) === -1 &&
+      ['UC', 'SC', 'AC'].indexOf(dbOrder?.status) === -1 &&
       orderRequest?.serviceOrder?.status === 'CO' &&
       orderRequest?.serviceOrder?.serviceOrderId
     ) {
@@ -473,8 +497,8 @@ export class ServiceOrdersController {
           orderRequest.serviceOrder.serviceOrderId,
         );
         await this.sendAppUserOrderUpdateNotification(dbOrder);
-        await this.sendServiceProviderOrderUpdateNotification(dbOrder)
-       
+        await this.sendServiceProviderOrderUpdateNotification(dbOrder);
+
         result = {
           code: 0,
           msg: 'Order completed successfully.',
@@ -824,7 +848,7 @@ export class ServiceOrdersController {
               orderRequest?.serviceOrder?.serviceOrderId,
             );
             await this.sendAppUserOrderUpdateNotification(dbOrder);
-            
+
             result = {
               code: 0,
               msg: 'Payment completed successfully.',
@@ -846,7 +870,7 @@ export class ServiceOrdersController {
   ): Promise<void> {
     let title = '',
       body = '';
-    if(serviceOrders?.userId) {
+    if (serviceOrders?.userId) {
       const appUser: AppUsers = await this.appUsersRepository.findById(
         serviceOrders.userId,
         {fields: ['endpoint']},
@@ -881,7 +905,6 @@ export class ServiceOrdersController {
           body = 'Order has been canceled by the admin.';
         }
 
-
         await this.sendOrderNotification(
           appUser.endpoint,
           title,
@@ -889,6 +912,7 @@ export class ServiceOrdersController {
           serviceOrders,
         );
       }
+      //sendCustomMail;
     }
   }
 
@@ -897,27 +921,16 @@ export class ServiceOrdersController {
   ): Promise<void> {
     let title = '',
       body = '';
-    if(serviceOrders?.serviceProviderId) {
-      const serviceProvider: ServiceProvider = await this.serviceProviderRepository.findById(
-        serviceOrders.serviceProviderId,
-        {fields: ['endpoint']},
-      );
+    if (serviceOrders?.serviceProviderId) {
+      const serviceProvider: ServiceProvider =
+        await this.serviceProviderRepository.findById(
+          serviceOrders.serviceProviderId,
+          {fields: ['endpoint']},
+        );
       if (serviceOrders?.status && serviceProvider?.endpoint?.length > 20) {
         if (serviceOrders?.status === 'LO' || serviceOrders?.status === 'OA') {
           title = 'Order Alert';
           body = 'New order has been assigned.';
-        } else if (serviceOrders?.status === 'AR') {
-          title = 'Service Provider Arrived';
-          body = 'Service Provider has arrived at your location.';
-        } else if (serviceOrders?.status === 'RA') {
-          title = 'Rider is arriving';
-          body = 'Service Provider is arriving at your location.';
-        } else if (serviceOrders?.status === 'CC') {
-          title = 'Time has been confirmed.';
-          body = 'Rider has confirmed the time.';
-        } else if (serviceOrders?.status === 'ST') {
-          title = 'Order Started';
-          body = 'Your order has started.';
         } else if (serviceOrders?.status === 'CO') {
           title = 'Order Completed';
           body = 'Order has been completed.';
@@ -935,7 +948,6 @@ export class ServiceOrdersController {
           body = 'Order has been canceled by the admin.';
         }
 
-    
         await this.sendOrderNotification(
           serviceProvider.endpoint,
           title,
@@ -943,6 +955,7 @@ export class ServiceOrdersController {
           serviceOrders,
         );
       }
+      //sendCustomMail;
     }
   }
 
@@ -1185,7 +1198,7 @@ export class ServiceOrdersController {
           if (dbOrder?.serviceProviderId) {
             await this.sendServiceProviderOrderUpdateNotification(dbOrder);
           }
-          if(dbOrder?.userId){
+          if (dbOrder?.userId) {
             await this.sendAppUserOrderUpdateNotification(dbOrder);
           }
           result = {code: 0, msg: 'Order canceled.', order: dbOrder};
@@ -1255,10 +1268,10 @@ export class ServiceOrdersController {
           dbOrder.promoId = promoCodeObj.promoId;
           dbOrder.discountType = promoCodeObj.discountType;
           dbOrder.discountValue = promoCodeObj.discountValue;
-          
+
           if (!serviceOrders.serviceFeePaid) {
-	          serviceOrders.grossAmount += serviceOrders.serviceFee;
-	        }
+            serviceOrders.grossAmount += serviceOrders.serviceFee;
+          }
           if (dbOrder.taxPercentage) {
             dbOrder.taxAmount =
               (dbOrder.grossAmount - promoDiscount) *
@@ -1474,9 +1487,10 @@ export class ServiceOrdersController {
         for (const order of orders) {
           try {
             if (order.serviceProviderId) {
-              order.serviceProvider = await this.serviceProviderRepository.findById(
-                order.serviceProviderId,
-              );
+              order.serviceProvider =
+                await this.serviceProviderRepository.findById(
+                  order.serviceProviderId,
+                );
             }
           } catch (e) {
             console.log(e);
@@ -1644,20 +1658,20 @@ export class ServiceOrdersController {
     };
     try {
       if (appUserId?.length > 0 && serviceOrderId?.length > 0) {
-		  	if (filter) {
-	        filter.where = {
-						...filter.where, 
-						serviceOrderId: serviceOrderId, 
-						userId: appUserId
-					};
-	      } else {
-	        filter = {
-            where: {
-							serviceOrderId: serviceOrderId, 
-							userId: appUserId
-						},
+        if (filter) {
+          filter.where = {
+            ...filter.where,
+            serviceOrderId: serviceOrderId,
+            userId: appUserId,
           };
-	      }
+        } else {
+          filter = {
+            where: {
+              serviceOrderId: serviceOrderId,
+              userId: appUserId,
+            },
+          };
+        }
         const dbServiceOrders: ServiceOrders[] =
           await this.serviceOrdersRepository.find(filter);
         if (dbServiceOrders?.length > 0) {
@@ -1703,11 +1717,11 @@ export class ServiceOrdersController {
     };
     try {
       if (appUserId?.length > 0) {
-			  if (filter) {
-	        filter.where = {...filter.where, userId: appUserId};
-	      } else {
-	        filter = {where: {userId: appUserId}};
-	      }
+        if (filter) {
+          filter.where = {...filter.where, userId: appUserId};
+        } else {
+          filter = {where: {userId: appUserId}};
+        }
         const dbServiceOrders: ServiceOrders[] =
           await this.serviceOrdersRepository.find(filter);
         if (dbServiceOrders && dbServiceOrders.length > 0) {

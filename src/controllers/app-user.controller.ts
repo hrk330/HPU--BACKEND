@@ -556,7 +556,7 @@ export class AppUserController {
       fields: ['id', 'email'],
     });
   }
-  
+
   @post('/appUsers/admin/createAppUser', {
     responses: {
       '200': {
@@ -620,7 +620,7 @@ export class AppUserController {
     }
     return JSON.stringify(result);
   }
-  
+
   @authenticate('jwt')
   @post('/appUsers/admin/updateAppUser', {
     responses: {
@@ -648,24 +648,27 @@ export class AppUserController {
     })
     newUserRequest: AppUsers,
   ): Promise<String> {
-	  let result = {
+    let result = {
       code: 5,
       msg: 'User update failed.',
       user: {},
     };
-	  try {
-	    await this.appUsersRepository.updateById(
-	      newUserRequest.id,
-	      _.omit(newUserRequest, 'email', 'password'),
-	    );
-	    const user = await this.appUsersRepository.findById(newUserRequest.id, {});
-	    result = {
-	      code: 0,
-	      msg: 'User updated successfully.',
-	      user: user,
-	    };
+    try {
+      await this.appUsersRepository.updateById(
+        newUserRequest.id,
+        _.omit(newUserRequest, 'email', 'password'),
+      );
+      const user = await this.appUsersRepository.findById(
+        newUserRequest.id,
+        {},
+      );
+      result = {
+        code: 0,
+        msg: 'User updated successfully.',
+        user: user,
+      };
     } catch (e) {
-			console.log(e);
+      console.log(e);
       result.code = 5;
       result.msg = 'Some error occurred while updating user';
     }
