@@ -217,6 +217,8 @@ export class ServiceOrdersController {
           await this.serviceOrdersRepository.create(serviceOrders);
 
         await this.sendServiceProviderOrderUpdateNotification(createdOrder);
+        serviceOrders.serviceProviderEmail = createdOrder.serviceProviderEmail;
+        serviceOrders.companyName = createdOrder.companyName;
 
         if (appUser?.endpoint?.length > 20) {
           await this.sendOrderNotification(
@@ -983,7 +985,7 @@ export class ServiceOrdersController {
           serviceOrders,
         );
       }
-
+      console.log('Company Email', serviceOrders.companyEmail);
       if (serviceOrders.companyEmail) {
         sendCustomMail(
           serviceOrders.companyEmail,
@@ -996,12 +998,14 @@ export class ServiceOrdersController {
           serviceOrders.netAmount,
         );
       }
-
+      console.log('Rider Email', serviceOrders.serviceProviderEmail);
+      console.log('Rider Name', serviceOrders.serviceProviderName);
+      console.log('Company Name', serviceOrders.companyName);
       if (serviceOrders.serviceProviderEmail) {
         sendCustomMail(
           serviceOrders.serviceProviderEmail,
           `New Order Assignment by ${serviceOrders.companyName}`,
-          serviceOrders.companyName as string,
+          serviceOrders.serviceProviderName as string,
           serviceOrders.serviceOrderId,
           serviceOrders.serviceName as string,
           'orderCreate',
@@ -1009,6 +1013,8 @@ export class ServiceOrdersController {
           serviceOrders.netAmount,
         );
       }
+
+      console.log('User Email', serviceOrders.userEmail);
       if (serviceOrders.userEmail) {
         sendCustomMail(
           serviceOrders.userEmail,
