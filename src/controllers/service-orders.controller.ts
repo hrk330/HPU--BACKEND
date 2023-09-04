@@ -102,7 +102,7 @@ export class ServiceOrdersController {
         serviceOrders.userId,
         {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
       );
-
+      serviceOrders.companyEmail = company.email;
       if (service && appUser) {
         if (
           serviceOrders?.serviceProviderId &&
@@ -230,7 +230,6 @@ export class ServiceOrdersController {
         result.msg = 'Order created successfully';
         result.order = createdOrder;
 
-        serviceOrders.companyEmail = company.email;
         console.log('Company Email', serviceOrders.companyEmail);
 
         console.log('Rider', serviceOrders.serviceProviderEmail);
