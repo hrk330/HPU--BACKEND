@@ -234,8 +234,8 @@ export class ServiceOrdersController {
             serviceOrders.netAmount,
           );
         }
+        console.log('conpany', serviceOrders);
         if (serviceOrders.companyEmail) {
-          console.log(serviceOrders.companyEmail);
           sendCustomMail(
             serviceOrders.companyEmail,
             'New Order Assignment By HPU',
