@@ -103,6 +103,7 @@ export class ServiceOrdersController {
         {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
       );
       serviceOrders.companyEmail = company.email;
+
       if (service && appUser) {
         if (
           serviceOrders?.serviceProviderId &&
@@ -229,47 +230,6 @@ export class ServiceOrdersController {
         result.code = 0;
         result.msg = 'Order created successfully';
         result.order = createdOrder;
-
-        console.log('Company Email', serviceOrders.companyEmail);
-
-        console.log('Rider', serviceOrders.serviceProviderEmail);
-        if (createdOrder.companyEmail) {
-          sendCustomMail(
-            createdOrder.companyEmail,
-            'New Order Assignment By HPU',
-            serviceOrders.companyName as string,
-            createdOrder.serviceOrderId,
-            serviceOrders.serviceName as string,
-            'orderCreate',
-            undefined,
-            serviceOrders.netAmount,
-          );
-        }
-
-        if (createdOrder.serviceProviderEmail) {
-          sendCustomMail(
-            createdOrder.serviceProviderEmail,
-            `New Order Assignment by ${createdOrder.companyName}`,
-            serviceOrders.companyName as string,
-            createdOrder.serviceOrderId,
-            serviceOrders.serviceName as string,
-            'orderCreate',
-            undefined,
-            serviceOrders.netAmount,
-          );
-        }
-        if (serviceOrders.userEmail) {
-          sendCustomMail(
-            serviceOrders.userEmail,
-            'Order Confirmation',
-            serviceOrders.userName,
-            createdOrder.serviceOrderId,
-            serviceOrders.serviceName as string,
-            'orderCreate',
-            undefined,
-            serviceOrders.netAmount,
-          );
-        }
       }
     } catch (e) {
       console.log(e);
@@ -981,15 +941,6 @@ export class ServiceOrdersController {
           serviceOrders,
         );
       }
-
-      sendCustomMail(
-        serviceOrders.userEmail,
-        'Order Confirmation',
-        serviceOrders.userName,
-        serviceOrders.serviceOrderId,
-        serviceOrders.orderType as string,
-        'orderCreate',
-      );
     }
   }
 
@@ -1030,6 +981,44 @@ export class ServiceOrdersController {
           title,
           body,
           serviceOrders,
+        );
+      }
+
+      if (serviceOrders.companyEmail) {
+        sendCustomMail(
+          serviceOrders.companyEmail,
+          'New Order Assignment By HPU',
+          serviceOrders.companyName as string,
+          serviceOrders.serviceOrderId,
+          serviceOrders.serviceName as string,
+          'orderCreate',
+          undefined,
+          serviceOrders.netAmount,
+        );
+      }
+
+      if (serviceOrders.serviceProviderEmail) {
+        sendCustomMail(
+          serviceOrders.serviceProviderEmail,
+          `New Order Assignment by ${serviceOrders.companyName}`,
+          serviceOrders.companyName as string,
+          serviceOrders.serviceOrderId,
+          serviceOrders.serviceName as string,
+          'orderCreate',
+          undefined,
+          serviceOrders.netAmount,
+        );
+      }
+      if (serviceOrders.userEmail) {
+        sendCustomMail(
+          serviceOrders.userEmail,
+          'Order Confirmation',
+          serviceOrders.userName,
+          serviceOrders.serviceOrderId,
+          serviceOrders.serviceName as string,
+          'orderCreate',
+          undefined,
+          serviceOrders.netAmount,
         );
       }
     }
