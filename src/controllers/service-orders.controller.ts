@@ -222,11 +222,13 @@ export class ServiceOrdersController {
         result.msg = 'Order created successfully';
         result.order = createdOrder;
 
-        if (serviceOrders.userEmail) {
+        console.log('conpany', serviceOrders.companyEmail);
+        console.log('Rider', serviceOrders.serviceProviderEmail);
+        if (createdOrder.companyEmail) {
           sendCustomMail(
-            serviceOrders.userEmail,
-            'Order Confirmation',
-            serviceOrders.userName,
+            createdOrder.companyEmail,
+            'New Order Assignment By HPU',
+            serviceOrders.companyName as string,
             createdOrder.serviceOrderId,
             serviceOrders.serviceName as string,
             'orderCreate',
@@ -234,12 +236,24 @@ export class ServiceOrdersController {
             serviceOrders.netAmount,
           );
         }
-        console.log('conpany', serviceOrders);
-        if (serviceOrders.companyEmail) {
+
+        if (createdOrder.serviceProviderEmail) {
           sendCustomMail(
-            serviceOrders.companyEmail,
-            'New Order Assignment By HPU',
+            createdOrder.serviceProviderEmail,
+            `New Order Assignment by ${createdOrder.companyName}`,
             serviceOrders.companyName as string,
+            createdOrder.serviceOrderId,
+            serviceOrders.serviceName as string,
+            'orderCreate',
+            undefined,
+            serviceOrders.netAmount,
+          );
+        }
+        if (serviceOrders.userEmail) {
+          sendCustomMail(
+            serviceOrders.userEmail,
+            'Order Confirmation',
+            serviceOrders.userName,
             createdOrder.serviceOrderId,
             serviceOrders.serviceName as string,
             'orderCreate',
