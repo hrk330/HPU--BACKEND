@@ -230,10 +230,9 @@ export class ServiceOrdersController {
         result.msg = 'Order created successfully';
         result.order = createdOrder;
 
-        console.log('service', serviceOrders);
-        console.log('Order ', createdOrder);
+        serviceOrders.companyEmail = company.email;
+        console.log('Company Email', serviceOrders.companyEmail);
 
-        console.log('company', company.email);
         console.log('Rider', serviceOrders.serviceProviderEmail);
         if (createdOrder.companyEmail) {
           sendCustomMail(
