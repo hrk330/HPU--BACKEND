@@ -233,7 +233,7 @@ export class ServiceOrdersController {
         console.log('service', serviceOrders);
         console.log('Order ', createdOrder);
 
-        console.log('company', serviceOrders.companyEmail);
+        console.log('company', company.email);
         console.log('Rider', serviceOrders.serviceProviderEmail);
         if (createdOrder.companyEmail) {
           sendCustomMail(
