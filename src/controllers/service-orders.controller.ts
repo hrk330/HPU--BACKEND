@@ -20,6 +20,7 @@ import {
 import {
   Account,
   AppUsers,
+  Company,
   OrderRequest,
   Payment,
   PromoCodes,
@@ -37,6 +38,7 @@ import {
   ServiceProviderRepository,
   ServicesRepository,
   TransactionRepository,
+  CompanyRepository,
 } from '../repositories';
 import {sendMessage} from '../services';
 import {sendCustomMail} from '../services';
@@ -58,6 +60,8 @@ export class ServiceOrdersController {
     public serviceProviderRepository: ServiceProviderRepository,
     @repository(TransactionRepository)
     public transactionRepository: TransactionRepository,
+    @repository(CompanyRepository) // Inject the CompanyRepository
+    public companyRepository: CompanyRepository,
   ) {}
 
   @post('/serviceOrders/adminUser/createOrder')
@@ -87,6 +91,10 @@ export class ServiceOrdersController {
       const serviceProvider: ServiceProvider = await this.getServiceProvider(
         serviceOrders?.serviceProviderId,
       );
+      const company: Company = await this.getCompany(
+        serviceOrders?.companyId as string,
+      );
+
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
       );
@@ -222,7 +230,10 @@ export class ServiceOrdersController {
         result.msg = 'Order created successfully';
         result.order = createdOrder;
 
-        console.log('conpany', serviceOrders.companyEmail);
+        console.log('service', serviceOrders);
+        console.log('Order ', createdOrder);
+
+        console.log('company', serviceOrders.companyEmail);
         console.log('Rider', serviceOrders.serviceProviderEmail);
         if (createdOrder.companyEmail) {
           sendCustomMail(
@@ -268,6 +279,16 @@ export class ServiceOrdersController {
       result.msg = e.message;
     }
     return JSON.stringify(result);
+  }
+
+  async getCompany(companyId: string): Promise<Company> {
+    let company: Company = new Company();
+    if (companyId) {
+      company = await this.companyRepository.findById(companyId, {
+        fields: ['id', 'email'],
+      });
+    }
+    return company;
   }
 
   async getServiceProvider(
