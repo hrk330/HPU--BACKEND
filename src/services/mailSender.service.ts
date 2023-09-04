@@ -6,8 +6,8 @@ import fs from 'fs';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'testcompany850@gmail.com',
-    pass: 'testcompany1234',
+    user: 'hrk3341@gmail.com',
+    pass: 'kedufuphgzpyoxtk',
   },
 });
 
@@ -47,7 +47,7 @@ export const sendCustomMail = (
   }
 
   const mailOptions: nodemailer.SendMailOptions = {
-    from: 'testcompany850@gmail.com',
+    from: 'hrk3341@gmail.com',
     to: recipient,
     subject: subject,
     html: renderTemplate(emailTemplate, templateVars),
