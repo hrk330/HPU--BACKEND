@@ -1001,10 +1001,23 @@ export class ServiceOrdersController {
       console.log('Rider Email', serviceOrders.serviceProviderEmail);
       console.log('Rider Name', serviceOrders.serviceProviderName);
       console.log('Company Name', serviceOrders.companyName);
-      if (serviceOrders.serviceProviderEmail) {
+      if (serviceOrders.serviceProviderEmail && serviceOrders.companyEmail) {
         sendCustomMail(
           serviceOrders.serviceProviderEmail,
           `New Order Assignment by ${serviceOrders.companyName}`,
+          serviceOrders.serviceProviderName as string,
+          serviceOrders.serviceOrderId,
+          serviceOrders.serviceName as string,
+          'orderCreate',
+          undefined,
+          serviceOrders.netAmount,
+        );
+      }
+
+      if (serviceOrders.serviceProviderEmail && !serviceOrders.companyEmail) {
+        sendCustomMail(
+          serviceOrders.serviceProviderEmail,
+          `New Order Assignment by HPU`,
           serviceOrders.serviceProviderName as string,
           serviceOrders.serviceOrderId,
           serviceOrders.serviceName as string,
