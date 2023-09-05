@@ -282,62 +282,64 @@ export class ServiceOrdersController {
     })
     serviceOrders: Omit<ServiceOrders, 'serviceOrderId'>,
   ): Promise<ServiceOrders> {
-    serviceOrders.status = 'LO';
     let createdOrder: ServiceOrders = new ServiceOrders();
-    const appUser: AppUsers = await this.appUsersRepository.findById(
-      serviceOrders.userId,
-      {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
-    );
-    const service: Services = await this.servicesRepository.findById(
-      serviceOrders.serviceId,
-    );
-    if (service && appUser) {
-      serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
-      serviceOrders.userEmail = appUser.email;
-      serviceOrders.taxPercentage = service.salesTax;
-      serviceOrders.serviceName = service.serviceName;
-      serviceOrders.serviceType = service.serviceType;
-      serviceOrders.serviceFee = 0;
-      if (service.serviceFee) {
-        serviceOrders.serviceFee = service.serviceFee;
-      }
-      if (serviceOrders?.distance) {
-        serviceOrders.distanceAmount =
-          service.pricePerKm * serviceOrders.distance;
-        serviceOrders.grossAmount =
-          service.price + serviceOrders.distanceAmount;
-      } else {
-        serviceOrders.grossAmount = service.price;
-      }
+    try {
+      serviceOrders.status = 'LO';
+      const appUser: AppUsers = await this.appUsersRepository.findById(
+        serviceOrders.userId,
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+      );
+      const service: Services = await this.servicesRepository.findById(
+        serviceOrders.serviceId,
+      );
+      if (service && appUser) {
+        serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
+        serviceOrders.userEmail = appUser.email;
+        serviceOrders.taxPercentage = service.salesTax;
+        serviceOrders.serviceName = service.serviceName;
+        serviceOrders.serviceType = service.serviceType;
+        serviceOrders.serviceFee = 0;
+        if (service.serviceFee) {
+          serviceOrders.serviceFee = service.serviceFee;
+        }
+        if (serviceOrders?.distance) {
+          serviceOrders.distanceAmount =
+            service.pricePerKm * serviceOrders.distance;
+          serviceOrders.grossAmount =
+            service.price + serviceOrders.distanceAmount;
+        } else {
+          serviceOrders.grossAmount = service.price;
+        }
 
-      if (!serviceOrders.serviceFeePaid) {
-        serviceOrders.grossAmount += serviceOrders.serviceFee;
-      }
+        if (!serviceOrders.serviceFeePaid) {
+          serviceOrders.grossAmount += serviceOrders.serviceFee;
+        }
 
-      if (serviceOrders.taxPercentage) {
-        serviceOrders.taxAmount =
-          serviceOrders.grossAmount * (serviceOrders.taxPercentage / 100);
-      } else {
-        serviceOrders.taxAmount = 0;
-      }
-      serviceOrders.netAmount =
-        serviceOrders.grossAmount + serviceOrders.taxAmount;
+        if (serviceOrders.taxPercentage) {
+          serviceOrders.taxAmount =
+            serviceOrders.grossAmount * (serviceOrders.taxPercentage / 100);
+        } else {
+          serviceOrders.taxAmount = 0;
+        }
+        serviceOrders.netAmount =
+          serviceOrders.grossAmount + serviceOrders.taxAmount;
 
-      createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
-      const serviceProviders: ServiceProvider[] =
-        await this.serviceProviderRepository.find({
-          where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'},
-          fields: ['endpoint'],
-        });
-      if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
-        for (const serviceProvider of serviceProviders) {
-          if (serviceProvider?.endpoint?.length > 20) {
-            await this.sendOrderNotification(
-              serviceProvider.endpoint,
-              'Order Alert',
-              'A new order is available.',
-              createdOrder,
-            );
+        createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
+        const serviceProviders: ServiceProvider[] =
+          await this.serviceProviderRepository.find({
+            where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'},
+            fields: ['endpoint'],
+          });
+        if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
+          for (const serviceProvider of serviceProviders) {
+            if (serviceProvider?.endpoint?.length > 20) {
+              await this.sendOrderNotification(
+                serviceProvider.endpoint,
+                'Order Alert',
+                'A new order is available.',
+                createdOrder,
+              );
+            }
           }
         }
       }
@@ -351,6 +353,8 @@ export class ServiceOrdersController {
         undefined,
         createdOrder.netAmount,
       );
+    } catch (e) {
+      console.log(e);
     }
     return createdOrder;
   }
@@ -410,6 +414,11 @@ export class ServiceOrdersController {
     ) {
       try {
         await this.populateStatusDates(serviceOrders);
+        if(serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
+          const dbCompany = await this.companyRepository.findOne({where: {id: serviceOrders.companyId}});
+          serviceOrders.companyEmail = dbCompany?.email;
+          serviceOrders.companyName = dbCompany?.companyName;
+        }
         await this.serviceOrdersRepository.updateById(
           serviceOrders.serviceOrderId,
           serviceOrders,

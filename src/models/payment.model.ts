@@ -47,6 +47,40 @@ export class Payment extends Entity {
   paymentStatus: string;
 
   @property({
+    type: 'number',
+    default: 0,
+  })
+  platformFee: number;
+
+  @property({
+    type: 'number',
+    default: 0,
+  })
+  discountAmount?: number;
+
+  @property({
+    type: 'number',
+    default: 0,
+  })
+  taxAmount: number;
+
+  @property({
+    type: 'number',
+  })
+  grossAmount: number;
+
+  @property({
+    type: 'number',
+  })
+  netAmount: number;
+
+  @property({
+    type: 'number',
+    default: 0,
+  })
+  serviceFee: number;
+
+  @property({
     type: 'date',
     default: '$now',
   })

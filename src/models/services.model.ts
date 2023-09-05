@@ -31,11 +31,13 @@ export class Services extends Entity {
 
   @property({
     type: 'number',
+    default: 0,
   })
   serviceFee: number;
 
   @property({
     type: 'number',
+    default: 0,
   })
   pricePerKm: number;
 
@@ -43,6 +45,12 @@ export class Services extends Entity {
     type: 'number',
   })
   salesTax: number;
+
+  @property({
+    type: 'number',
+    default: 0,
+  })
+  platformFee: number;
 
   @property({
     type: 'boolean',
