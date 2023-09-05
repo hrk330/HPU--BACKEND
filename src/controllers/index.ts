@@ -40,3 +40,4 @@ export * from './service-provider-account.controller';
 export * from './company-service-provider.controller';
 export * from './transactions.controller';
 
+export * from './dfy-stats.controller';
