@@ -102,7 +102,9 @@ export class ServiceOrdersController {
         serviceOrders.userId,
         {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
       );
-      serviceOrders.companyEmail = company.email;
+      serviceOrders.companyEmail = company?.email;
+      serviceOrders.companyId = company?.id;
+      serviceOrders.companyName = company?.companyName;
 
       if (service && appUser) {
         if (
@@ -217,8 +219,6 @@ export class ServiceOrdersController {
           await this.serviceOrdersRepository.create(serviceOrders);
 
         await this.sendServiceProviderOrderUpdateNotification(createdOrder);
-        serviceOrders.serviceProviderEmail = createdOrder.serviceProviderEmail;
-        serviceOrders.companyName = createdOrder.companyName;
 
         if (appUser?.endpoint?.length > 20) {
           await this.sendOrderNotification(
@@ -243,10 +243,15 @@ export class ServiceOrdersController {
 
   async getCompany(companyId: string): Promise<Company> {
     let company: Company = new Company();
-    if (companyId) {
-      company = await this.companyRepository.findById(companyId, {
-        fields: ['id', 'email'],
-      });
+    try {
+
+      if (companyId) {
+        company = await this.companyRepository.findById(companyId, {
+          fields: ['id', 'email', 'companyName'],
+        });
+      }
+    } catch(e) {
+      console.log(e);
     }
     return company;
   }
@@ -415,9 +420,16 @@ export class ServiceOrdersController {
       try {
         await this.populateStatusDates(serviceOrders);
         if(serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
-          const dbCompany = await this.companyRepository.findOne({where: {id: serviceOrders.companyId}});
-          serviceOrders.companyEmail = dbCompany?.email;
-          serviceOrders.companyName = dbCompany?.companyName;
+          const serviceProvider: ServiceProvider = await this.getServiceProvider(
+            serviceOrders?.serviceProviderId,
+          );
+          const company: Company = await this.getCompany(
+            serviceProvider?.companyId as string,
+          );
+
+          serviceOrders.companyEmail = company?.email;
+          serviceOrders.companyId = company?.id;
+          serviceOrders.companyName = company?.companyName;
         }
         await this.serviceOrdersRepository.updateById(
           serviceOrders.serviceOrderId,
