@@ -92,7 +92,7 @@ export class ServiceOrdersController {
         serviceOrders?.serviceProviderId,
       );
       const company: Company = await this.getCompany(
-        serviceOrders?.companyId as string,
+        serviceProvider?.companyId as string,
       );
 
       const service: Services = await this.servicesRepository.findById(
