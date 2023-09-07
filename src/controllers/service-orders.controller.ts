@@ -32,16 +32,15 @@ import {
 } from '../models';
 import {
   AppUsersRepository,
+  CompanyRepository,
   PaymentRepository,
   PromoCodesRepository,
   ServiceOrdersRepository,
   ServiceProviderRepository,
   ServicesRepository,
   TransactionRepository,
-  CompanyRepository,
 } from '../repositories';
-import {sendMessage} from '../services';
-import {sendCustomMail} from '../services';
+import {sendCustomMail, sendMessage} from '../services';
 //import _ from 'lodash';
 
 export class ServiceOrdersController {
@@ -232,6 +231,62 @@ export class ServiceOrdersController {
         result.code = 0;
         result.msg = 'Order created successfully';
         result.order = createdOrder;
+
+        console.log('Company Email', serviceOrders.companyEmail);
+        if (serviceOrders.companyEmail) {
+          sendCustomMail(
+            serviceOrders.companyEmail,
+            'New Order Assignment By HPU',
+            serviceOrders.companyName as string,
+            createdOrder.serviceOrderId,
+            serviceOrders.serviceName as string,
+            'orderCreate',
+            undefined,
+            serviceOrders.netAmount,
+          );
+        }
+        console.log('Rider Email', serviceOrders.serviceProviderEmail);
+        console.log('Rider Name', serviceOrders.serviceProviderName);
+        console.log('Company Name', serviceOrders.companyName);
+        if (serviceOrders.serviceProviderEmail && serviceOrders.companyEmail) {
+          sendCustomMail(
+            serviceOrders.serviceProviderEmail,
+            `New Order Assignment by ${serviceOrders.companyName}`,
+            serviceOrders.serviceProviderName as string,
+            createdOrder.serviceOrderId,
+            serviceOrders.serviceName as string,
+            'orderCreate',
+            undefined,
+            serviceOrders.netAmount,
+          );
+        }
+
+        if (serviceOrders.serviceProviderEmail && !serviceOrders.companyEmail) {
+          sendCustomMail(
+            serviceOrders.serviceProviderEmail,
+            `New Order Assignment by HPU`,
+            serviceOrders.serviceProviderName as string,
+            createdOrder.serviceOrderId,
+            serviceOrders.serviceName as string,
+            'orderCreate',
+            undefined,
+            serviceOrders.netAmount,
+          );
+        }
+
+        console.log('User Email', serviceOrders.userEmail);
+        if (serviceOrders.userEmail) {
+          sendCustomMail(
+            serviceOrders.userEmail,
+            'Order Confirmation',
+            serviceOrders.userName,
+            createdOrder.serviceOrderId,
+            serviceOrders.serviceName as string,
+            'orderCreate',
+            undefined,
+            serviceOrders.netAmount,
+          );
+        }
       }
     } catch (e) {
       console.log(e);
@@ -244,13 +299,12 @@ export class ServiceOrdersController {
   async getCompany(companyId: string): Promise<Company> {
     let company: Company = new Company();
     try {
-
       if (companyId) {
         company = await this.companyRepository.findById(companyId, {
           fields: ['id', 'email', 'companyName'],
         });
       }
-    } catch(e) {
+    } catch (e) {
       console.log(e);
     }
     return company;
@@ -419,17 +473,12 @@ export class ServiceOrdersController {
     ) {
       try {
         await this.populateStatusDates(serviceOrders);
-        if(serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
-          const serviceProvider: ServiceProvider = await this.getServiceProvider(
-            serviceOrders?.serviceProviderId,
-          );
-          const company: Company = await this.getCompany(
-            serviceProvider?.companyId as string,
-          );
-
-          serviceOrders.companyEmail = company?.email;
-          serviceOrders.companyId = company?.id;
-          serviceOrders.companyName = company?.companyName;
+        if (serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
+          const dbCompany = await this.companyRepository.findOne({
+            where: {id: serviceOrders.companyId},
+          });
+          serviceOrders.companyEmail = dbCompany?.email;
+          serviceOrders.companyName = dbCompany?.companyName;
         }
         await this.serviceOrdersRepository.updateById(
           serviceOrders.serviceOrderId,
@@ -1004,61 +1053,6 @@ export class ServiceOrdersController {
           title,
           body,
           serviceOrders,
-        );
-      }
-      console.log('Company Email', serviceOrders.companyEmail);
-      if (serviceOrders.companyEmail) {
-        sendCustomMail(
-          serviceOrders.companyEmail,
-          'New Order Assignment By HPU',
-          serviceOrders.companyName as string,
-          serviceOrders.serviceOrderId,
-          serviceOrders.serviceName as string,
-          'orderCreate',
-          undefined,
-          serviceOrders.netAmount,
-        );
-      }
-      console.log('Rider Email', serviceOrders.serviceProviderEmail);
-      console.log('Rider Name', serviceOrders.serviceProviderName);
-      console.log('Company Name', serviceOrders.companyName);
-      if (serviceOrders.serviceProviderEmail && serviceOrders.companyEmail) {
-        sendCustomMail(
-          serviceOrders.serviceProviderEmail,
-          `New Order Assignment by ${serviceOrders.companyName}`,
-          serviceOrders.serviceProviderName as string,
-          serviceOrders.serviceOrderId,
-          serviceOrders.serviceName as string,
-          'orderCreate',
-          undefined,
-          serviceOrders.netAmount,
-        );
-      }
-
-      if (serviceOrders.serviceProviderEmail && !serviceOrders.companyEmail) {
-        sendCustomMail(
-          serviceOrders.serviceProviderEmail,
-          `New Order Assignment by HPU`,
-          serviceOrders.serviceProviderName as string,
-          serviceOrders.serviceOrderId,
-          serviceOrders.serviceName as string,
-          'orderCreate',
-          undefined,
-          serviceOrders.netAmount,
-        );
-      }
-
-      console.log('User Email', serviceOrders.userEmail);
-      if (serviceOrders.userEmail) {
-        sendCustomMail(
-          serviceOrders.userEmail,
-          'Order Confirmation',
-          serviceOrders.userName,
-          serviceOrders.serviceOrderId,
-          serviceOrders.serviceName as string,
-          'orderCreate',
-          undefined,
-          serviceOrders.netAmount,
         );
       }
     }
