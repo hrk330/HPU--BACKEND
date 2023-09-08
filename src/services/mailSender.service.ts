@@ -1,13 +1,13 @@
-import path from 'path';
-import nodemailer from 'nodemailer';
-import handlebars from 'handlebars';
 import fs from 'fs';
+import handlebars from 'handlebars';
+import nodemailer from 'nodemailer';
+import path from 'path';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'hrk3341@gmail.com',
-    pass: 'kedufuphgzpyoxtk',
+    user: 'testcompany850@gmail.com',
+    pass: 'apsxwzplafbvhhei',
   },
 });
 
@@ -47,7 +47,7 @@ export const sendCustomMail = (
   }
 
   const mailOptions: nodemailer.SendMailOptions = {
-    from: 'hrk3341@gmail.com',
+    from: 'testcompany850@gmail.com',
     to: recipient,
     subject: subject,
     html: renderTemplate(emailTemplate, templateVars),
