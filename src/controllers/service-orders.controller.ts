@@ -94,6 +94,12 @@ export class ServiceOrdersController {
         serviceProvider?.companyId as string,
       );
 
+      if(company) {
+        serviceOrders.companyEmail = company?.email;
+        serviceOrders.companyId = company?.id;
+        serviceOrders.companyName = company?.companyName;
+      }
+
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
       );
@@ -101,9 +107,7 @@ export class ServiceOrdersController {
         serviceOrders.userId,
         {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
       );
-      serviceOrders.companyEmail = company?.email;
-      serviceOrders.companyId = company?.id;
-      serviceOrders.companyName = company?.companyName;
+
 
       if (service && appUser) {
         if (
@@ -317,7 +321,7 @@ export class ServiceOrdersController {
     if (serviceProviderId) {
       serviceProvider = await this.serviceProviderRepository.findById(
         serviceProviderId,
-        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'companyId']},
       );
     }
     return serviceProvider;
