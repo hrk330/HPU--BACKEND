@@ -108,7 +108,6 @@ export class ServiceOrdersController {
         {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
       );
 
-
       if (service && appUser) {
         if (
           serviceOrders?.serviceProviderId &&
@@ -120,11 +119,7 @@ export class ServiceOrdersController {
         }
         serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
         serviceOrders.userEmail = appUser.email;
-        if (
-          serviceProvider?.firstName &&
-          serviceProvider?.lastName &&
-          serviceProvider?.email
-        ) {
+        if (serviceProvider) {
           serviceOrders.serviceProviderName =
             serviceProvider.firstName + ' ' + serviceProvider.lastName;
           serviceOrders.serviceProviderEmail = serviceProvider.email;
@@ -478,11 +473,23 @@ export class ServiceOrdersController {
       try {
         await this.populateStatusDates(serviceOrders);
         if (serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
-          const dbCompany = await this.companyRepository.findOne({
-            where: {id: serviceOrders.companyId},
-          });
-          serviceOrders.companyEmail = dbCompany?.email;
-          serviceOrders.companyName = dbCompany?.companyName;
+          const serviceProvider: ServiceProvider = await this.getServiceProvider(
+            serviceOrders?.serviceProviderId,
+          );
+          const company: Company = await this.getCompany(
+            serviceProvider?.companyId as string,
+          );
+
+          if(company) {
+            serviceOrders.companyEmail = company?.email;
+            serviceOrders.companyId = company?.id;
+            serviceOrders.companyName = company?.companyName;
+          }
+          if (serviceProvider) {
+            serviceOrders.serviceProviderName =
+              serviceProvider.firstName + ' ' + serviceProvider.lastName;
+            serviceOrders.serviceProviderEmail = serviceProvider.email;
+          }
         }
         await this.serviceOrdersRepository.updateById(
           serviceOrders.serviceOrderId,
