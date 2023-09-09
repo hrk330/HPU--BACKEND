@@ -184,15 +184,27 @@ export class CodeVerificationController {
     );
     if(codeVerificationResponse) {
 	    if (codeVerificationResponse.code === 0) {
-	      await this.appUsersRepository.updateById(
-	        verificationRequestObject.userId,
-	        _.pick(verificationRequestObject, 'phoneNo'),
-	      );
-	      const user = await this.appUsersRepository.findById(
-	        verificationRequestObject.userId,
-	        {},
-	      );
-	      result = {code: 0, msg: 'User profile updated successfully.', user: user};
+        let user: AppUsers| ServiceProvider| undefined = undefined;
+        if(verificationRequestObject.userType === "A") {
+          await this.appUsersRepository.updateById(
+            verificationRequestObject.userId,
+            _.pick(verificationRequestObject, 'phoneNo'),
+          );
+          user = await this.appUsersRepository.findById(
+            verificationRequestObject.userId,
+            {},
+          );
+        } else if(verificationRequestObject.userType === "S") {
+          await this.serviceProviderRepository.updateById(
+            verificationRequestObject.userId,
+            _.pick(verificationRequestObject, 'phoneNo'),
+          );
+          user = await this.serviceProviderRepository.findById(
+            verificationRequestObject.userId,
+            {},
+          );
+        }
+	      result = {code: 0, msg: 'Mobile number updated successfully.', user: user};
 	    } else {
 				result = codeVerificationResponse;
 			}
