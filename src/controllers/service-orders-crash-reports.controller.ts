@@ -39,9 +39,7 @@ export class ServiceOrdersCrashReportsController {
       crashReport: {},
     };
     try {
-      const crashReport: CrashReports = await this.serviceOrdersRepository
-        .crashReport(id)
-        .get(filter);
+      const crashReport: CrashReports| null = await this.crashReportsRepository.findOne({where: {serviceOrderId: id}});
       if (crashReport) {
         const witnessList: Witness[] = await this.crashReportsRepository
           .witnesses(crashReport.crashReportId)

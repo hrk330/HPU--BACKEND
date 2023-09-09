@@ -1,4 +1,4 @@
-import {getModelSchemaRef, post, response} from '@loopback/rest';
+import {getModelSchemaRef, get, response} from '@loopback/rest';
 import { OrderRequest, Payment, RevenueStats, ServiceOrders} from '../models';
 import {repository} from '@loopback/repository';
 import {
@@ -27,7 +27,7 @@ export class DfyStatsController {
     public transactionRepository: TransactionRepository,
   ) {}
 
-  @post('/dfy/getDashboardStats')
+  @get('/dfy/getDashboardStats')
   @response(200, {
     description: 'ServiceOrders model instance',
     content: {'application/json': {schema: getModelSchemaRef(OrderRequest)}},
@@ -45,6 +45,9 @@ export class DfyStatsController {
       const dfyPayments: Payment[] = await this.paymentRepository.find({where: {paymentStatus: 'C', paymentOrderId: {inq: paymentOrderIds}}});
       revenueStats.revenue = dfyPayments.reduce((accumulator, dfyPayment) => accumulator + dfyPayment.paymentAmount, 0);
       revenueStats.earning = dfyPayments.reduce((accumulator, dfyPayment) => accumulator + dfyPayment.platformFee, 0);
+      revenueStats.coffer = dfyPayments.reduce((accumulator, dfyPayment) => accumulator + dfyPayment.paymentAmount, 0);
+      revenueStats.outstandingCash = dfyPayments.reduce((accumulator, dfyPayment) => accumulator + dfyPayment.platformFee, 0);
+
       result.dfyStats = revenueStats;
       result.code = 0;
       result.msg = 'Stats fetched successfully.';
