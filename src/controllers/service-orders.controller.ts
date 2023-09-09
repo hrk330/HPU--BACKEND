@@ -437,6 +437,8 @@ export class ServiceOrdersController {
             serviceOrders.companyId = company?.id;
             serviceOrders.companyName = company?.companyName;
           }
+
+          console.log('Service Provider ', serviceProvider);
           if (serviceProvider) {
             serviceOrders.serviceProviderName =
               serviceProvider.firstName + ' ' + serviceProvider.lastName;
