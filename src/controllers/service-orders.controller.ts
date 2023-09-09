@@ -451,11 +451,11 @@ export class ServiceOrdersController {
           console.log('Rider Email', serviceOrders.serviceProviderEmail);
           console.log('Rider Name', serviceOrders.serviceProviderName);
           console.log('Company Name', serviceOrders.companyName);
-          if (dbOrder.serviceProviderEmail) {
+          if (serviceOrders.serviceProviderEmail) {
             sendCustomMail(
-              dbOrder.serviceProviderEmail,
+              serviceOrders.serviceProviderEmail,
               `Current Order Details`,
-              dbOrder.serviceProviderName as string,
+              serviceOrders.serviceProviderName as string,
               dbOrder.serviceOrderId,
               dbOrder.serviceName as string,
               'orderCreate',
@@ -485,11 +485,11 @@ export class ServiceOrdersController {
             );
           }
 
-          if (dbOrder.companyEmail && dbOrder.serviceProviderId) {
+          if (serviceOrders.companyEmail && serviceOrders.serviceProviderId) {
             sendCustomMail(
-              dbOrder.companyEmail,
+              serviceOrders.companyEmail,
               `Order Containing this ID (${dbOrder.serviceOrderId}) Accepted by ${serviceOrders.serviceProviderName}`,
-              dbOrder.companyName as string,
+              serviceOrders.companyName as string,
               dbOrder.serviceOrderId,
               dbOrder.serviceName as string,
               'orderCreate',
