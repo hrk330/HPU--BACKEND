@@ -98,9 +98,11 @@ export class ServiceOrdersController {
       );
 
       if (company) {
-        serviceOrders.companyEmail = company?.email;
-        serviceOrders.companyId = company?.id;
-        serviceOrders.companyName = company?.companyName;
+        serviceOrders.companyEmail = company.email;
+        serviceOrders.companyId = company.id;
+        serviceOrders.companyName = company.companyName;
+        serviceOrders.companyProfilePic = company.profilePic;
+        serviceOrders.companyPhoneNumber = company.phoneNo;
       }
 
       const service: Services = await this.servicesRepository.findById(
@@ -108,7 +110,7 @@ export class ServiceOrdersController {
       );
       const appUser: AppUsers = await this.appUsersRepository.findById(
         serviceOrders.userId,
-        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'profilePic', 'phoneNo']},
       );
 
       if (service && appUser) {
@@ -122,10 +124,14 @@ export class ServiceOrdersController {
         }
         serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
         serviceOrders.userEmail = appUser.email;
+        serviceOrders.appUserProfilePic = appUser.profilePic;
+        serviceOrders.appUserPhoneNumber = appUser.phoneNo;
         if (serviceProvider) {
           serviceOrders.serviceProviderName =
             serviceProvider.firstName + ' ' + serviceProvider.lastName;
           serviceOrders.serviceProviderEmail = serviceProvider.email;
+          serviceOrders.serviceProviderPhoneNumber = serviceProvider.phoneNo;
+          serviceOrders.serviceProviderProfilePic = serviceProvider.profilePic
         }
         serviceOrders.taxPercentage = service.salesTax;
         serviceOrders.serviceName = service.serviceName;
@@ -242,28 +248,6 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
-  async getServiceProvider(
-    serviceProviderId: string,
-  ): Promise<ServiceProvider> {
-    let serviceProvider: ServiceProvider = new ServiceProvider();
-    if (serviceProviderId) {
-      serviceProvider = await this.serviceProviderRepository.findById(
-        serviceProviderId,
-        {
-          fields: [
-            'id',
-            'email',
-            'firstName',
-            'lastName',
-            'endpoint',
-            'companyId',
-          ],
-        },
-      );
-    }
-    return serviceProvider;
-  }
-
   @post('/serviceOrders/appUser/createOrder')
   @response(200, {
     description: 'ServiceOrders model instance',
@@ -287,7 +271,7 @@ export class ServiceOrdersController {
       serviceOrders.status = 'LO';
       const appUser: AppUsers = await this.appUsersRepository.findById(
         serviceOrders.userId,
-        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'profilePic', 'phoneNo']},
       );
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
@@ -295,6 +279,8 @@ export class ServiceOrdersController {
       if (service && appUser) {
         serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
         serviceOrders.userEmail = appUser.email;
+        serviceOrders.appUserProfilePic = appUser.profilePic;
+        serviceOrders.appUserPhoneNumber = appUser.phoneNo;
         serviceOrders.taxPercentage = service.salesTax;
         serviceOrders.serviceName = service.serviceName;
         serviceOrders.serviceType = service.serviceType;
@@ -412,8 +398,9 @@ export class ServiceOrdersController {
       try {
         await this.populateStatusDates(serviceOrders);
         if (serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
-          const serviceProvider: ServiceProvider = await this.getServiceProvider(
+          const serviceProvider: ServiceProvider = await this.serviceOrdersUtils.getServiceProvider(
             serviceOrders?.serviceProviderId,
+            this.serviceProviderRepository,
           );
           const company: Company = await this.serviceOrdersUtils.getCompany(
             serviceProvider?.companyId as string,
@@ -421,9 +408,11 @@ export class ServiceOrdersController {
           );
 
           if (company) {
-            serviceOrders.companyEmail = company?.email;
-            serviceOrders.companyId = company?.id;
-            serviceOrders.companyName = company?.companyName;
+            serviceOrders.companyEmail = company.email;
+            serviceOrders.companyId = company.id;
+            serviceOrders.companyName = company.companyName;
+            serviceOrders.companyProfilePic = company.profilePic;
+            serviceOrders.companyPhoneNumber = company.phoneNo;
           }
 
           console.log('Service Provider ', serviceProvider);
@@ -431,6 +420,8 @@ export class ServiceOrdersController {
             serviceOrders.serviceProviderName =
               serviceProvider.firstName + ' ' + serviceProvider.lastName;
             serviceOrders.serviceProviderEmail = serviceProvider.email;
+            serviceOrders.serviceProviderPhoneNumber = serviceProvider.phoneNo;
+            serviceOrders.serviceProviderProfilePic = serviceProvider.profilePic
           }
 
           console.log('Rider Email', dbOrder.serviceProviderEmail);

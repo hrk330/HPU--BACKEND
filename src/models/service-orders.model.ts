@@ -26,12 +26,32 @@ export class ServiceOrders extends Entity {
   @property({
     type: 'string',
   })
+  serviceProviderPhoneNumber?: string;
+
+  @property({
+    type: 'string',
+  })
+  serviceProviderProfilePic?: string;
+
+  @property({
+    type: 'string',
+  })
   userId: string;
 
   @property({
     type: 'string',
   })
   userName: string;
+
+  @property({
+    type: 'string',
+  })
+  appUserPhoneNumber?: string;
+
+  @property({
+    type: 'string',
+  })
+  appUserProfilePic?: string;
 
   @property({
     type: 'string',
@@ -87,6 +107,16 @@ export class ServiceOrders extends Entity {
     type: 'string',
   })
   companyEmail?: string;
+
+  @property({
+    type: 'string',
+  })
+  companyPhoneNumber?: string;
+
+  @property({
+    type: 'string',
+  })
+  companyProfilePic?: string;
 
   @property({
     type: 'string',

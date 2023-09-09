@@ -115,7 +115,7 @@ export class CodeVerificationController {
       verificationKey = verificationRequestObject.userId;
     }
 
-    const verificationCodefilter = {
+    const verificationCodeFilter = {
       where: {
         key: verificationKey,
         code: verificationRequestObject.verificationCode,
@@ -125,7 +125,7 @@ export class CodeVerificationController {
       order: ['createdAt desc'],
     };
     const verificationCodeObject =
-      await this.verificationCodesRepository.findOne(verificationCodefilter);
+      await this.verificationCodesRepository.findOne(verificationCodeFilter);
     if (verificationCodeObject) {
       const currentDateTime = new Date();
       if (
@@ -483,7 +483,7 @@ export class CodeVerificationController {
     return result;
   }
 
-  @post('/appUsers/sendSmsCode', {
+  @post('/codeVerification/sendSmsCode', {
     responses: {
       '200': {
         description: 'User',

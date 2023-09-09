@@ -54,7 +54,7 @@ export class ServiceOrdersUtils {
     if (serviceProviderId) {
       serviceProvider = await serviceProviderRepository.findById(
         serviceProviderId,
-        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'companyId']},
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'companyId', 'profilePic', 'phoneNo']},
       );
     }
     return serviceProvider;
@@ -77,7 +77,7 @@ export class ServiceOrdersUtils {
     try {
       if (companyId) {
         company = await companyRepository.findById(companyId, {
-          fields: ['id', 'email', 'companyName'],
+          fields: ['id', 'email', 'companyName', 'profilePic', 'phoneNo'],
         });
       }
     } catch (e) {
