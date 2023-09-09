@@ -88,10 +88,11 @@ export class ServiceOrdersController {
       order: {},
     };
     try {
-      const serviceProvider: ServiceProvider = await this.serviceOrdersUtils.getServiceProvider(
-        serviceOrders?.serviceProviderId,
-        this.serviceProviderRepository,
-      );
+      const serviceProvider: ServiceProvider =
+        await this.serviceOrdersUtils.getServiceProvider(
+          serviceOrders?.serviceProviderId,
+          this.serviceProviderRepository,
+        );
       const company: Company = await this.serviceOrdersUtils.getCompany(
         serviceProvider?.companyId as string,
         this.companyRepository,
@@ -110,7 +111,17 @@ export class ServiceOrdersController {
       );
       const appUser: AppUsers = await this.appUsersRepository.findById(
         serviceOrders.userId,
-        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'profilePic', 'phoneNo']},
+        {
+          fields: [
+            'id',
+            'email',
+            'firstName',
+            'lastName',
+            'endpoint',
+            'profilePic',
+            'phoneNo',
+          ],
+        },
       );
 
       if (service && appUser) {
@@ -131,7 +142,7 @@ export class ServiceOrdersController {
             serviceProvider.firstName + ' ' + serviceProvider.lastName;
           serviceOrders.serviceProviderEmail = serviceProvider.email;
           serviceOrders.serviceProviderPhoneNumber = serviceProvider.phoneNo;
-          serviceOrders.serviceProviderProfilePic = serviceProvider.profilePic
+          serviceOrders.serviceProviderProfilePic = serviceProvider.profilePic;
         }
         serviceOrders.taxPercentage = service.salesTax;
         serviceOrders.serviceName = service.serviceName;
@@ -271,7 +282,17 @@ export class ServiceOrdersController {
       serviceOrders.status = 'LO';
       const appUser: AppUsers = await this.appUsersRepository.findById(
         serviceOrders.userId,
-        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'profilePic', 'phoneNo']},
+        {
+          fields: [
+            'id',
+            'email',
+            'firstName',
+            'lastName',
+            'endpoint',
+            'profilePic',
+            'phoneNo',
+          ],
+        },
       );
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
@@ -390,18 +411,20 @@ export class ServiceOrdersController {
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
       serviceOrders.serviceOrderId,
     );
-    if ((dbOrder?.status &&
+    if (
+      dbOrder?.status &&
       ['UC', 'SC', 'AC'].indexOf(dbOrder?.status) < 0 &&
       serviceOrders?.status &&
-      ['LO', 'CC', 'OA', 'RA', 'AR', 'ST'].indexOf(serviceOrders.status) >= 0)
+      ['LO', 'CC', 'OA', 'RA', 'AR', 'ST'].indexOf(serviceOrders.status) >= 0
     ) {
       try {
         await this.populateStatusDates(serviceOrders);
         if (serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
-          const serviceProvider: ServiceProvider = await this.serviceOrdersUtils.getServiceProvider(
-            serviceOrders?.serviceProviderId,
-            this.serviceProviderRepository,
-          );
+          const serviceProvider: ServiceProvider =
+            await this.serviceOrdersUtils.getServiceProvider(
+              serviceOrders?.serviceProviderId,
+              this.serviceProviderRepository,
+            );
           const company: Company = await this.serviceOrdersUtils.getCompany(
             serviceProvider?.companyId as string,
             this.companyRepository,
@@ -421,7 +444,8 @@ export class ServiceOrdersController {
               serviceProvider.firstName + ' ' + serviceProvider.lastName;
             serviceOrders.serviceProviderEmail = serviceProvider.email;
             serviceOrders.serviceProviderPhoneNumber = serviceProvider.phoneNo;
-            serviceOrders.serviceProviderProfilePic = serviceProvider.profilePic
+            serviceOrders.serviceProviderProfilePic =
+              serviceProvider.profilePic;
           }
 
           console.log('Rider Email', dbOrder.serviceProviderEmail);
@@ -440,11 +464,18 @@ export class ServiceOrdersController {
             );
           }
           console.log('User Email 4', dbOrder.userEmail);
-
+          console.log(
+            'Rider Name From DBORDER = ',
+            dbOrder.serviceProviderName,
+          );
+          console.log(
+            'Rider name from service orders = ',
+            serviceOrders.serviceProviderName,
+          );
           if (dbOrder.userEmail) {
             sendCustomMail(
               dbOrder.userEmail,
-              `Order Accepted by ${dbOrder.serviceProviderName}`,
+              `Order Accepted by ${serviceOrders.serviceProviderName}`,
               dbOrder.userName,
               dbOrder.serviceOrderId,
               dbOrder.serviceName as string,
@@ -457,7 +488,7 @@ export class ServiceOrdersController {
           if (dbOrder.companyEmail && dbOrder.serviceProviderId) {
             sendCustomMail(
               dbOrder.companyEmail,
-              `Order Containing this ID (${dbOrder.serviceOrderId}) Accepted by ${dbOrder.serviceProviderName}`,
+              `Order Containing this ID (${dbOrder.serviceOrderId}) Accepted by ${serviceOrders.serviceProviderName}`,
               dbOrder.companyName as string,
               dbOrder.serviceOrderId,
               dbOrder.serviceName as string,
@@ -627,14 +658,14 @@ export class ServiceOrdersController {
         (orderRequest?.serviceOrder?.paymentMethod === 'CASH' ||
           orderRequest?.serviceOrder?.paymentMethod === 'CARD')
       ) {
-        const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
-          orderRequest?.serviceOrder?.serviceOrderId,
-        );
+        const dbOrder: ServiceOrders =
+          await this.serviceOrdersRepository.findById(
+            orderRequest?.serviceOrder?.serviceOrderId,
+          );
         if (
           dbOrder?.status === 'CO' &&
           orderRequest?.serviceOrder?.status === 'PI'
         ) {
-
           orderRequest.payment.payerId = dbOrder.userId;
           orderRequest.payment.receiverId = dbOrder.serviceProviderId;
           orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
@@ -693,8 +724,6 @@ export class ServiceOrdersController {
     }
     return JSON.stringify(result);
   }
-
-
 
   @post('/serviceOrders/appUser/processCardPayment/failure/{serviceOrderId}')
   @response(200, {
@@ -867,9 +896,10 @@ export class ServiceOrdersController {
       order: {},
     };
     if (orderRequest?.serviceOrder?.serviceOrderId) {
-      const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
-        orderRequest?.serviceOrder?.serviceOrderId,
-      );
+      const dbOrder: ServiceOrders =
+        await this.serviceOrdersRepository.findById(
+          orderRequest?.serviceOrder?.serviceOrderId,
+        );
       if (
         dbOrder?.status === 'PI' &&
         orderRequest?.serviceOrder?.status === 'PC'
@@ -977,6 +1007,67 @@ export class ServiceOrdersController {
         if (serviceOrders?.status === 'LO' || serviceOrders?.status === 'OA') {
           title = 'Order Alert';
           body = 'New order has been assigned.';
+          console.log('Company Email', serviceOrders.companyEmail);
+          if (serviceOrders.companyEmail) {
+            sendCustomMail(
+              serviceOrders.companyEmail,
+              'New Order Assignment By HPU',
+              serviceOrders.companyName as string,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
+          console.log('Rider Email', serviceOrders.serviceProviderEmail);
+          console.log('Rider Name', serviceOrders.serviceProviderName);
+          console.log('Company Name', serviceOrders.companyName);
+          if (
+            serviceOrders.serviceProviderEmail &&
+            serviceOrders.companyEmail
+          ) {
+            sendCustomMail(
+              serviceOrders.serviceProviderEmail,
+              `New Order Assignment by ${serviceOrders.companyName}`,
+              serviceOrders.serviceProviderName as string,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
+
+          if (
+            serviceOrders.serviceProviderEmail &&
+            !serviceOrders.companyEmail
+          ) {
+            sendCustomMail(
+              serviceOrders.serviceProviderEmail,
+              `New Order Assignment by HPU`,
+              serviceOrders.serviceProviderName as string,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
+
+          console.log('User Email', serviceOrders.userEmail);
+          if (serviceOrders.userEmail) {
+            sendCustomMail(
+              serviceOrders.userEmail,
+              'Order Confirmation',
+              serviceOrders.userName,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
         } else if (serviceOrders?.status === 'CO') {
           title = 'Order Completed';
           body = 'Order has been completed.';
@@ -1000,61 +1091,6 @@ export class ServiceOrdersController {
           body,
           serviceOrders,
         );
-        console.log('Company Email', serviceOrders.companyEmail);
-        if (serviceOrders.companyEmail) {
-          sendCustomMail(
-            serviceOrders.companyEmail,
-            'New Order Assignment By HPU',
-            serviceOrders.companyName as string,
-            serviceOrders.serviceOrderId,
-            serviceOrders.serviceName as string,
-            'orderCreate',
-            undefined,
-            serviceOrders.netAmount,
-          );
-        }
-        console.log('Rider Email', serviceOrders.serviceProviderEmail);
-        console.log('Rider Name', serviceOrders.serviceProviderName);
-        console.log('Company Name', serviceOrders.companyName);
-        if (serviceOrders.serviceProviderEmail && serviceOrders.companyEmail) {
-          sendCustomMail(
-            serviceOrders.serviceProviderEmail,
-            `New Order Assignment by ${serviceOrders.companyName}`,
-            serviceOrders.serviceProviderName as string,
-            serviceOrders.serviceOrderId,
-            serviceOrders.serviceName as string,
-            'orderCreate',
-            undefined,
-            serviceOrders.netAmount,
-          );
-        }
-
-        if (serviceOrders.serviceProviderEmail && !serviceOrders.companyEmail) {
-          sendCustomMail(
-            serviceOrders.serviceProviderEmail,
-            `New Order Assignment by HPU`,
-            serviceOrders.serviceProviderName as string,
-            serviceOrders.serviceOrderId,
-            serviceOrders.serviceName as string,
-            'orderCreate',
-            undefined,
-            serviceOrders.netAmount,
-          );
-        }
-
-        console.log('User Email', serviceOrders.userEmail);
-        if (serviceOrders.userEmail) {
-          sendCustomMail(
-            serviceOrders.userEmail,
-            'Order Confirmation',
-            serviceOrders.userName,
-            serviceOrders.serviceOrderId,
-            serviceOrders.serviceName as string,
-            'orderCreate',
-            undefined,
-            serviceOrders.netAmount,
-          );
-        }
       }
     }
   }
