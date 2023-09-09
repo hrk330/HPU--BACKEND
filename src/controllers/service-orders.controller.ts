@@ -445,46 +445,46 @@ export class ServiceOrdersController {
             serviceOrders.serviceProviderEmail = serviceProvider.email;
           }
 
-          console.log('Rider Email', serviceOrders.serviceProviderEmail);
-          console.log('Rider Name', serviceOrders.serviceProviderName);
-          console.log('Company Name', serviceOrders.companyName);
-          if (serviceOrders.serviceProviderEmail) {
+          console.log('Rider Email', dbOrder.serviceProviderEmail);
+          console.log('Rider Name', dbOrder.serviceProviderName);
+          console.log('Company Name', dbOrder.companyName);
+          if (dbOrder.serviceProviderEmail) {
             sendCustomMail(
-              serviceOrders.serviceProviderEmail,
+              dbOrder.serviceProviderEmail,
               `Current Order Details`,
-              serviceOrders.serviceProviderName as string,
-              serviceOrders.serviceOrderId,
-              serviceOrders.serviceName as string,
+              dbOrder.serviceProviderName as string,
+              dbOrder.serviceOrderId,
+              dbOrder.serviceName as string,
               'orderCreate',
               undefined,
-              serviceOrders.netAmount,
+              dbOrder.netAmount,
             );
           }
-          console.log('User Email', serviceOrders.userEmail);
+          console.log('User Email 4', dbOrder.userEmail);
 
-          if (serviceOrders.userEmail) {
+          if (dbOrder.userEmail) {
             sendCustomMail(
-              serviceOrders.userEmail,
-              `Order Accepted by ${serviceOrders.serviceProviderName}`,
-              serviceOrders.userName,
-              serviceOrders.serviceOrderId,
-              serviceOrders.serviceName as string,
+              dbOrder.userEmail,
+              `Order Accepted by ${dbOrder.serviceProviderName}`,
+              dbOrder.userName,
+              dbOrder.serviceOrderId,
+              dbOrder.serviceName as string,
               'orderCreate',
               undefined,
-              serviceOrders.netAmount,
+              dbOrder.netAmount,
             );
           }
 
-          if (serviceOrders.companyEmail && serviceOrders.serviceProviderId) {
+          if (dbOrder.companyEmail && dbOrder.serviceProviderId) {
             sendCustomMail(
-              serviceOrders.companyEmail,
-              `Order Containing this ID (${serviceOrders.serviceOrderId}) Accepted by ${serviceOrders.serviceProviderName}`,
-              serviceOrders.companyName as string,
-              serviceOrders.serviceOrderId,
-              serviceOrders.serviceName as string,
+              dbOrder.companyEmail,
+              `Order Containing this ID (${dbOrder.serviceOrderId}) Accepted by ${dbOrder.serviceProviderName}`,
+              dbOrder.companyName as string,
+              dbOrder.serviceOrderId,
+              dbOrder.serviceName as string,
               'orderCreate',
               undefined,
-              serviceOrders.netAmount,
+              dbOrder.netAmount,
             );
           }
         }
