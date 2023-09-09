@@ -184,25 +184,6 @@ export class MenusController {
     }
   }
 
-  @patch('/menus')
-  @response(200, {
-    description: 'Menus PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Menus, {partial: true}),
-        },
-      },
-    })
-    menus: Menus,
-    @param.where(Menus) where?: Where<Menus>,
-  ): Promise<Count> {
-    return this.menusRepository.updateAll(menus, where);
-  }
-
   @get('/menus/{id}')
   @response(200, {
     description: 'Menus model instance',

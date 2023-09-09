@@ -74,25 +74,6 @@ export class ServicesController {
     return this.servicesRepository.find(filter);
   }
 
-  @patch('/services')
-  @response(200, {
-    description: 'Services PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Services, {partial: true}),
-        },
-      },
-    })
-    services: Services,
-    @param.where(Services) where?: Where<Services>,
-  ): Promise<Count> {
-    return this.servicesRepository.updateAll(services, where);
-  }
-
   @get('/services/getService/{id}')
   @response(200, {
     description: 'Services model instance',

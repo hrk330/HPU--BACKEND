@@ -145,25 +145,6 @@ export class AccountsController {
     return JSON.stringify(result);
   }
 
-  @patch('/accounts')
-  @response(200, {
-    description: 'Account PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Account, {partial: true}),
-        },
-      },
-    })
-    account: Account,
-    @param.where(Account) where?: Where<Account>,
-  ): Promise<Count> {
-    return this.accountRepository.updateAll(account, where);
-  }
-
   @get('/accounts/{id}')
   @response(200, {
     description: 'Account model instance',

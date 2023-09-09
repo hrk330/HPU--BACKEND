@@ -76,25 +76,6 @@ export class CrashReportsController {
     return this.crashReportsRepository.find(filter);
   }
 
-  @patch('/crashReports')
-  @response(200, {
-    description: 'CrashReports PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(CrashReports, {partial: true}),
-        },
-      },
-    })
-    crashReports: CrashReports,
-    @param.where(CrashReports) where?: Where<CrashReports>,
-  ): Promise<Count> {
-    return this.crashReportsRepository.updateAll(crashReports, where);
-  }
-
   @get('/crashReports/{id}')
   @response(200, {
     description: 'CrashReports model instance',

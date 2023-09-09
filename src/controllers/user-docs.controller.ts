@@ -11,7 +11,6 @@ import {
   param,
   get,
   getModelSchemaRef,
-  patch,
   put,
   del,
   requestBody,
@@ -72,25 +71,6 @@ export class UserDocsController {
     @param.filter(UserDocs) filter?: Filter<UserDocs>,
   ): Promise<UserDocs[]> {
     return this.userDocsRepository.find(filter);
-  }
-
-  @patch('/userDocs')
-  @response(200, {
-    description: 'UserDocs PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(UserDocs, {partial: true}),
-        },
-      },
-    })
-    userDocs: UserDocs,
-    @param.where(UserDocs) where?: Where<UserDocs>,
-  ): Promise<Count> {
-    return this.userDocsRepository.updateAll(userDocs, where);
   }
 
   @get('/userDocs/{id}')

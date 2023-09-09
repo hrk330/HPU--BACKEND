@@ -283,6 +283,11 @@ export class ServiceOrders extends Entity {
   additionalNote?: string;
 
   @property({
+    type: 'string',
+  })
+  cancellationReason?: string;
+
+  @property({
     type: 'date',
     default: '$now',
   })

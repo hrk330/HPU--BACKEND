@@ -82,7 +82,7 @@ export class ServicesProviderController {
     };
     try {
       if (
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
           serviceProvider.email,
         )
       ) {
@@ -148,7 +148,7 @@ export class ServicesProviderController {
     let result = {code: 5, msg: 'User registeration failed.', user: {}};
     try {
       if (
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
           serviceProvider.email,
         )
       ) {
@@ -391,24 +391,20 @@ export class ServicesProviderController {
   async checkServicesExist(
     servicesArray: Array<string>,
   ): Promise<Array<Services>> {
-    const finalServicesArray: Array<Services> =
-      await this.servicesRepository.find({
-        where: {serviceId: {inq: servicesArray}},
-        fields: ['serviceId', 'serviceName', 'serviceType', 'vehicleType'],
-      });
-    return finalServicesArray;
+    return this.servicesRepository.find({
+      where: {serviceId: {inq: servicesArray}},
+      fields: ['serviceId', 'serviceName', 'serviceType', 'vehicleType'],
+    });
   }
 
   async checkServiceProviderServiceExist(
     serviceId: string,
     userId: string,
   ): Promise<Array<ServiceProviderServices>> {
-    const serviceProviderServiceArray: Array<ServiceProviderServices> =
-      await this.serviceProviderServicesRepository.find({
-        where: {serviceId: serviceId, userId: userId},
-        fields: ['serviceId'],
-      });
-    return serviceProviderServiceArray;
+    return this.serviceProviderServicesRepository.find({
+      where: {serviceId: serviceId, userId: userId},
+      fields: ['serviceId'],
+    });
   }
 
   @post('/serviceProvider/login', {
@@ -810,25 +806,6 @@ export class ServicesProviderController {
     @param.filter(ServiceProvider) filter?: Filter<ServiceProvider>,
   ): Promise<ServiceProvider[]> {
     return this.serviceProviderRepository.find(filter);
-  }
-
-  @patch('/serviceProvider')
-  @response(200, {
-    description: 'ServiceProvider PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(ServiceProvider, {partial: true}),
-        },
-      },
-    })
-    appUsers: ServiceProvider,
-    @param.where(ServiceProvider) where?: Where<ServiceProvider>,
-  ): Promise<Count> {
-    return this.serviceProviderRepository.updateAll(appUsers, where);
   }
 
   @get('/serviceProvider/{id}')
