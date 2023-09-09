@@ -442,6 +442,49 @@ export class ServiceOrdersController {
               serviceProvider.firstName + ' ' + serviceProvider.lastName;
             serviceOrders.serviceProviderEmail = serviceProvider.email;
           }
+
+          console.log('Rider Email', serviceOrders.serviceProviderEmail);
+          console.log('Rider Name', serviceOrders.serviceProviderName);
+          console.log('Company Name', serviceOrders.companyName);
+          if (serviceOrders.serviceProviderEmail) {
+            sendCustomMail(
+              serviceOrders.serviceProviderEmail,
+              `Current Order Details`,
+              serviceOrders.serviceProviderName as string,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
+          console.log('User Email', serviceOrders.userEmail);
+
+          if (serviceOrders.userEmail) {
+            sendCustomMail(
+              serviceOrders.userEmail,
+              `Order Accepted by ${serviceOrders.serviceProviderName}`,
+              serviceOrders.userName,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
+
+          if (serviceOrders.companyEmail && serviceOrders.serviceProviderId) {
+            sendCustomMail(
+              serviceOrders.companyEmail,
+              `Order Containing this ID (${serviceOrders.serviceOrderId}) Accepted by ${serviceOrders.serviceProviderName}`,
+              serviceOrders.companyName as string,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
         }
         await this.serviceOrdersRepository.updateById(
           serviceOrders.serviceOrderId,
