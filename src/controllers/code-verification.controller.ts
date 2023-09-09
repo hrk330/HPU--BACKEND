@@ -185,7 +185,7 @@ export class CodeVerificationController {
     if(codeVerificationResponse) {
 	    if (codeVerificationResponse.code === 0) {
         let user: AppUsers| ServiceProvider| undefined = undefined;
-        if(verificationRequestObject.userType === "A") {
+        if(verificationRequestObject.userType === "U") {
           await this.appUsersRepository.updateById(
             verificationRequestObject.userId,
             _.pick(verificationRequestObject, 'phoneNo'),

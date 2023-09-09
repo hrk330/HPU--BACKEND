@@ -88,23 +88,6 @@ export class ServiceOrdersController {
       order: {},
     };
     try {
-      const serviceProvider: ServiceProvider =
-        await this.serviceOrdersUtils.getServiceProvider(
-          serviceOrders?.serviceProviderId,
-          this.serviceProviderRepository,
-        );
-      const company: Company = await this.serviceOrdersUtils.getCompany(
-        serviceProvider?.companyId as string,
-        this.companyRepository,
-      );
-
-      if (company) {
-        serviceOrders.companyEmail = company.email;
-        serviceOrders.companyId = company.id;
-        serviceOrders.companyName = company.companyName;
-        serviceOrders.companyProfilePic = company.profilePic;
-        serviceOrders.companyPhoneNumber = company.phoneNo;
-      }
 
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
@@ -125,25 +108,13 @@ export class ServiceOrdersController {
       );
 
       if (service && appUser) {
-        if (
-          serviceOrders?.serviceProviderId &&
-          !(service.serviceType === 'Done For You')
-        ) {
-          serviceOrders.status = 'OA';
-        } else {
-          serviceOrders.status = 'LO';
-        }
+        this.serviceOrdersUtils.populateAdminCreatedOrderStatus(service.serviceType, serviceOrders);
+        await this.serviceOrdersUtils.populateServiceProviderAndCompanyDetailsInOrder(serviceOrders, this.serviceProviderRepository, this.companyRepository);
         serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
         serviceOrders.userEmail = appUser.email;
         serviceOrders.appUserProfilePic = appUser.profilePic;
         serviceOrders.appUserPhoneNumber = appUser.phoneNo;
-        if (serviceProvider) {
-          serviceOrders.serviceProviderName =
-            serviceProvider.firstName + ' ' + serviceProvider.lastName;
-          serviceOrders.serviceProviderEmail = serviceProvider.email;
-          serviceOrders.serviceProviderPhoneNumber = serviceProvider.phoneNo;
-          serviceOrders.serviceProviderProfilePic = serviceProvider.profilePic;
-        }
+
         serviceOrders.taxPercentage = service.salesTax;
         serviceOrders.serviceName = service.serviceName;
         serviceOrders.serviceType = service.serviceType;
@@ -418,7 +389,7 @@ export class ServiceOrdersController {
       ['LO', 'CC', 'OA', 'RA', 'AR', 'ST'].indexOf(serviceOrders.status) >= 0
     ) {
       try {
-        await this.populateStatusDates(serviceOrders);
+        await this.serviceOrdersUtils.populateStatusDates(serviceOrders);
         if (serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
           const serviceProvider: ServiceProvider =
             await this.serviceOrdersUtils.getServiceProvider(
@@ -548,7 +519,7 @@ export class ServiceOrdersController {
       orderRequest?.serviceOrder?.serviceOrderId
     ) {
       try {
-        await this.populateStatusDates(orderRequest.serviceOrder);
+        await this.serviceOrdersUtils.populateStatusDates(orderRequest.serviceOrder);
 
         await this.serviceOrdersRepository.updateById(
           orderRequest.serviceOrder.serviceOrderId,
@@ -606,7 +577,7 @@ export class ServiceOrdersController {
         orderRequest?.serviceOrder?.status === 'CO' &&
         orderRequest?.serviceOrder?.serviceOrderId
       ) {
-        await this.populateStatusDates(orderRequest.serviceOrder);
+        await this.serviceOrdersUtils.populateStatusDates(orderRequest.serviceOrder);
 
         await this.serviceOrdersRepository.updateById(
           orderRequest.serviceOrder.serviceOrderId,
@@ -671,7 +642,7 @@ export class ServiceOrdersController {
           orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
           orderRequest.payment.paymentStatus = 'L';
           await this.paymentRepository.create(orderRequest.payment);
-          await this.populateStatusDates(orderRequest.serviceOrder);
+          await this.serviceOrdersUtils.populateStatusDates(orderRequest.serviceOrder);
           const serviceProviderAccount: Account =
             await this.serviceProviderRepository
               .account(dbOrder.serviceProviderId)
@@ -800,7 +771,7 @@ export class ServiceOrdersController {
           await this.paymentRepository.create(paymentObj);
           dbOrder.paymentType = paymentObj.paymentType;
           dbOrder.status = 'PC';
-          await this.populateStatusDates(dbOrder);
+          await this.serviceOrdersUtils.populateStatusDates(dbOrder);
           await this.serviceOrdersRepository.updateById(
             serviceOrderId,
             dbOrder,
@@ -905,7 +876,7 @@ export class ServiceOrdersController {
         orderRequest?.serviceOrder?.status === 'PC'
       ) {
         try {
-          await this.populateStatusDates(orderRequest.serviceOrder);
+          await this.serviceOrdersUtils.populateStatusDates(orderRequest.serviceOrder);
 
           const paymentObj: Payment | null =
             await this.paymentRepository.findOne({
@@ -1095,26 +1066,6 @@ export class ServiceOrdersController {
     }
   }
 
-  async populateStatusDates(serviceOrders: ServiceOrders): Promise<void> {
-    const currentDateTime = new Date();
-    if (serviceOrders) {
-      if (serviceOrders.status === 'OA') {
-        serviceOrders.acceptedAt = currentDateTime;
-      } else if (serviceOrders.status === 'AR') {
-        serviceOrders.arrivedAt = currentDateTime;
-      } else if (serviceOrders.status === 'CC') {
-        serviceOrders.confirmedAt = currentDateTime;
-      } else if (serviceOrders.status === 'ST') {
-        serviceOrders.startedAt = currentDateTime;
-      } else if (serviceOrders.status === 'PC') {
-        serviceOrders.payedAt = currentDateTime;
-      } else if (serviceOrders?.status === 'CO') {
-        serviceOrders.completedAt = currentDateTime;
-      }
-    }
-    serviceOrders.updatedAt = currentDateTime;
-  }
-
   @post('/serviceOrders/serviceProvider/rateOrder')
   @response(200, {
     description: 'ServiceOrders model instance',
@@ -1215,7 +1166,7 @@ export class ServiceOrdersController {
         dbOrder.serviceProviderId + '' === serviceOrders.serviceProviderId + ''
       ) {
         try {
-          await this.populateStatusDates(serviceOrders);
+          await this.serviceOrdersUtils.populateStatusDates(serviceOrders);
           await this.serviceOrdersRepository.updateById(
             serviceOrders.serviceOrderId,
             serviceOrders,
@@ -1270,7 +1221,7 @@ export class ServiceOrdersController {
         'UC'.indexOf(serviceOrders.status) >= 0
       ) {
         try {
-          await this.populateStatusDates(serviceOrders);
+          await this.serviceOrdersUtils.populateStatusDates(serviceOrders);
           await this.serviceOrdersRepository.updateById(
             serviceOrders.serviceOrderId,
             serviceOrders,
@@ -1323,7 +1274,7 @@ export class ServiceOrdersController {
         serviceOrders?.status === 'AC'
       ) {
         try {
-          await this.populateStatusDates(serviceOrders);
+          await this.serviceOrdersUtils.populateStatusDates(serviceOrders);
           await this.serviceOrdersRepository.updateById(
             serviceOrders.serviceOrderId,
             serviceOrders,

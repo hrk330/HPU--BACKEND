@@ -1,4 +1,4 @@
-import {Company, ServiceProvider, Transaction, TransactionResponse} from '../models';
+import {Company, ServiceOrders, ServiceProvider, Transaction, TransactionResponse} from '../models';
 import {CompanyRepository, ServiceProviderRepository, TransactionRepository} from '../repositories';
 
 export class ServiceOrdersUtils {
@@ -84,5 +84,73 @@ export class ServiceOrdersUtils {
       console.log(e);
     }
     return company;
+  }
+
+  async populateCompanyDetailsInOrder(companyId: string, serviceOrder: Omit<ServiceOrders, 'serviceOrderId'>, companyRepository: CompanyRepository): Promise<void> {
+    if(companyId && serviceOrder && companyRepository) {
+      const company: Company = await this.getCompany(
+        companyId,
+        companyRepository,
+      );
+
+      if (company?.id) {
+        serviceOrder.companyEmail = company.email;
+        serviceOrder.companyId = company.id;
+        serviceOrder.companyName = company.companyName;
+        serviceOrder.companyProfilePic = company.profilePic;
+        serviceOrder.companyPhoneNumber = company.phoneNo;
+      }
+    }
+  }
+
+  async populateServiceProviderAndCompanyDetailsInOrder(serviceOrder: Omit<ServiceOrders, 'serviceOrderId'>, serviceProviderRepository: ServiceProviderRepository, companyRepository: CompanyRepository): Promise<void> {
+    if(serviceOrder && ServiceProviderRepository) {
+      const serviceProvider: ServiceProvider =
+        await this.getServiceProvider(
+          serviceOrder.serviceProviderId,
+          serviceProviderRepository,
+        );
+      if (serviceProvider?.id) {
+        serviceOrder.serviceProviderName =
+          serviceProvider.firstName + ' ' + serviceProvider.lastName;
+        serviceOrder.serviceProviderEmail = serviceProvider.email;
+        serviceOrder.serviceProviderPhoneNumber = serviceProvider.phoneNo;
+        serviceOrder.serviceProviderProfilePic = serviceProvider.profilePic;
+        if (serviceProvider.companyId && companyRepository) {
+          await this.populateCompanyDetailsInOrder(serviceProvider.companyId, serviceOrder, companyRepository);
+        }
+      }
+    }
+  }
+
+  populateAdminCreatedOrderStatus(serviceType: string, serviceOrder: Omit<ServiceOrders, 'serviceOrderId'>) {
+    if (
+      serviceOrder?.serviceProviderId &&
+      !(serviceType === 'Done For You')
+    ) {
+      serviceOrder.status = 'OA';
+    } else {
+      serviceOrder.status = 'LO';
+    }
+  }
+
+  async populateStatusDates(serviceOrders: ServiceOrders): Promise<void> {
+    const currentDateTime = new Date();
+    if (serviceOrders) {
+      if (serviceOrders.status === 'OA') {
+        serviceOrders.acceptedAt = currentDateTime;
+      } else if (serviceOrders.status === 'AR') {
+        serviceOrders.arrivedAt = currentDateTime;
+      } else if (serviceOrders.status === 'CC') {
+        serviceOrders.confirmedAt = currentDateTime;
+      } else if (serviceOrders.status === 'ST') {
+        serviceOrders.startedAt = currentDateTime;
+      } else if (serviceOrders.status === 'PC') {
+        serviceOrders.payedAt = currentDateTime;
+      } else if (serviceOrders?.status === 'CO') {
+        serviceOrders.completedAt = currentDateTime;
+      }
+    }
+    serviceOrders.updatedAt = currentDateTime;
   }
 }
