@@ -448,9 +448,9 @@ export class ServiceOrdersController {
               serviceProvider.profilePic;
           }
 
-          console.log('Rider Email', dbOrder.serviceProviderEmail);
-          console.log('Rider Name', dbOrder.serviceProviderName);
-          console.log('Company Name', dbOrder.companyName);
+          console.log('Rider Email', serviceOrders.serviceProviderEmail);
+          console.log('Rider Name', serviceOrders.serviceProviderName);
+          console.log('Company Name', serviceOrders.companyName);
           if (dbOrder.serviceProviderEmail) {
             sendCustomMail(
               dbOrder.serviceProviderEmail,
