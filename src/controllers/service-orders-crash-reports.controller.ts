@@ -98,9 +98,7 @@ export class ServiceOrdersCrashReportsController {
       crashReport: {},
     };
     try {
-      const crashReport: CrashReports = await this.serviceOrdersRepository
-        .crashReport(id)
-        .get();
+      const crashReport: CrashReports| null = await this.crashReportsRepository.findOne({where: {serviceOrderId: id}});
       if (crashReport) {
         result.code = 5;
         result.msg = 'Crash report already exists.';

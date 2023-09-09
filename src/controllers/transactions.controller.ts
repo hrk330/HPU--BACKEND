@@ -76,25 +76,6 @@ export class TransactionsController {
     return this.transactionRepository.find(filter);
   }
 
-  @patch('/transactions')
-  @response(200, {
-    description: 'Transaction PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Transaction, {partial: true}),
-        },
-      },
-    })
-    transaction: Transaction,
-    @param.where(Transaction) where?: Where<Transaction>,
-  ): Promise<Count> {
-    return this.transactionRepository.updateAll(transaction, where);
-  }
-
   @get('/transactions/{id}')
   @response(200, {
     description: 'Transaction model instance',

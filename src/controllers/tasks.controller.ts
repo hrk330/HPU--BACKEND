@@ -71,25 +71,6 @@ export class TasksController {
     return this.tasksRepository.find(filter);
   }
 
-  @patch('/tasks')
-  @response(200, {
-    description: 'Tasks PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Tasks, {partial: true}),
-        },
-      },
-    })
-    tasks: Tasks,
-    @param.where(Tasks) where?: Where<Tasks>,
-  ): Promise<Count> {
-    return this.tasksRepository.updateAll(tasks, where);
-  }
-
   @get('/tasks/{id}')
   @response(200, {
     description: 'Tasks model instance',

@@ -370,25 +370,6 @@ export class AdminUsersController {
     return dbAdminUsers;
   }
 
-  @patch('/adminUsers')
-  @response(200, {
-    description: 'AdminUsers PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(AdminUsers, {partial: true}),
-        },
-      },
-    })
-    adminUsers: AdminUsers,
-    @param.where(AdminUsers) where?: Where<AdminUsers>,
-  ): Promise<Count> {
-    return this.adminUsersRepository.updateAll(adminUsers, where);
-  }
-
   @get('/adminUsers/getAdminUser/{id}')
   @response(200, {
     description: 'AdminUsers model instance',

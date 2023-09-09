@@ -11,7 +11,6 @@ import {
   get,
   getModelSchemaRef,
   param,
-  patch,
   post,
   put,
   requestBody,
@@ -179,25 +178,6 @@ export class RolesController {
     return this.rolesRepository.find({
       fields: ['roleId', 'roleName', 'isActive'],
     });
-  }
-
-  @patch('/roles')
-  @response(200, {
-    description: 'Roles PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Roles, {partial: true}),
-        },
-      },
-    })
-    roles: Roles,
-    @param.where(Roles) where?: Where<Roles>,
-  ): Promise<Count> {
-    return this.rolesRepository.updateAll(roles, where);
   }
 
   @get('/roles/{id}')

@@ -27,7 +27,6 @@ import {
   ServiceOrders,
   ServiceProvider,
   Services,
-  Transaction,
   TransactionResponse,
 } from '../models';
 import {
@@ -41,9 +40,11 @@ import {
   TransactionRepository,
 } from '../repositories';
 import {sendCustomMail, sendMessage} from '../services';
+import {ServiceOrdersUtils} from '../utils/service-orders.utils';
 //import _ from 'lodash';
 
 export class ServiceOrdersController {
+  private serviceOrdersUtils: ServiceOrdersUtils = new ServiceOrdersUtils();
   constructor(
     @repository(ServiceOrdersRepository)
     public serviceOrdersRepository: ServiceOrdersRepository,
@@ -87,17 +88,21 @@ export class ServiceOrdersController {
       order: {},
     };
     try {
-      const serviceProvider: ServiceProvider = await this.getServiceProvider(
+      const serviceProvider: ServiceProvider = await this.serviceOrdersUtils.getServiceProvider(
         serviceOrders?.serviceProviderId,
+        this.serviceProviderRepository,
       );
-      const company: Company = await this.getCompany(
+      const company: Company = await this.serviceOrdersUtils.getCompany(
         serviceProvider?.companyId as string,
+        this.companyRepository,
       );
 
       if (company) {
-        serviceOrders.companyEmail = company?.email;
-        serviceOrders.companyId = company?.id;
-        serviceOrders.companyName = company?.companyName;
+        serviceOrders.companyEmail = company.email;
+        serviceOrders.companyId = company.id;
+        serviceOrders.companyName = company.companyName;
+        serviceOrders.companyProfilePic = company.profilePic;
+        serviceOrders.companyPhoneNumber = company.phoneNo;
       }
 
       const service: Services = await this.servicesRepository.findById(
@@ -105,7 +110,7 @@ export class ServiceOrdersController {
       );
       const appUser: AppUsers = await this.appUsersRepository.findById(
         serviceOrders.userId,
-        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'profilePic', 'phoneNo']},
       );
 
       if (service && appUser) {
@@ -119,10 +124,14 @@ export class ServiceOrdersController {
         }
         serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
         serviceOrders.userEmail = appUser.email;
+        serviceOrders.appUserProfilePic = appUser.profilePic;
+        serviceOrders.appUserPhoneNumber = appUser.phoneNo;
         if (serviceProvider) {
           serviceOrders.serviceProviderName =
             serviceProvider.firstName + ' ' + serviceProvider.lastName;
           serviceOrders.serviceProviderEmail = serviceProvider.email;
+          serviceOrders.serviceProviderPhoneNumber = serviceProvider.phoneNo;
+          serviceOrders.serviceProviderProfilePic = serviceProvider.profilePic
         }
         serviceOrders.taxPercentage = service.salesTax;
         serviceOrders.serviceName = service.serviceName;
@@ -239,42 +248,6 @@ export class ServiceOrdersController {
     return JSON.stringify(result);
   }
 
-  async getCompany(companyId: string): Promise<Company> {
-    let company: Company = new Company();
-    try {
-      if (companyId) {
-        company = await this.companyRepository.findById(companyId, {
-          fields: ['id', 'email', 'companyName'],
-        });
-      }
-    } catch (e) {
-      console.log(e);
-    }
-    return company;
-  }
-
-  async getServiceProvider(
-    serviceProviderId: string,
-  ): Promise<ServiceProvider> {
-    let serviceProvider: ServiceProvider = new ServiceProvider();
-    if (serviceProviderId) {
-      serviceProvider = await this.serviceProviderRepository.findById(
-        serviceProviderId,
-        {
-          fields: [
-            'id',
-            'email',
-            'firstName',
-            'lastName',
-            'endpoint',
-            'companyId',
-          ],
-        },
-      );
-    }
-    return serviceProvider;
-  }
-
   @post('/serviceOrders/appUser/createOrder')
   @response(200, {
     description: 'ServiceOrders model instance',
@@ -298,7 +271,7 @@ export class ServiceOrdersController {
       serviceOrders.status = 'LO';
       const appUser: AppUsers = await this.appUsersRepository.findById(
         serviceOrders.userId,
-        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint']},
+        {fields: ['id', 'email', 'firstName', 'lastName', 'endpoint', 'profilePic', 'phoneNo']},
       );
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
@@ -306,6 +279,8 @@ export class ServiceOrdersController {
       if (service && appUser) {
         serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
         serviceOrders.userEmail = appUser.email;
+        serviceOrders.appUserProfilePic = appUser.profilePic;
+        serviceOrders.appUserPhoneNumber = appUser.phoneNo;
         serviceOrders.taxPercentage = service.salesTax;
         serviceOrders.serviceName = service.serviceName;
         serviceOrders.serviceType = service.serviceType;
@@ -415,27 +390,29 @@ export class ServiceOrdersController {
     let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
       serviceOrders.serviceOrderId,
     );
-    if (
-      (dbOrder?.status &&
-        ['UC', 'SC', 'AC'].indexOf(dbOrder?.status) < 0 &&
-        serviceOrders &&
-        !serviceOrders.status) ||
-      (serviceOrders?.status &&
-        ['LO', 'CC', 'OA', 'RA', 'AR', 'ST'].indexOf(serviceOrders.status) >= 0)
+    if ((dbOrder?.status &&
+      ['UC', 'SC', 'AC'].indexOf(dbOrder?.status) < 0 &&
+      serviceOrders?.status &&
+      ['LO', 'CC', 'OA', 'RA', 'AR', 'ST'].indexOf(serviceOrders.status) >= 0)
     ) {
       try {
         await this.populateStatusDates(serviceOrders);
         if (serviceOrders.serviceProviderId && serviceOrders?.status === 'OA') {
-          const serviceProvider: ServiceProvider =
-            await this.getServiceProvider(serviceOrders?.serviceProviderId);
-          const company: Company = await this.getCompany(
+          const serviceProvider: ServiceProvider = await this.serviceOrdersUtils.getServiceProvider(
+            serviceOrders?.serviceProviderId,
+            this.serviceProviderRepository,
+          );
+          const company: Company = await this.serviceOrdersUtils.getCompany(
             serviceProvider?.companyId as string,
+            this.companyRepository,
           );
 
           if (company) {
-            serviceOrders.companyEmail = company?.email;
-            serviceOrders.companyId = company?.id;
-            serviceOrders.companyName = company?.companyName;
+            serviceOrders.companyEmail = company.email;
+            serviceOrders.companyId = company.id;
+            serviceOrders.companyName = company.companyName;
+            serviceOrders.companyProfilePic = company.profilePic;
+            serviceOrders.companyPhoneNumber = company.phoneNo;
           }
 
           console.log('Service Provider ', serviceProvider);
@@ -443,6 +420,8 @@ export class ServiceOrdersController {
             serviceOrders.serviceProviderName =
               serviceProvider.firstName + ' ' + serviceProvider.lastName;
             serviceOrders.serviceProviderEmail = serviceProvider.email;
+            serviceOrders.serviceProviderPhoneNumber = serviceProvider.phoneNo;
+            serviceOrders.serviceProviderProfilePic = serviceProvider.profilePic
           }
 
           console.log('Rider Email', dbOrder.serviceProviderEmail);
@@ -586,16 +565,16 @@ export class ServiceOrdersController {
       msg: 'Some error occurred while completing order.',
       order: {},
     };
-    let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
-      orderRequest.serviceOrder.serviceOrderId,
-    );
-    if (
-      dbOrder?.status &&
-      ['UC', 'SC', 'AC'].indexOf(dbOrder?.status) === -1 &&
-      orderRequest?.serviceOrder?.status === 'CO' &&
-      orderRequest?.serviceOrder?.serviceOrderId
-    ) {
-      try {
+    try {
+      let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
+        orderRequest.serviceOrder.serviceOrderId,
+      );
+      if (
+        dbOrder?.status &&
+        ['UC', 'SC', 'AC'].indexOf(dbOrder?.status) === -1 &&
+        orderRequest?.serviceOrder?.status === 'CO' &&
+        orderRequest?.serviceOrder?.serviceOrderId
+      ) {
         await this.populateStatusDates(orderRequest.serviceOrder);
 
         await this.serviceOrdersRepository.updateById(
@@ -613,11 +592,11 @@ export class ServiceOrdersController {
           msg: 'Order completed successfully.',
           order: dbOrder,
         };
-      } catch (e) {
-        console.log(e);
-        result.code = 5;
-        result.msg = e.message;
       }
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
     }
     return JSON.stringify(result);
   }
@@ -642,20 +621,20 @@ export class ServiceOrdersController {
       msg: 'Some error occurred while initiating payment.',
       order: {},
     };
-    if (
-      orderRequest?.serviceOrder?.serviceOrderId &&
-      (orderRequest?.serviceOrder?.paymentMethod === 'CASH' ||
-        orderRequest?.serviceOrder?.paymentMethod === 'CARD')
-    ) {
-      let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
-        orderRequest?.serviceOrder?.serviceOrderId,
-      );
+    try {
       if (
-        dbOrder &&
-        dbOrder.status === 'CO' &&
-        orderRequest?.serviceOrder?.status === 'PI'
+        orderRequest?.serviceOrder?.serviceOrderId &&
+        (orderRequest?.serviceOrder?.paymentMethod === 'CASH' ||
+          orderRequest?.serviceOrder?.paymentMethod === 'CARD')
       ) {
-        try {
+        const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
+          orderRequest?.serviceOrder?.serviceOrderId,
+        );
+        if (
+          dbOrder?.status === 'CO' &&
+          orderRequest?.serviceOrder?.status === 'PI'
+        ) {
+
           orderRequest.payment.payerId = dbOrder.userId;
           orderRequest.payment.receiverId = dbOrder.serviceProviderId;
           orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
@@ -694,70 +673,28 @@ export class ServiceOrdersController {
             }
           }
 
-          dbOrder = await this.serviceOrdersRepository.findById(
+          const updatedDbOrder = await this.serviceOrdersRepository.findById(
             orderRequest?.serviceOrder?.serviceOrderId,
           );
 
-          await this.sendServiceProviderOrderUpdateNotification(dbOrder);
+          await this.sendServiceProviderOrderUpdateNotification(updatedDbOrder);
 
           result = {
             code: 0,
             msg: 'Payment initiated successfully.',
-            order: dbOrder,
+            order: updatedDbOrder,
           };
-        } catch (e) {
-          console.log(e);
-          result.code = 5;
-          result.msg = e.message;
         }
       }
+    } catch (e) {
+      console.log(e);
+      result.code = 5;
+      result.msg = e.message;
     }
     return JSON.stringify(result);
   }
 
-  async processTransactionResponse(
-    transactionResponse: TransactionResponse,
-    serviceOrderId: string,
-  ): Promise<void> {
-    const transaction: Transaction = new Transaction();
-    transaction.serviceOrderId = serviceOrderId;
-    transaction.transactionProcessedDateTime =
-      transactionResponse.txndate_processed;
-    transaction.cardBin = transactionResponse.ccbin;
-    transaction.timezone = transactionResponse.timezone;
-    transaction.processorNetworkInformation =
-      transactionResponse.processor_network_information;
-    transaction.oid = transactionResponse.oid;
-    transaction.country = transactionResponse.cccountry;
-    transaction.expiryMonth = transactionResponse.expmonth;
-    transaction.hashAlgorithm = transactionResponse.hash_algorithm;
-    transaction.endpointTransactionId =
-      transactionResponse.endpointTransactionId;
-    transaction.currency = transactionResponse.currency;
-    transaction.processorResponseCode =
-      transactionResponse.processor_response_code;
-    transaction.chargeTotal = transactionResponse.chargetotal;
-    transaction.terminalId = transactionResponse.terminal_id;
-    transaction.associationResponseCode =
-      transactionResponse.associationResponseCode;
-    transaction.approvalCode = transactionResponse.approval_code;
-    transaction.expiryYear = transactionResponse.expyear;
-    transaction.responseHash = transactionResponse.response_hash;
-    transaction.transactionDateInSeconds = transactionResponse.tdate;
-    transaction.installmentsInterest =
-      transactionResponse.installments_interest;
-    transaction.bankName = transactionResponse.bname;
-    transaction.CardBrand = transactionResponse.ccbrand;
-    transaction.referenceNumber = transactionResponse.refnumber;
-    transaction.transactionType = transactionResponse.txntype;
-    transaction.paymentMethod = transactionResponse.paymentMethod;
-    transaction.transactionDateTime = transactionResponse.txndatetime;
-    transaction.cardNumber = transactionResponse.cardnumber;
-    transaction.ipgTransactionId = transactionResponse.ipgTransactionId;
-    transaction.status = transactionResponse.status;
 
-    await this.transactionRepository.create(transaction);
-  }
 
   @post('/serviceOrders/appUser/processCardPayment/failure/{serviceOrderId}')
   @response(200, {
@@ -779,9 +716,10 @@ export class ServiceOrdersController {
     if (serviceOrderId) {
       const dbOrder: ServiceOrders =
         await this.serviceOrdersRepository.findById(serviceOrderId);
-      await this.processTransactionResponse(
+      await this.serviceOrdersUtils.processTransactionResponse(
         transactionResponse,
         dbOrder.serviceOrderId,
+        this.transactionRepository,
       );
       result.order = dbOrder;
     }
@@ -813,9 +751,10 @@ export class ServiceOrdersController {
       let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
         serviceOrderId,
       );
-      await this.processTransactionResponse(
+      await this.serviceOrdersUtils.processTransactionResponse(
         transactionResponse,
         dbOrder.serviceOrderId,
+        this.transactionRepository,
       );
       if (
         dbOrder?.status === 'CO' &&
@@ -928,12 +867,11 @@ export class ServiceOrdersController {
       order: {},
     };
     if (orderRequest?.serviceOrder?.serviceOrderId) {
-      let dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
+      const dbOrder: ServiceOrders = await this.serviceOrdersRepository.findById(
         orderRequest?.serviceOrder?.serviceOrderId,
       );
       if (
-        dbOrder &&
-        dbOrder.status === 'PI' &&
+        dbOrder?.status === 'PI' &&
         orderRequest?.serviceOrder?.status === 'PC'
       ) {
         try {
@@ -953,15 +891,15 @@ export class ServiceOrdersController {
               orderRequest.serviceOrder.serviceOrderId,
               orderRequest.serviceOrder,
             );
-            dbOrder = await this.serviceOrdersRepository.findById(
+            const updatedDbOrder = await this.serviceOrdersRepository.findById(
               orderRequest?.serviceOrder?.serviceOrderId,
             );
-            await this.sendAppUserOrderUpdateNotification(dbOrder);
+            await this.sendAppUserOrderUpdateNotification(updatedDbOrder);
 
             result = {
               code: 0,
               msg: 'Payment completed successfully.',
-              order: dbOrder,
+              order: updatedDbOrder,
             };
           }
         } catch (e) {
@@ -1730,25 +1668,6 @@ export class ServiceOrdersController {
       token: token,
     });
     return 'SUCCESS';
-  }
-
-  @patch('/serviceOrders')
-  @response(200, {
-    description: 'ServiceOrders PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(ServiceOrders, {partial: true}),
-        },
-      },
-    })
-    serviceOrders: ServiceOrders,
-    @param.where(ServiceOrders) where?: Where<ServiceOrders>,
-  ): Promise<Count> {
-    return this.serviceOrdersRepository.updateAll(serviceOrders, where);
   }
 
   @get(

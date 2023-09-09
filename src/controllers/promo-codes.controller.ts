@@ -11,7 +11,6 @@ import {
   get,
   getModelSchemaRef,
   param,
-  patch,
   post,
   put,
   requestBody,
@@ -84,25 +83,6 @@ export class PromoCodesController {
     @param.filter(PromoCodes) filter?: Filter<PromoCodes>,
   ): Promise<PromoCodes[]> {
     return this.promoCodesRepository.find(filter);
-  }
-
-  @patch('/promoCodes')
-  @response(200, {
-    description: 'PromoCodes PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(PromoCodes, {partial: true}),
-        },
-      },
-    })
-    promoCodes: PromoCodes,
-    @param.where(PromoCodes) where?: Where<PromoCodes>,
-  ): Promise<Count> {
-    return this.promoCodesRepository.updateAll(promoCodes, where);
   }
 
   @get('/promoCodes/{promoId}')

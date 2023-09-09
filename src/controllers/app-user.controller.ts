@@ -693,26 +693,6 @@ export class AppUserController {
     return this.appUsersRepository.find(filter);
   }
 
-  @patch('/appUsers')
-  @response(200, {
-    description: 'AppUsers PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(AppUsers, {partial: true}),
-        },
-      },
-    })
-    appUsers: AppUsers,
-    @param.where(AppUsers) where?: Where<AppUsers>,
-  ): Promise<Count> {
-    console.log(where);
-    return this.appUsersRepository.updateAll(appUsers, where);
-  }
-
   @get('/appUsers/{id}')
   @response(200, {
     description: 'AppUsers model instance',

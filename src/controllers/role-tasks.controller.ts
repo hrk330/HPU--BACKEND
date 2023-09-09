@@ -76,25 +76,6 @@ export class RoleTasksController {
     return this.roleTasksRepository.find(filter);
   }
 
-  @patch('/roleTasks')
-  @response(200, {
-    description: 'RoleTasks PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(RoleTasks, {partial: true}),
-        },
-      },
-    })
-    roleTasks: RoleTasks,
-    @param.where(RoleTasks) where?: Where<RoleTasks>,
-  ): Promise<Count> {
-    return this.roleTasksRepository.updateAll(roleTasks, where);
-  }
-
   @get('/roleTasks/{id}')
   @response(200, {
     description: 'RoleTasks model instance',

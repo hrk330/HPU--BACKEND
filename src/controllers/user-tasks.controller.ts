@@ -76,25 +76,6 @@ export class UserTasksController {
     return this.userTasksRepository.find(filter);
   }
 
-  @patch('/userTasks')
-  @response(200, {
-    description: 'UserTasks PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(UserTasks, {partial: true}),
-        },
-      },
-    })
-    userTasks: UserTasks,
-    @param.where(UserTasks) where?: Where<UserTasks>,
-  ): Promise<Count> {
-    return this.userTasksRepository.updateAll(userTasks, where);
-  }
-
   @get('/userTasks/{id}')
   @response(200, {
     description: 'UserTasks model instance',

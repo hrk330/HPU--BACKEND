@@ -74,25 +74,6 @@ export class PaymentsController {
     return this.paymentRepository.find(filter);
   }
 
-  @patch('/payments')
-  @response(200, {
-    description: 'Payment PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Payment, {partial: true}),
-        },
-      },
-    })
-    payment: Payment,
-    @param.where(Payment) where?: Where<Payment>,
-  ): Promise<Count> {
-    return this.paymentRepository.updateAll(payment, where);
-  }
-
   @get('/payments/{id}')
   @response(200, {
     description: 'Payment model instance',
