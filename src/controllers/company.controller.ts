@@ -84,22 +84,26 @@ export class CompanyController {
         where: {email: credentials.email},
         include: [{relation: 'userCreds'}],
       };
-      const dbCompany = await this.companyRepository.findOne(filter);
+      const dbCompany: Company| null = await this.companyRepository.findOne(filter);
 
       //const user = await this.userService.verifyCredentials(credentials);
-      if (dbCompany?.userCreds) {
-        const salt = dbCompany.userCreds.salt;
-        const password = await hash(credentials.password, salt);
-        if (password === dbCompany.userCreds.password) {
-          // create a JSON Web Token based on the user profile
-          result.token = await this.jwtService.generateToken(
-            this.userService.convertToUserProfile(dbCompany),
-          );
-          dbCompany.userCreds = new UserCreds();
-          result.company = dbCompany;
-          result.code = 0;
-          result.msg = 'Logged in successfully.';
+      if(dbCompany?.status !== "S") {
+        if (dbCompany?.userCreds) {
+          const salt = dbCompany.userCreds.salt;
+          const password = await hash(credentials.password, salt);
+          if (password === dbCompany.userCreds.password) {
+            // create a JSON Web Token based on the user profile
+            result.token = await this.jwtService.generateToken(
+              this.userService.convertToUserProfile(dbCompany),
+            );
+            dbCompany.userCreds = new UserCreds();
+            result.company = dbCompany;
+            result.code = 0;
+            result.msg = 'Logged in successfully.';
+          }
         }
+      } else {
+        result.msg = 'User suspended.';
       }
     } catch (e) {
       result.code = 5;
