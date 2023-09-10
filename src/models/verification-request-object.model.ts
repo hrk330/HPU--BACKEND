@@ -27,6 +27,11 @@ export class VerificationRequestObject extends Model {
   })
   type: string;
 
+  @property({
+    type: 'string',
+  })
+  userType: string;
+
   constructor(data?: Partial<VerificationRequestObject>) {
     super(data);
   }
