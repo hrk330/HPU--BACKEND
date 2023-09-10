@@ -90,19 +90,14 @@ export class AdminUsersController {
       };
       const user = await this.adminUsersRepository.findOne(filter);
 
-      //const user = await this.userService.verifyCredentials(credentials);
       if (user?.userCreds) {
         const salt = user.userCreds.salt;
         const password = await hash(credentials.password, salt);
         if (password === user.userCreds.password) {
-          //this.appUsersRepository.updateById(id, appUsers)
-          // convert a User object into a UserProfile object (reduced set of properties)
-
-          // create a JSON Web Token based on the user profile
+          user.userCreds = new UserCreds();
           result.token = await this.jwtService.generateToken(
             this.userService.convertToUserProfile(user),
           );
-          user.userCreds = new UserCreds();
           result.user = user;
           result.code = 0;
           result.msg = 'User logged in successfully.';

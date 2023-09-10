@@ -7,7 +7,7 @@ export class WithdrawalRequest extends Entity {
     id: true,
     generated: true,
   })
-  withdrawlRequestId: string;
+  withdrawalRequestId: string;
 
   @property({
     type: 'string',
@@ -58,7 +58,22 @@ export class WithdrawalRequest extends Entity {
   @property({
     type: 'number',
   })
-  withdrawalAmount?: number;
+  withdrawalAmount: number;
+
+  @property({
+    type: 'number',
+  })
+  unpaidAmount: number;
+
+  @property({
+    type: 'string',
+  })
+  rejectionReason?: string;
+
+  @property({
+    type: 'string',
+  })
+  profilePic: string;
 
   @property({
     type: 'string',
@@ -91,5 +106,5 @@ export interface WithdrawalRequestRelations {
   // describe navigational properties here
 }
 
-export type WithdrawlRequestsWithRelations = WithdrawalRequest &
+export type WithdrawalRequestsWithRelations = WithdrawalRequest &
   WithdrawalRequestRelations;

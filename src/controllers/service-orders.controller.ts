@@ -207,7 +207,9 @@ export class ServiceOrdersController {
         const createdOrder: ServiceOrders =
           await this.serviceOrdersRepository.create(serviceOrders);
 
-        await this.sendServiceProviderOrderUpdateNotification(createdOrder);
+        if(service.serviceType !== 'Done For You') {
+          await this.sendServiceProviderOrderUpdateNotification(createdOrder);
+        }
 
         if (appUser?.endpoint?.length > 20) {
           await this.sendOrderNotification(
