@@ -1,44 +1,12 @@
 import {TokenService} from '@loopback/authentication';
-import {
-  MyUserService,
-  TokenServiceBindings,
-  UserServiceBindings,
-} from '@loopback/authentication-jwt';
+import {MyUserService, TokenServiceBindings, UserServiceBindings} from '@loopback/authentication-jwt';
 import {inject} from '@loopback/core';
-import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  Where,
-  repository,
-} from '@loopback/repository';
-import {
-  get,
-  getModelSchemaRef,
-  param,
-  patch,
-  post,
-  put,
-  requestBody,
-  response,
-} from '@loopback/rest';
+import {Count, CountSchema, Filter, FilterExcludingWhere, repository, Where} from '@loopback/repository';
+import {get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
 import {genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import {
-  AdminUsers,
-  CredentialsRequest,
-  CredentialsRequestBody,
-  Roles,
-  Tasks,
-  UserCreds,
-  UserTasks,
-} from '../models';
-import {
-  AdminUsersRepository,
-  RolesRepository,
-  TasksRepository,
-} from '../repositories';
+import {AdminUsers, CredentialsRequest, CredentialsRequestBody, Roles, Tasks, UserCreds, UserTasks} from '../models';
+import {AdminUsersRepository, RolesRepository, TasksRepository} from '../repositories';
 
 export class AdminUsersController {
   constructor(
@@ -89,19 +57,22 @@ export class AdminUsersController {
         include: [{relation: 'userCreds'}],
       };
       const user = await this.adminUsersRepository.findOne(filter);
-
-      if (user?.userCreds) {
-        const salt = user.userCreds.salt;
-        const password = await hash(credentials.password, salt);
-        if (password === user.userCreds.password) {
-          user.userCreds = new UserCreds();
-          result.token = await this.jwtService.generateToken(
-            this.userService.convertToUserProfile(user),
-          );
-          result.user = user;
-          result.code = 0;
-          result.msg = 'User logged in successfully.';
+      if(user?.status !== "S") {
+        if (user?.userCreds) {
+          const salt = user.userCreds.salt;
+          const password = await hash(credentials.password, salt);
+          if (password === user.userCreds.password) {
+            user.userCreds = new UserCreds();
+            result.token = await this.jwtService.generateToken(
+              this.userService.convertToUserProfile(user),
+            );
+            result.user = user;
+            result.code = 0;
+            result.msg = 'User logged in successfully.';
+          }
         }
+      } else {
+        result.msg = "User suspended";
       }
     } catch (e) {
       result.code = 5;
@@ -292,23 +263,31 @@ export class AdminUsersController {
     })
     adminUsers: AdminUsers,
   ): Promise<Object> {
-    const result = {code: 5, msg: '', adminUser: {}};
-
-    adminUsers.userTasksList = [];
-    adminUsers.updatedAt = new Date();
-    if (await this.checkIfValidRole(adminUsers.roleId)) {
-      await this.adminUsersRepository.updateById(adminUsers.id, adminUsers);
-      const dbAdminUser = await this.adminUsersRepository.findById(
-        adminUsers.id,
-        {},
-      );
-      result.adminUser = dbAdminUser;
-      result.code = 0;
-      result.msg = 'Record updated successfully.';
-    } else {
-      result.msg = 'Invalid role';
+    const result = {code: 5, msg: 'User not available', adminUser: {}};
+    const dbAdminUser = await this.adminUsersRepository.findOne(
+      {where: {id: adminUsers.id}, include: [{relation: 'userCreds'}],},
+    );
+    if (dbAdminUser) {
+      adminUsers.userTasksList = [];
+      adminUsers.updatedAt = new Date();
+      if (await this.checkIfValidRole(adminUsers.roleId)) {
+        if(adminUsers.password?.length>0) {
+          const salt = await genSalt();
+          const password = await hash(adminUsers.password, salt);
+          await this.adminUsersRepository
+            .userCreds(dbAdminUser.id)
+            .patch({password, salt});
+        }
+        await this.adminUsersRepository.updateById(adminUsers.id, _.omit(adminUsers, 'password'));
+        result.adminUser = await this.adminUsersRepository.findById(
+          adminUsers.id,
+        );
+        result.code = 0;
+        result.msg = 'Record updated successfully.';
+      } else {
+        result.msg = 'Invalid role';
+      }
     }
-
     return result;
   }
 

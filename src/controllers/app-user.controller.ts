@@ -114,22 +114,26 @@ export class AppUserController {
       });
 
       //const user = await this.userService.verifyCredentials(credentials);
-      if (user?.userCreds) {
-        const salt = user.userCreds.salt;
-        const password = await hash(credentials.password, salt);
-        if (password === user.userCreds.password) {
-          //this.appUsersRepository.updateById(id, appUsers)
-          // convert a User object into a UserProfile object (reduced set of properties)
+      if(user?.userStatus !== "S") {
+        if (user?.userCreds) {
+          const salt = user.userCreds.salt;
+          const password = await hash(credentials.password, salt);
+          if (password === user.userCreds.password) {
+            //this.appUsersRepository.updateById(id, appUsers)
+            // convert a User object into a UserProfile object (reduced set of properties)
 
-          // create a JSON Web Token based on the user profile
-          result.token = await this.jwtService.generateToken(
-            this.userService.convertToUserProfile(user),
-          );
-          user.userCreds = new UserCreds();
-          result.user = user;
-          result.code = 0;
-          result.msg = 'User logged in successfully.';
+            // create a JSON Web Token based on the user profile
+            result.token = await this.jwtService.generateToken(
+              this.userService.convertToUserProfile(user),
+            );
+            user.userCreds = new UserCreds();
+            result.user = user;
+            result.code = 0;
+            result.msg = 'User logged in successfully.';
+          }
         }
+      } else {
+        result.msg = 'User suspended.';
       }
     } catch (e) {
       result.code = 5;
@@ -308,17 +312,21 @@ export class AppUserController {
         },
       };
       const user = await this.appUsersRepository.findOne(filter);
-      if (user) {
-        //this.appUsersRepository.updateById(id, appUsers)
-        // convert a User object into a UserProfile object (reduced set of properties)
+      if(user) {
+        if(user?.userStatus !== "S") {
+          //this.appUsersRepository.updateById(id, appUsers)
+          // convert a User object into a UserProfile object (reduced set of properties)
 
-        // create a JSON Web Token based on the user profile
-        result.token = await this.jwtService.generateToken(
-          this.userService.convertToUserProfile(user),
-        );
-        result.user = user;
-        result.code = 0;
-        result.msg = 'User logged in successfully';
+          // create a JSON Web Token based on the user profile
+          result.token = await this.jwtService.generateToken(
+            this.userService.convertToUserProfile(user),
+          );
+          result.user = user;
+          result.code = 0;
+          result.msg = 'User logged in successfully';
+        } else {
+          result.msg = "User suspended";
+        }
       }
     } catch (e) {
       result.code = 5;

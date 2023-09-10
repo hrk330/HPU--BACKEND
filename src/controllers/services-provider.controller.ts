@@ -76,7 +76,7 @@ export class ServicesProviderController {
   ): Promise<String> {
     let result = {
       code: 5,
-      msg: 'User registeration failed.',
+      msg: 'User registration failed.',
       token: '',
       userId: '',
     };
@@ -145,7 +145,7 @@ export class ServicesProviderController {
     })
     serviceProvider: Omit<ServiceProvider, 'id'>,
   ): Promise<String> {
-    let result = {code: 5, msg: 'User registeration failed.', user: {}};
+    let result = {code: 5, msg: 'User registration failed.', user: {}};
     try {
       if (
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
@@ -262,7 +262,7 @@ export class ServicesProviderController {
     } catch (e) {
       console.log(e);
       result.code = 5;
-      result.msg = 'Some error occured.';
+      result.msg = 'Some error occurred.';
     }
     return JSON.stringify(result);
   }
@@ -443,23 +443,28 @@ export class ServicesProviderController {
       });
 
       //const user = await this.userService.verifyCredentials(credentials);
-      if (user?.userCreds) {
-        const salt = user.userCreds.salt;
-        const password = await hash(credentials.password, salt);
-        if (password === user.userCreds.password) {
-          // create a JSON Web Token based on the user profile
-          result.token = await this.jwtService.generateToken(
-            this.userService.convertToUserProfile(user),
-          );
-          user.userCreds = new UserCreds();
-          result.user = user;
-          result.code = 0;
-          result.msg = 'User logged in successfully.';
+      if(user?.userStatus !== "S") {
+        if (user?.userCreds) {
+          const salt = user.userCreds.salt;
+          const password = await hash(credentials.password, salt);
+          if (password === user.userCreds.password) {
+            // create a JSON Web Token based on the user profile
+            result.token = await this.jwtService.generateToken(
+              this.userService.convertToUserProfile(user),
+            );
+            user.userCreds = new UserCreds();
+            result.user = user;
+            result.code = 0;
+            result.msg = 'User logged in successfully.';
+          }
         }
+      } else {
+        result.msg = 'User suspended.';
       }
     } catch (e) {
+      console.log(e)
       result.code = 5;
-      result.msg = e.message;
+      result.msg = "Some error occurred";
     }
     return JSON.stringify(result);
   }
