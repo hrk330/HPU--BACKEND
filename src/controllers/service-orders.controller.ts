@@ -305,20 +305,22 @@ export class ServiceOrdersController {
           serviceOrders.grossAmount + serviceOrders.taxAmount;
 
         createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
-        const serviceProviders: ServiceProvider[] =
-          await this.serviceProviderRepository.find({
-            where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'},
-            fields: ['endpoint'],
-          });
-        if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
-          for (const serviceProvider of serviceProviders) {
-            if (serviceProvider?.endpoint?.length > 20) {
-              await this.sendOrderNotification(
-                serviceProvider.endpoint,
-                'Order Alert',
-                'A new order is available.',
-                createdOrder,
-              );
+        if(service.serviceType !== 'Done For You') {
+          const serviceProviders: ServiceProvider[] =
+            await this.serviceProviderRepository.find({
+              where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'},
+              fields: ['endpoint'],
+            });
+          if (Array.isArray(serviceProviders) && serviceProviders.length > 0) {
+            for (const serviceProvider of serviceProviders) {
+              if (serviceProvider?.endpoint?.length > 20) {
+                await this.sendOrderNotification(
+                  serviceProvider.endpoint,
+                  'Order Alert',
+                  'A new order is available.',
+                  createdOrder,
+                );
+              }
             }
           }
         }
