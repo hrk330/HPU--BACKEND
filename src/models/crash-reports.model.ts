@@ -19,14 +19,11 @@ export class CrashReports extends Entity {
 
   @property({
     type: 'string',
-    id: true,
-    generated: true,
   })
   vehicleId?: string;
 
   @property({
     type: 'string',
-    required: true,
   })
   vehicleType: string;
 

@@ -5,7 +5,7 @@ import {WithdrawalRequest, WithdrawalRequestRelations} from '../models';
 
 export class WithdrawalRequestRepository extends DefaultCrudRepository<
   WithdrawalRequest,
-  typeof WithdrawalRequest.prototype.withdrawlRequestId,
+  typeof WithdrawalRequest.prototype.withdrawalRequestId,
   WithdrawalRequestRelations
 > {
   constructor(@inject('datasources.MongoDb') dataSource: MongoDbDataSource) {

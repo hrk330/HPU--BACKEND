@@ -63,13 +63,13 @@ export class AppUsersWithdrawalRequestController {
         'application/json': {
           schema: getModelSchemaRef(WithdrawalRequest, {
             title: 'NewWithdrawalRequestInAppUsers',
-            exclude: ['withdrawlRequestId'],
+            exclude: ['withdrawalRequestId'],
             optional: ['serviceProviderId'],
           }),
         },
       },
     })
-    withdrawalRequest: Omit<WithdrawalRequest, 'withdrawlRequestId'>,
+    withdrawalRequest: Omit<WithdrawalRequest, 'withdrawalRequestId'>,
   ): Promise<WithdrawalRequest> {
     return this.appUsersRepository
       .withdrawalRequests(id)

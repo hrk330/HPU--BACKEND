@@ -9,6 +9,7 @@ import {
 } from '@loopback/rest';
 import {Account, WithdrawalRequest} from '../models';
 import {
+  AccountRepository,
   ServiceProviderRepository,
   WithdrawalRequestRepository,
 } from '../repositories';
@@ -19,6 +20,8 @@ export class WithdrawalRequestsController {
     public withdrawalRequestRepository: WithdrawalRequestRepository,
     @repository(ServiceProviderRepository)
     public serviceProviderRepository: ServiceProviderRepository,
+    @repository(AccountRepository)
+    public accountRepository: AccountRepository,
   ) {}
 
   @post('/withdrawalRequests/createWithdrawalRequest')
@@ -34,12 +37,12 @@ export class WithdrawalRequestsController {
         'application/json': {
           schema: getModelSchemaRef(WithdrawalRequest, {
             title: 'NewWithdrawalRequest',
-            exclude: ['withdrawlRequestId'],
+            exclude: ['withdrawalRequestId'],
           }),
         },
       },
     })
-    withdrawalRequest: Omit<WithdrawalRequest, 'withdrawlRequestId'>,
+    withdrawalRequest: Omit<WithdrawalRequest, 'withdrawalRequestId'>,
   ): Promise<string> {
     const result = {
       code: 5,
@@ -47,28 +50,102 @@ export class WithdrawalRequestsController {
       withdrawalRequest: {},
     };
     try {
-      const userAccount: Account = await this.serviceProviderRepository
-        .account(withdrawalRequest.serviceProviderId)
-        .get({});
-      if (
-        !withdrawalRequest?.withdrawalAmount ||
-        withdrawalRequest?.withdrawalAmount < 1200
-      ) {
-        result.msg = 'Withdrawal amount should be greater than 1200.';
-      } else if (
-        !userAccount?.balanceAmount ||
-        userAccount?.balanceAmount < 1200
-      ) {
-        result.msg = 'Insufficient balance.';
+      if(withdrawalRequest.serviceProviderId) {
+        const userAccount: Account| null = await this.accountRepository
+          .findOne({where: {userId: withdrawalRequest.serviceProviderId}});
+        if(userAccount) {
+          if (
+            !withdrawalRequest?.withdrawalAmount ||
+            withdrawalRequest?.withdrawalAmount < 1200
+          ) {
+            result.msg = 'Withdrawal amount should be greater than 1200.';
+          } else if (
+            !userAccount?.balanceAmount ||
+            userAccount?.balanceAmount < 1200
+          ) {
+            result.msg = 'Insufficient balance.';
+          } else {
+            withdrawalRequest.withdrawalAmount = userAccount.balanceAmount;
+            withdrawalRequest.unpaidAmount = userAccount.balanceAmount;
+            const dbWithdrawalRequest: WithdrawalRequest =
+              await this.withdrawalRequestRepository.create(withdrawalRequest);
+            userAccount.balanceAmount = 0;
+            await this.accountRepository
+              .update(userAccount, {where: {userId: withdrawalRequest.serviceProviderId}});
+            result.code = 0;
+            result.msg = 'Withdrawal request created successfully.';
+            result.withdrawalRequest = dbWithdrawalRequest;
+          }
+        } else {
+          result.msg = "Account not found";
+        }
       } else {
-        const dbwithdrawalRequest: WithdrawalRequest =
-          await this.withdrawalRequestRepository.create(withdrawalRequest);
-        result.code = 0;
-        result.msg = 'Withdrawal request created successfully.';
-        result.withdrawalRequest = dbwithdrawalRequest;
+        result.msg = "User not found";
       }
     } catch (e) {
-      result.msg = e.message;
+      console.log(e);
+    }
+
+    return JSON.stringify(result);
+  }
+
+  @post('/withdrawalRequests/admin/createWithdrawalRequest')
+  @response(200, {
+    description: 'WithdrawalRequest model instance',
+    content: {
+      'application/json': {schema: getModelSchemaRef(WithdrawalRequest)},
+    },
+  })
+  async createAdminWithdrawalRequest(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(WithdrawalRequest, {
+            title: 'NewWithdrawalRequest',
+            exclude: ['withdrawalRequestId'],
+          }),
+        },
+      },
+    })
+      withdrawalRequest: Omit<WithdrawalRequest, 'withdrawalRequestId'>,
+  ): Promise<string> {
+    const result = {
+      code: 5,
+      msg: 'Some error occurred while creating withdrawal request.',
+      withdrawalRequest: {},
+    };
+    try {
+      if(withdrawalRequest.serviceProviderId) {
+        const userAccount: Account | null = await this.accountRepository
+          .findOne({where: {userId: withdrawalRequest.serviceProviderId}});
+        if (userAccount) {
+          if (!withdrawalRequest?.withdrawalAmount) {
+            result.msg = 'Enter withdrawal amount.';
+          } else if (
+            withdrawalRequest?.withdrawalAmount >
+            userAccount?.balanceAmount
+          ) {
+            result.msg = 'Insufficient balance.';
+          } else {
+            withdrawalRequest.withdrawalAmount = userAccount.balanceAmount;
+            withdrawalRequest.unpaidAmount = userAccount.balanceAmount;
+            const dbWithdrawalRequest: WithdrawalRequest =
+              await this.withdrawalRequestRepository.create(withdrawalRequest);
+            userAccount.balanceAmount = 0;
+            await this.accountRepository
+              .update(userAccount, {where: {userId: withdrawalRequest.serviceProviderId}});
+            result.code = 0;
+            result.msg = 'Withdrawal request created successfully.';
+            result.withdrawalRequest = dbWithdrawalRequest;
+          }
+        } else {
+          result.msg = "Account not found";
+        }
+      } else {
+        result.msg = "User not found";
+      }
+    } catch (e) {
+      console.log(e);
     }
 
     return JSON.stringify(result);
@@ -197,11 +274,31 @@ export class WithdrawalRequestsController {
       withdrawalRequest: {},
     };
     try {
-      await this.withdrawalRequestRepository.updateById(id, withdrawalRequest);
-      result.withdrawalRequest =
-        await this.withdrawalRequestRepository.findById(id, {});
-      result.code = 0;
-      result.msg = 'Withdrawal requests fetched successfully.';
+      if(id && withdrawalRequest.serviceProviderId) {
+        const userAccount: Account | null = await this.accountRepository
+          .findOne({where: {userId: withdrawalRequest.serviceProviderId}});
+        const dbWithdrawalRequest: WithdrawalRequest = await this.withdrawalRequestRepository.findById(id, {});
+        if (userAccount && dbWithdrawalRequest && dbWithdrawalRequest.status === "P" && withdrawalRequest.serviceProviderId) {
+          withdrawalRequest.updatedAt = new Date();
+          if (withdrawalRequest.status === "A") {
+              withdrawalRequest.unpaidAmount = 0;
+              await this.withdrawalRequestRepository.updateById(id, withdrawalRequest);
+          } else if (withdrawalRequest.status === "R") {
+            userAccount.balanceAmount = dbWithdrawalRequest.withdrawalAmount;
+            await this.accountRepository
+              .update(userAccount, {where: {userId: withdrawalRequest.serviceProviderId}});
+            await this.withdrawalRequestRepository.updateById(id, withdrawalRequest);
+          }
+          result.withdrawalRequest =
+            await this.withdrawalRequestRepository.findById(id, {});
+          result.code = 0;
+          result.msg = 'Withdrawal requests fetched successfully.';
+        } else {
+          result.msg = "Account not found";
+        }
+      } {
+        result.msg = "Invalid request";
+      }
     } catch (e) {
       result.msg = e.message;
     }

@@ -205,6 +205,11 @@ export class ServiceOrders extends Entity {
 
   @property({
     type: 'number',
+  })
+  amountPaidByCustomer: number;
+
+  @property({
+    type: 'number',
     default: 0,
   })
   platformFee: number;
