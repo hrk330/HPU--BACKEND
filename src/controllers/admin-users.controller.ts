@@ -75,8 +75,9 @@ export class AdminUsersController {
         result.msg = "User suspended";
       }
     } catch (e) {
+      console.log(e);
       result.code = 5;
-      result.msg = e.message;
+      result.msg = "Some error occurred";
     }
     return JSON.stringify(result);
   }
