@@ -422,7 +422,7 @@ export class CodeVerificationController {
     });
     if (
       verificationRequestObject.email &&
-      (verificationRequestObject.type = 'SU')
+      verificationRequestObject.type === 'SU'
     ) {
       await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
         verificationRequestObject,
@@ -430,7 +430,7 @@ export class CodeVerificationController {
     }
     if (
       verificationRequestObject.email &&
-      (verificationRequestObject.type = 'RP')
+      verificationRequestObject.type === 'RP'
     ) {
       await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
         verificationRequestObject,
