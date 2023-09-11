@@ -127,11 +127,10 @@ export class WithdrawalRequestsController {
           ) {
             result.msg = 'Insufficient balance.';
           } else {
-            withdrawalRequest.withdrawalAmount = userAccount.balanceAmount;
-            withdrawalRequest.unpaidAmount = userAccount.balanceAmount;
+            withdrawalRequest.unpaidAmount = withdrawalRequest?.withdrawalAmount;
             const dbWithdrawalRequest: WithdrawalRequest =
               await this.withdrawalRequestRepository.create(withdrawalRequest);
-            userAccount.balanceAmount = 0;
+            userAccount.balanceAmount -= withdrawalRequest?.withdrawalAmount;
             await this.accountRepository
               .update(userAccount, {where: {userId: withdrawalRequest.serviceProviderId}});
             result.code = 0;
