@@ -428,12 +428,16 @@ export class CodeVerificationController {
         verificationRequestObject,
       );
     }
-    const code = verificationRequestObject.verificationCode;
+    const verificationResult = await this.insertVerificationCode(
+      user,
+      verificationRequestObject,
+      'E',
+    );
+
+    const code = verificationResult.code;
     console.log('Code = ', code);
 
-    return JSON.stringify(
-      await this.insertVerificationCode(user, verificationRequestObject, 'E'),
-    );
+    return JSON.stringify(verificationResult);
   }
 
   @post('/codeVerification/serviceProvider/sendEmailCode', {
