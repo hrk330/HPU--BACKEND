@@ -204,9 +204,6 @@ export class AppUserController {
           result.token = await this.jwtService.generateToken(userProfile);
           result.code = 0;
           result.msg = 'User registered successfully.';
-          await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
-            savedUser,
-          );
         }
       }
     } catch (e) {
