@@ -28,7 +28,7 @@ export const sendCustomMail = (
   name?: any,
   username?: any,
   password?: any,
-  emailTemplate?: string,
+  emailTemplate?: any,
   companyName?: any,
   totalcost?: any,
   veriCode?: any,
