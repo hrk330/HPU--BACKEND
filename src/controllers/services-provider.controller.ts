@@ -40,9 +40,10 @@ import {
   ServiceProviderServicesRepository,
   ServicesRepository,
 } from '../repositories';
-import {sendCustomMail} from '../services';
+import {AccCreateEmails} from '../utils';
 
 export class ServicesProviderController {
+  private AccCreateEmails: AccCreateEmails = new AccCreateEmails();
   constructor(
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public jwtService: TokenService,
@@ -244,15 +245,9 @@ export class ServicesProviderController {
             result.code = 0;
             result.msg = 'Service provider created successfully.';
             result.user = savedUser;
-            const subject = 'Rider Registration Credentials';
-            sendCustomMail(
-              savedUser.email,
-              subject,
-              savedUser.firstName,
-              savedUser.email,
-              serviceProvider.password,
-              'addRidertemplate',
-              savedUser.companyName,
+            await this.AccCreateEmails.sendRiderAccCreateMail(
+              savedUser,
+              serviceProvider,
             );
           }
         }
@@ -514,7 +509,7 @@ export class ServicesProviderController {
 
     return JSON.stringify(result);
   }
-  
+
   @post('/serviceProvider/changePassword', {
     responses: {
       '200': {
@@ -533,7 +528,11 @@ export class ServicesProviderController {
     @requestBody(CredentialsRequestBody) credentialsRequest: CredentialsRequest,
   ): Promise<String> {
     const result = {code: 5, msg: 'Change password failed.'};
-    if(credentialsRequest?.id && credentialsRequest?.password && credentialsRequest?.oldPassword) {
+    if (
+      credentialsRequest?.id &&
+      credentialsRequest?.password &&
+      credentialsRequest?.oldPassword
+    ) {
       const user = await this.serviceProviderRepository.findOne({
         where: {id: credentialsRequest.id, roleId: 'SERVICEPROVIDER'},
         include: [{relation: 'userCreds'}],
