@@ -99,7 +99,17 @@ export class AccCreateEmails {
       console.log(
         `Sending Verification Mail to User with this email (${savedUser.email}) for Account Credentials`,
       );
-      sendCustomMail(savedUser.email, subject, emailTemplate, veriCode);
+      sendCustomMail(
+        savedUser.email,
+        subject,
+        undefined,
+        undefined,
+        undefined,
+        emailTemplate,
+        undefined,
+        undefined,
+        veriCode,
+      );
 
       console.log(
         `Verification Email Sent To User with this email (${savedUser.email})`,
