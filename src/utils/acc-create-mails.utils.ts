@@ -99,7 +99,7 @@ export class AccCreateEmails {
 
     if (
       verificationRequestObject.email &&
-      (verificationRequestObject.type = 'SU')
+      verificationRequestObject.type === 'SU'
     ) {
       const subject = 'Verification Code For Sign Up';
       const emailTemplate = 'verificationCodeTemplate';
@@ -125,7 +125,7 @@ export class AccCreateEmails {
     }
     if (
       verificationRequestObject.email &&
-      (verificationRequestObject.type = 'RP')
+      verificationRequestObject.type === 'RP'
     ) {
       const subject = 'Verification Code For Reset Password';
       const emailTemplate = 'verificationCodeTemplate';
