@@ -116,7 +116,7 @@ export class AppUserController {
       });
 
       //const user = await this.userService.verifyCredentials(credentials);
-      if(user?.userStatus !== "S") {
+      if (user?.userStatus !== 'S') {
         if (user?.userCreds) {
           const salt = user.userCreds.salt;
           const password = await hash(credentials.password, salt);
@@ -189,6 +189,9 @@ export class AppUserController {
         const savedUser = await this.appUsersRepository.create(
           _.omit(newUserRequest, 'password'),
         );
+        await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
+          savedUser,
+        );
         if (savedUser) {
           await this.appUsersRepository
             .userCreds(savedUser.id)
@@ -203,9 +206,6 @@ export class AppUserController {
           result.token = await this.jwtService.generateToken(userProfile);
           result.code = 0;
           result.msg = 'User registered successfully.';
-          await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
-            savedUser,
-          );
         }
       }
     } catch (e) {
@@ -317,8 +317,8 @@ export class AppUserController {
         },
       };
       const user = await this.appUsersRepository.findOne(filter);
-      if(user) {
-        if(user?.userStatus !== "S") {
+      if (user) {
+        if (user?.userStatus !== 'S') {
           //this.appUsersRepository.updateById(id, appUsers)
           // convert a User object into a UserProfile object (reduced set of properties)
 
@@ -330,7 +330,7 @@ export class AppUserController {
           result.code = 0;
           result.msg = 'User logged in successfully';
         } else {
-          result.msg = "User suspended";
+          result.msg = 'User suspended';
         }
       }
     } catch (e) {
