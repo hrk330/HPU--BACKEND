@@ -1,4 +1,9 @@
-import {AppUsers, Company, ServiceProvider} from '../models';
+import {
+  AppUsers,
+  Company,
+  ServiceProvider,
+  VerificationRequestObject,
+} from '../models';
 import {sendCustomMail} from '../services';
 
 //   }
@@ -87,20 +92,23 @@ export class AccCreateEmails {
   }
 
   async sendUserAccCreateByAppVerificationEmail(
-    savedUser: AppUsers,
+    verificationRequestObject: VerificationRequestObject,
   ): Promise<void> {
-    console.log('User Email = ', savedUser.email);
-    console.log(`User Name = ${savedUser.firstName} ${savedUser.lastName}`);
+    console.log('User Email = ', verificationRequestObject.email);
+    console.log('User Type', verificationRequestObject.type);
 
-    if (savedUser.email) {
+    if (
+      verificationRequestObject.email &&
+      (verificationRequestObject.type = 'SU')
+    ) {
       const subject = 'Verification Code For Sign Up';
       const emailTemplate = 'verificationCodeTemplate';
       const veriCode = 1234;
       console.log(
-        `Sending Verification Mail to User with this email (${savedUser.email}) for Account Credentials`,
+        `Sending Verification Mail to User with this email (${verificationRequestObject.email}) for Account Credentials`,
       );
       sendCustomMail(
-        savedUser.email,
+        verificationRequestObject.email,
         subject,
         undefined,
         undefined,
@@ -112,7 +120,7 @@ export class AccCreateEmails {
       );
 
       console.log(
-        `Verification Email Sent To User with this email (${savedUser.email})`,
+        `Verification Email Sent To User with this email (${verificationRequestObject.email})`,
       );
     }
   }
