@@ -105,7 +105,7 @@ export class AccCreateEmails {
       const emailTemplate = 'verificationCodeTemplate';
       const veriCode = 1234;
       console.log(
-        `Sending Verification Mail to User with this email (${verificationRequestObject.email}) for Account Credentials`,
+        `Sending Verification Mail for sign up to User with this email (${verificationRequestObject.email}) for Account Credentials`,
       );
       sendCustomMail(
         verificationRequestObject.email,
@@ -120,7 +120,34 @@ export class AccCreateEmails {
       );
 
       console.log(
-        `Verification Email Sent To User with this email (${verificationRequestObject.email})`,
+        `Verification Email for sign up Sent To User with this email (${verificationRequestObject.email})`,
+      );
+    }
+
+    if (
+      verificationRequestObject.email &&
+      (verificationRequestObject.type = 'RP')
+    ) {
+      const subject = 'Verification Code For Reset Password';
+      const emailTemplate = 'verificationCodeTemplate';
+      const veriCode = 1234;
+      console.log(
+        `Sending Verification Mail for reset password to User with this email (${verificationRequestObject.email}) for Account Credentials`,
+      );
+      sendCustomMail(
+        verificationRequestObject.email,
+        subject,
+        undefined,
+        undefined,
+        undefined,
+        emailTemplate,
+        undefined,
+        undefined,
+        veriCode,
+      );
+
+      console.log(
+        `Verification Email for reset password Sent To User with this email (${verificationRequestObject.email})`,
       );
     }
   }

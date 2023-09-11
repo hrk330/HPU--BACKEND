@@ -420,10 +420,7 @@ export class CodeVerificationController {
     const user = await this.appUsersRepository.findOne({
       where: {email: verificationRequestObject.email, roleId: 'APPUSER'},
     });
-    if (
-      verificationRequestObject.email &&
-      (verificationRequestObject.type = 'SU')
-    ) {
+    if (verificationRequestObject.email && verificationRequestObject.type) {
       await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
         verificationRequestObject,
       );
