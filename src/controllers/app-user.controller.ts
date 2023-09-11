@@ -189,9 +189,7 @@ export class AppUserController {
         const savedUser = await this.appUsersRepository.create(
           _.omit(newUserRequest, 'password'),
         );
-        await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
-          savedUser,
-        );
+
         if (savedUser) {
           await this.appUsersRepository
             .userCreds(savedUser.id)
@@ -206,6 +204,9 @@ export class AppUserController {
           result.token = await this.jwtService.generateToken(userProfile);
           result.code = 0;
           result.msg = 'User registered successfully.';
+          await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
+            savedUser,
+          );
         }
       }
     } catch (e) {
