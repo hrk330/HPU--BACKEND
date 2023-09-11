@@ -122,7 +122,8 @@ export class AccCreateEmails {
       console.log(
         `Verification Email for sign up Sent To User with this email (${verificationRequestObject.email})`,
       );
-    } else if (
+    }
+    if (
       verificationRequestObject.email &&
       (verificationRequestObject.type = 'RP')
     ) {
