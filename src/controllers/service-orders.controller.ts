@@ -40,13 +40,11 @@ import {
   TransactionRepository,
 } from '../repositories';
 import {sendCustomMail, sendMessage} from '../services';
-// import {OrderEmailsUtil} from '../utils/order-emails.utils';
 import {ServiceOrdersUtils} from '../utils/service-orders.utils';
 //import _ from 'lodash';
 
 export class ServiceOrdersController {
   private serviceOrdersUtils: ServiceOrdersUtils = new ServiceOrdersUtils();
-  // private orderEmailsUtil: OrderEmailsUtil = new OrderEmailsUtil();
   constructor(
     @repository(ServiceOrdersRepository)
     public serviceOrdersRepository: ServiceOrdersRepository,
@@ -90,6 +88,7 @@ export class ServiceOrdersController {
       order: {},
     };
     try {
+
       const service: Services = await this.servicesRepository.findById(
         serviceOrders.serviceId,
       );
@@ -109,15 +108,8 @@ export class ServiceOrdersController {
       );
 
       if (service && appUser) {
-        this.serviceOrdersUtils.populateAdminCreatedOrderStatus(
-          service.serviceType,
-          serviceOrders,
-        );
-        await this.serviceOrdersUtils.populateServiceProviderAndCompanyDetailsInOrder(
-          serviceOrders,
-          this.serviceProviderRepository,
-          this.companyRepository,
-        );
+        this.serviceOrdersUtils.populateAdminCreatedOrderStatus(service.serviceType, serviceOrders);
+        await this.serviceOrdersUtils.populateServiceProviderAndCompanyDetailsInOrder(serviceOrders, this.serviceProviderRepository, this.companyRepository);
         serviceOrders.userName = appUser.firstName + ' ' + appUser.lastName;
         serviceOrders.userEmail = appUser.email;
         serviceOrders.appUserProfilePic = appUser.profilePic;
@@ -215,10 +207,9 @@ export class ServiceOrdersController {
         const createdOrder: ServiceOrders =
           await this.serviceOrdersRepository.create(serviceOrders);
 
-        await this.sendServiceProviderOrderUpdateNotification(
-          createdOrder,
-          true,
-        );
+        if(service.serviceType !== 'Done For You') {
+          await this.sendServiceProviderOrderUpdateNotification(createdOrder);
+        }
 
         if (appUser?.endpoint?.length > 20) {
           await this.sendOrderNotification(
@@ -314,7 +305,7 @@ export class ServiceOrdersController {
           serviceOrders.grossAmount + serviceOrders.taxAmount;
 
         createdOrder = await this.serviceOrdersRepository.create(serviceOrders);
-        if (service.serviceType !== 'Done For You') {
+        if(service.serviceType !== 'Done For You') {
           const serviceProviders: ServiceProvider[] =
             await this.serviceProviderRepository.find({
               where: {roleId: 'SERVICEPROVIDER', userStatus: 'A'},
@@ -432,6 +423,21 @@ export class ServiceOrdersController {
               serviceProvider.profilePic;
           }
 
+          console.log('Rider Email', serviceOrders.serviceProviderEmail);
+          console.log('Rider Name', serviceOrders.serviceProviderName);
+          console.log('Company Name', serviceOrders.companyName);
+          if (serviceOrders.serviceProviderEmail) {
+            sendCustomMail(
+              serviceOrders.serviceProviderEmail,
+              `Current Order Details`,
+              serviceOrders.serviceProviderName as string,
+              dbOrder.serviceOrderId,
+              dbOrder.serviceName as string,
+              'orderCreate',
+              undefined,
+              dbOrder.netAmount,
+            );
+          }
           console.log('User Email 4', dbOrder.userEmail);
           console.log(
             'Rider Name From DBORDER = ',
@@ -476,7 +482,6 @@ export class ServiceOrdersController {
         );
 
         await this.sendAppUserOrderUpdateNotification(dbOrder);
-        await this.sendServiceProviderOrderUpdateNotification(dbOrder, false);
         result = {code: 0, msg: 'Order updated successfully.', order: dbOrder};
       } catch (e) {
         console.log(e);
@@ -518,9 +523,7 @@ export class ServiceOrdersController {
       orderRequest?.serviceOrder?.serviceOrderId
     ) {
       try {
-        await this.serviceOrdersUtils.populateStatusDates(
-          orderRequest.serviceOrder,
-        );
+        await this.serviceOrdersUtils.populateStatusDates(orderRequest.serviceOrder);
 
         await this.serviceOrdersRepository.updateById(
           orderRequest.serviceOrder.serviceOrderId,
@@ -578,9 +581,7 @@ export class ServiceOrdersController {
         orderRequest?.serviceOrder?.status === 'CO' &&
         orderRequest?.serviceOrder?.serviceOrderId
       ) {
-        await this.serviceOrdersUtils.populateStatusDates(
-          orderRequest.serviceOrder,
-        );
+        await this.serviceOrdersUtils.populateStatusDates(orderRequest.serviceOrder);
 
         await this.serviceOrdersRepository.updateById(
           orderRequest.serviceOrder.serviceOrderId,
@@ -590,7 +591,7 @@ export class ServiceOrdersController {
           orderRequest.serviceOrder.serviceOrderId,
         );
         await this.sendAppUserOrderUpdateNotification(dbOrder);
-        await this.sendServiceProviderOrderUpdateNotification(dbOrder, true);
+        await this.sendServiceProviderOrderUpdateNotification(dbOrder);
 
         result = {
           code: 0,
@@ -645,9 +646,7 @@ export class ServiceOrdersController {
           orderRequest.payment.paymentOrderId = dbOrder.serviceOrderId;
           orderRequest.payment.paymentStatus = 'L';
           await this.paymentRepository.create(orderRequest.payment);
-          await this.serviceOrdersUtils.populateStatusDates(
-            orderRequest.serviceOrder,
-          );
+          await this.serviceOrdersUtils.populateStatusDates(orderRequest.serviceOrder);
           const serviceProviderAccount: Account =
             await this.serviceProviderRepository
               .account(dbOrder.serviceProviderId)
@@ -684,10 +683,7 @@ export class ServiceOrdersController {
             orderRequest?.serviceOrder?.serviceOrderId,
           );
 
-          await this.sendServiceProviderOrderUpdateNotification(
-            updatedDbOrder,
-            false,
-          );
+          await this.sendServiceProviderOrderUpdateNotification(updatedDbOrder);
 
           result = {
             code: 0,
@@ -884,9 +880,7 @@ export class ServiceOrdersController {
         orderRequest?.serviceOrder?.status === 'PC'
       ) {
         try {
-          await this.serviceOrdersUtils.populateStatusDates(
-            orderRequest.serviceOrder,
-          );
+          await this.serviceOrdersUtils.populateStatusDates(orderRequest.serviceOrder);
 
           const paymentObj: Payment | null =
             await this.paymentRepository.findOne({
@@ -975,7 +969,6 @@ export class ServiceOrdersController {
 
   async sendServiceProviderOrderUpdateNotification(
     serviceOrders: ServiceOrders,
-    isCreatedByAdmin: boolean,
   ): Promise<void> {
     let title = '',
       body = '';
@@ -987,11 +980,69 @@ export class ServiceOrdersController {
         );
       if (serviceOrders?.status && serviceProvider?.endpoint?.length > 20) {
         if (serviceOrders?.status === 'LO' || serviceOrders?.status === 'OA') {
-          if (isCreatedByAdmin) {
-            title = 'Order Alert';
-            body = 'New order has been assigned.';
+          title = 'Order Alert';
+          body = 'New order has been assigned.';
+          console.log('Company Email', serviceOrders.companyEmail);
+          if (serviceOrders.companyEmail) {
+            sendCustomMail(
+              serviceOrders.companyEmail,
+              'New Order Assignment By HPU',
+              serviceOrders.companyName as string,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
           }
-          // await this.orderEmailsUtil.sendAcceptOrderEmail(serviceOrders);
+          console.log('Rider Email', serviceOrders.serviceProviderEmail);
+          console.log('Rider Name', serviceOrders.serviceProviderName);
+          console.log('Company Name', serviceOrders.companyName);
+          if (
+            serviceOrders.serviceProviderEmail &&
+            serviceOrders.companyEmail
+          ) {
+            sendCustomMail(
+              serviceOrders.serviceProviderEmail,
+              `New Order Assignment by ${serviceOrders.companyName}`,
+              serviceOrders.serviceProviderName as string,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
+
+          if (
+            serviceOrders.serviceProviderEmail &&
+            !serviceOrders.companyEmail
+          ) {
+            sendCustomMail(
+              serviceOrders.serviceProviderEmail,
+              `New Order Assignment by HPU`,
+              serviceOrders.serviceProviderName as string,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
+
+          console.log('User Email', serviceOrders.userEmail);
+          if (serviceOrders.userEmail) {
+            sendCustomMail(
+              serviceOrders.userEmail,
+              'Order Confirmation',
+              serviceOrders.userName,
+              serviceOrders.serviceOrderId,
+              serviceOrders.serviceName as string,
+              'orderCreate',
+              undefined,
+              serviceOrders.netAmount,
+            );
+          }
         } else if (serviceOrders?.status === 'CO') {
           title = 'Order Completed';
           body = 'Order has been completed.';
@@ -1183,10 +1234,7 @@ export class ServiceOrdersController {
             serviceOrders.serviceOrderId,
           );
           if (dbOrder?.serviceProviderId) {
-            await this.sendServiceProviderOrderUpdateNotification(
-              dbOrder,
-              false,
-            );
+            await this.sendServiceProviderOrderUpdateNotification(dbOrder);
           }
 
           result = {code: 0, msg: 'Order canceled.', order: dbOrder};
@@ -1239,10 +1287,7 @@ export class ServiceOrdersController {
             serviceOrders.serviceOrderId,
           );
           if (dbOrder?.serviceProviderId) {
-            await this.sendServiceProviderOrderUpdateNotification(
-              dbOrder,
-              true,
-            );
+            await this.sendServiceProviderOrderUpdateNotification(dbOrder);
           }
           if (dbOrder?.userId) {
             await this.sendAppUserOrderUpdateNotification(dbOrder);

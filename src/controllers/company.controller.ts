@@ -1,21 +1,12 @@
-import {TokenService, authenticate} from '@loopback/authentication';
-import {
-  MyUserService,
-  TokenServiceBindings,
-  UserServiceBindings,
-} from '@loopback/authentication-jwt';
-import {inject} from '@loopback/core';
 import {Filter, repository} from '@loopback/repository';
 import {
+  post,
+  param,
   get,
   getModelSchemaRef,
-  param,
-  post,
   requestBody,
   response,
 } from '@loopback/rest';
-import {genSalt, hash} from 'bcryptjs';
-import _ from 'lodash';
 import {
   BankAccount,
   Company,
@@ -32,10 +23,18 @@ import {
   ServiceProviderRepository,
   ServicesRepository,
 } from '../repositories';
-import {AccCreateEmails} from '../utils';
+import {genSalt, hash} from 'bcryptjs';
+import _ from 'lodash';
+import {
+  MyUserService,
+  TokenServiceBindings,
+  UserServiceBindings,
+} from '@loopback/authentication-jwt';
+import {authenticate, TokenService} from '@loopback/authentication';
+import {inject} from '@loopback/core';
+import {sendCustomMail} from '../services';
 
 export class CompanyController {
-  private AccCreateEmails: AccCreateEmails = new AccCreateEmails();
   constructor(
     @repository(CompanyRepository)
     public companyRepository: CompanyRepository,
@@ -165,9 +164,14 @@ export class CompanyController {
             result.company = savedCompany;
             result.code = 0;
             result.msg = 'Company registered successfully.';
-            await this.AccCreateEmails.sendCompanyAccCreateMail(
-              savedCompany,
-              company,
+
+            sendCustomMail(
+              savedCompany.email,
+              'Company Registration Credentials',
+              savedCompany.companyName,
+              savedCompany.email,
+              company.password,
+              'CompanyAccountCreate',
             );
           }
         }

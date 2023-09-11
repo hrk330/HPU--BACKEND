@@ -40,10 +40,8 @@ import {
   ServiceOrdersRepository,
   VerificationCodesRepository,
 } from '../repositories';
-import {AccCreateEmails} from '../utils';
 
 export class AppUserController {
-  private AccCreateEmails: AccCreateEmails = new AccCreateEmails();
   constructor(
     @repository(AppUsersRepository)
     public appUsersRepository: AppUsersRepository,
@@ -203,9 +201,6 @@ export class AppUserController {
           result.token = await this.jwtService.generateToken(userProfile);
           result.code = 0;
           result.msg = 'User registered successfully.';
-          await this.AccCreateEmails.sendUserAccCreateByAppVerificationEmail(
-            savedUser,
-          );
         }
       }
     } catch (e) {
@@ -496,7 +491,7 @@ export class AppUserController {
 
     return JSON.stringify(result);
   }
-
+  
   @post('/appUsers/changePassword', {
     responses: {
       '200': {
@@ -515,11 +510,7 @@ export class AppUserController {
     @requestBody(CredentialsRequestBody) credentialsRequest: CredentialsRequest,
   ): Promise<String> {
     const result = {code: 5, msg: 'Change password failed.'};
-    if (
-      credentialsRequest?.id &&
-      credentialsRequest?.password &&
-      credentialsRequest?.oldPassword
-    ) {
+    if(credentialsRequest?.id && credentialsRequest?.password && credentialsRequest?.oldPassword) {
       const user = await this.appUsersRepository.findOne({
         where: {id: credentialsRequest.id, roleId: 'APPUSER'},
         include: [{relation: 'userCreds'}],
@@ -630,10 +621,6 @@ export class AppUserController {
           result.code = 0;
           result.msg = 'User created successfully.';
         }
-        await this.AccCreateEmails.sendUserAccCreateByAdminEmail(
-          savedUser,
-          newUserRequest,
-        );
       }
     } catch (e) {
       result.code = 5;

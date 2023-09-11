@@ -25,44 +25,32 @@ export const renderTemplate = (templateName: string, context: any) => {
 export const sendCustomMail = (
   recipient: string,
   subject: string,
-  name?: any,
-  username?: any,
-  password?: any,
-  emailTemplate?: string,
+  name: string,
+  username: string,
+  password: string,
+  emailTemplate: string,
   companyName?: any,
   totalcost?: any,
-  veriCode?: any,
 ) => {
-  const templateVars: Record<string, string> = {};
+  const templateVars: Record<string, string> = {
+    name: name,
+    username: username,
+    password: password,
+  };
 
   // Add the companyName to templateVars if it is provided
-  if (name) {
-    templateVars.name = name;
-  }
-  if (username) {
-    templateVars.username = username;
-  }
-  if (password) {
-    templateVars.password = password;
-  }
-  if (emailTemplate) {
-    templateVars.emailTemplate = emailTemplate;
-  }
   if (companyName) {
     templateVars.companyName = companyName;
   }
   if (totalcost) {
     templateVars.totalcost = totalcost;
   }
-  if (veriCode) {
-    templateVars.veriCode = veriCode;
-  }
 
   const mailOptions: nodemailer.SendMailOptions = {
     from: 'testcompany850@gmail.com',
     to: recipient,
     subject: subject,
-    html: renderTemplate(emailTemplate as string, templateVars),
+    html: renderTemplate(emailTemplate, templateVars),
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
