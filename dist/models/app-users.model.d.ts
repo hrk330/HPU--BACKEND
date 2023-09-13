@@ -1,0 +1,58 @@
+import { UserCredentials } from '@loopback/authentication-jwt';
+import { Entity } from '@loopback/repository';
+import { UserCreds } from './user-creds.model';
+import { Vehicle } from './vehicle.model';
+import { UserDocs } from './user-docs.model';
+import { Account } from './account.model';
+import { WithdrawalRequest } from './withdrawal-request.model';
+import { ServiceProviderServices } from './service-provider-services.model';
+export declare class AppUsers extends Entity {
+    id: string;
+    username?: string;
+    email: string;
+    emailVerified: boolean;
+    password: string;
+    userType: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth?: string;
+    identityNo?: string;
+    address1?: string;
+    address2?: string;
+    country: string;
+    state?: string;
+    city?: string;
+    zipCode?: string;
+    phoneNo?: string;
+    isBlocked?: string;
+    roleId?: string;
+    profilePic?: string;
+    verificationCode: string;
+    passwordUpdatedAt?: string;
+    isMobileVerified?: string;
+    isProfileCompleted?: string;
+    isServiceProviderVerified?: string;
+    serviceProviderType?: string;
+    endpoint: string;
+    socialId: string;
+    socialIdType?: string;
+    userStatus?: string;
+    userOnlineStatus?: string;
+    rating?: number;
+    totalOrders?: number;
+    userLocation?: string;
+    userLocationCoordinates?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+    serviceProviderServicesList: ServiceProviderServices[];
+    userCredentials: UserCredentials;
+    vehicles: Vehicle[];
+    userCreds: UserCreds;
+    userDocs: UserDocs[];
+    account: Account;
+    withdrawalRequests: WithdrawalRequest[];
+    constructor(data?: Partial<AppUsers>);
+}
+export interface AppUsersRelations {
+}
+export type AppUsersWithRelations = AppUsers & AppUsersRelations;

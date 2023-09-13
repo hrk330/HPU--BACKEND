@@ -1,0 +1,58 @@
+import { UserCredentials } from '@loopback/authentication-jwt';
+import { Entity } from '@loopback/repository';
+import { ServiceProviderServices } from './service-provider-services.model';
+import { UserCreds } from './user-creds.model';
+import { UserDocs } from './user-docs.model';
+import { WithdrawalRequest } from './withdrawal-request.model';
+import { Account } from './account.model';
+export declare class ServiceProvider extends Entity {
+    id: string;
+    username?: string;
+    email: string;
+    emailVerified: boolean;
+    password: string;
+    companyId?: string;
+    companyName?: string;
+    userType: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth?: string;
+    identityNo?: string;
+    address1?: string;
+    address2?: string;
+    country: string;
+    state?: string;
+    city?: string;
+    zipCode?: string;
+    phoneNo?: string;
+    isBlocked?: string;
+    roleId?: string;
+    profilePic?: string;
+    verificationCode: string;
+    passwordUpdatedAt?: string;
+    isMobileVerified?: string;
+    isProfileCompleted?: string;
+    isServiceProviderVerified?: string;
+    serviceProviderType?: string;
+    endpoint: string;
+    socialId: string;
+    socialIdType?: string;
+    userStatus?: string;
+    userOnlineStatus?: string;
+    rating?: number;
+    totalOrders?: number;
+    userLocation?: string;
+    userLocationCoordinates?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+    serviceProviderServicesList: ServiceProviderServices[];
+    userCredentials: UserCredentials;
+    userCreds: UserCreds;
+    userDocs: UserDocs[];
+    withdrawalRequests: WithdrawalRequest[];
+    account: Account;
+    constructor(data?: Partial<ServiceProvider>);
+}
+export interface ServiceProviderRelations {
+}
+export type ServiceProviderWithRelations = ServiceProvider & ServiceProviderRelations;

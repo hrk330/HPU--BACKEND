@@ -1,0 +1,35 @@
+import { TokenService } from '@loopback/authentication';
+import { MyUserService, User } from '@loopback/authentication-jwt';
+import { Count, Filter, FilterExcludingWhere, Where } from '@loopback/repository';
+import { CredentialsRequest, ServiceProvider, ServiceProviderServices, Services } from '../models';
+import { ServiceProviderRepository, ServiceProviderServicesRepository, ServicesRepository } from '../repositories';
+export declare class ServicesProviderController {
+    jwtService: TokenService;
+    userService: MyUserService;
+    serviceProviderServicesRepository: ServiceProviderServicesRepository;
+    servicesRepository: ServicesRepository;
+    serviceProviderRepository: ServiceProviderRepository;
+    private AccCreateEmails;
+    constructor(jwtService: TokenService, userService: MyUserService, serviceProviderServicesRepository: ServiceProviderServicesRepository, servicesRepository: ServicesRepository, serviceProviderRepository: ServiceProviderRepository);
+    signUp(serviceProvider: Omit<ServiceProvider, 'id'>): Promise<String>;
+    createServiceProviderByAdmin(serviceProvider: Omit<ServiceProvider, 'id'>): Promise<String>;
+    updateServiceProviderByAdmin(serviceProvider: ServiceProvider): Promise<String>;
+    checkServicesExist(servicesArray: Array<string>): Promise<Array<Services>>;
+    checkServiceProviderServiceExist(serviceId: string, userId: string): Promise<Array<ServiceProviderServices>>;
+    login(credentials: CredentialsRequest): Promise<String>;
+    resetPassword(newUserRequest: ServiceProvider): Promise<String>;
+    changePassword(credentialsRequest: CredentialsRequest): Promise<String>;
+    updateProfile(serviceProvider: ServiceProvider): Promise<String>;
+    updateEndpoint(newUserRequest: ServiceProvider): Promise<String>;
+    approveServiceProvider(newUserRequest: ServiceProvider): Promise<String>;
+    fetchAllPendingServiceProviders(filter?: Filter<ServiceProvider>): Promise<ServiceProvider[]>;
+    findByEmail(email: string): Promise<User[]>;
+    logoutServiceProvider(newUserRequest: ServiceProvider): Promise<String>;
+    create(serviceProvider: Omit<ServiceProvider, 'id'>): Promise<ServiceProvider>;
+    count(where?: Where<ServiceProvider>): Promise<Count>;
+    find(filter?: Filter<ServiceProvider>): Promise<ServiceProvider[]>;
+    findById(id: string, filter?: FilterExcludingWhere<ServiceProvider>): Promise<ServiceProvider>;
+    updateById(id: string, appUsers: ServiceProvider): Promise<void>;
+    replaceById(id: string, appUsers: ServiceProvider): Promise<void>;
+    deleteById(id: string): Promise<void>;
+}
